@@ -37,12 +37,12 @@
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "AlexSkrypnyk\\App\\": "src/"
+            "AlexSkrypnyk\\SkillTest\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "AlexSkrypnyk\\App\\Tests\\": "tests/phpunit"
+            "AlexSkrypnyk\\SkillTest\\Tests\\": "tests/phpunit"
         },
         "classmap": [
             "tests/phpunit"

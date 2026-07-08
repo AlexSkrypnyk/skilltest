@@ -7,19 +7,14 @@
 
 declare(strict_types=1);
 
+use AlexSkrypnyk\SkillTest\Command\VersionCommand;
+use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Application;
-use AlexSkrypnyk\App\Command\JokeCommand;
-use AlexSkrypnyk\App\Command\SayHelloCommand;
 
 // @codeCoverageIgnoreStart
-$application = new Application('skilltest', '@skilltest-version@');
+$application = new Application(Version::NAME, Version::id());
 
-$command = new JokeCommand();
-$application->add($command);
-$application->setDefaultCommand((string) $command->getName());
-
-$command = new SayHelloCommand();
-$application->add($command);
+$application->add(new VersionCommand());
 
 $application->run();
 // @codeCoverageIgnoreEnd
