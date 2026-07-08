@@ -201,14 +201,30 @@ class CoverageCommand extends Command {
    *   The cells, aligned with HEADERS.
    */
   protected function cells(CoverageRow $row): array {
-    return [
+    return array_map($this->flatten(...), [
       $row->skill,
       $row->eval ? 'yes' : 'no',
       $row->transcript ? 'yes' : 'no',
       (string) $row->tasks,
       $row->status(),
       $row->reason ?? '',
-    ];
+    ]);
+  }
+
+  /**
+   * Collapses newlines to spaces so a free-text cell stays on its own row.
+   *
+   * The skill name and exclusion reason are author-controlled, so a newline in
+   * either would otherwise split a single grid row across lines.
+   *
+   * @param string $value
+   *   The cell value.
+   *
+   * @return string
+   *   The single-line value.
+   */
+  protected function flatten(string $value): string {
+    return str_replace(["\r\n", "\r", "\n"], ' ', $value);
   }
 
   /**
@@ -284,7 +300,8 @@ class CoverageCommand extends Command {
     $output->writeln('| ' . implode(' | ', array_fill(0, count(self::HEADERS), '---')) . ' |');
 
     foreach ($matrix as $cells) {
-      $output->writeln('| ' . implode(' | ', $cells) . ' |');
+      $escaped = array_map(static fn(string $cell): string => str_replace('|', '\\|', $cell), $cells);
+      $output->writeln('| ' . implode(' | ', $escaped) . ' |');
     }
   }
 

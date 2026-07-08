@@ -131,6 +131,17 @@ final class CoverageCommandTest extends TestCase {
     $this->assertStringContainsString('| covered | yes | no | 0 | covered |', $output);
   }
 
+  public function testMarkdownEscapesPipesAndNewlinesInFreeText(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skilltest.yml' => "version: \"1\"\npaths:\n  exclude:\n    - skill: lonely\n      reason: \"needs | work\\nlater\"\n",
+      'skills' => ['lonely' => ['SKILL.md' => 'x']],
+    ]);
+
+    $output = $this->runCoverage(['--dir' => $root->url(), '--format' => 'markdown'], 0);
+
+    $this->assertStringContainsString('needs \\| work later', $output);
+  }
+
   public function testUnknownFormatIsError(): void {
     $root = vfsStream::setup('root', NULL, ['skills' => []]);
 
