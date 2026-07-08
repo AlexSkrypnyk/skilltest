@@ -56,6 +56,9 @@ final class MatcherTest extends TestCase {
     yield 'gh-mutations ignores project item-list' => [['gh project item-list 1'], 'pack:gh-mutations', NULL];
     yield 'gh-mutations matches mutating api method' => [['gh api repos/x/y -X POST'], 'pack:gh-mutations', 'gh api repos/x/y -X POST'];
     yield 'gh-mutations matches lowercase api method' => [['gh api repos/x/y --method delete'], 'pack:gh-mutations', 'gh api repos/x/y --method delete'];
+    yield 'gh-mutations matches equals api method' => [['gh api x --method=POST'], 'pack:gh-mutations', 'gh api x --method=POST'];
+    yield 'gh-mutations matches glued short api method' => [['gh api x -XPATCH'], 'pack:gh-mutations', 'gh api x -XPATCH'];
+    yield 'gh-mutations matches quoted api method' => [["gh api x --method='delete'"], 'pack:gh-mutations', "gh api x --method='delete'"];
     yield 'gh-mutations ignores read-only api' => [['gh api repos/x/y'], 'pack:gh-mutations', NULL];
 
     yield 'gh-readonly matches pr view' => [['gh pr view 1'], 'pack:gh-readonly', 'gh pr view 1'];

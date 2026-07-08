@@ -49,7 +49,7 @@ final class Packs {
       '\bgh\s+pr\s+(?:create|merge|close|edit)\b',
       '\bgh\s+issue\s+(?:create|edit|close)\b',
       '\bgh\s+project\s+(?:item|field)-(?:add|create|edit|delete|archive)\b',
-      '\bgh\s+api\b[^\n]*(?:-X|--method)\s+(?i:POST|PUT|PATCH|DELETE)\b',
+      '\bgh\s+api\b[^\n]*(?:-X\s*|--method[=\s]+)["\']?(?i:POST|PUT|PATCH|DELETE)\b',
     ],
     'gh-readonly' => [
       '\bgh\s+pr\s+(?:view|list|checks)\b',
