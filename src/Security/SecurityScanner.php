@@ -215,6 +215,13 @@ final readonly class SecurityScanner {
 
       $path = $dir . '/' . $entry;
 
+      // A symlink could loop back into the skill or resolve outside it
+      // entirely; a supply-chain scan only ever reads the skill's own real
+      // files, so never follow one.
+      if (is_link($path)) {
+        continue;
+      }
+
       if (is_dir($path)) {
         foreach ($this->collect($path) as $nested) {
           $files[] = $nested;
