@@ -280,7 +280,10 @@ final class HookRunner {
       }
 
       if (microtime(TRUE) >= $deadline) {
-        proc_terminate($process);
+        // SIGKILL rather than the default SIGTERM: a hook that traps SIGTERM
+        // could otherwise ignore the terminate and stall proc_close() past the
+        // deadline, defeating the very budget this loop exists to enforce.
+        proc_terminate($process, 9);
 
         break;
       }
