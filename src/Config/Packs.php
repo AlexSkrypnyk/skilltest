@@ -32,6 +32,46 @@ final class Packs {
   ];
 
   /**
+   * The delimiter-less regexes each pattern pack expands to.
+   *
+   * A pack matches a command when any of its regexes matches, so a pack is the
+   * union of its patterns. Versioned with the tool: a release note calls out
+   * additions because they can newly fail an existing suite.
+   *
+   * @var array<string, list<string>>
+   */
+  public const array PATTERN_DEFINITIONS = [
+    'git-mutations' => [
+      '\bgit\s+(?:commit|push|checkout|switch|merge|rebase|tag)\b',
+      '\bgit\s+reset\s+--hard\b',
+    ],
+    'gh-mutations' => [
+      '\bgh\s+pr\s+(?:create|merge|close|edit)\b',
+      '\bgh\s+issue\s+(?:create|edit|close)\b',
+      '\bgh\s+project\s+(?:item|field)-(?:add|create|edit|delete|archive)\b',
+      '\bgh\s+api\b[^\n]*(?:-X\s*|--method[=\s]+)["\']?(?i:POST|PUT|PATCH|DELETE)\b',
+    ],
+    'gh-readonly' => [
+      '\bgh\s+pr\s+(?:view|list|checks)\b',
+      '\bgh\s+issue\s+(?:view|list)\b',
+    ],
+    'package-installs' => [
+      '\bnpm\s+(?:i|install|add)\b[^\n]*(?:-g|--global)\b',
+      '\bpip3?\s+install\b',
+      '\bcomposer\s+global\s+require\b',
+      '\bbrew\s+install\b',
+    ],
+    'network-fetch' => [
+      '\b(?:curl|wget)\b[^\n]*(?:https?|ftp)://',
+    ],
+    'system-temp' => [
+      '(?:^|\s)/tmp\b',
+      '\$TMPDIR\b',
+      '\$\{TMPDIR\}',
+    ],
+  ];
+
+  /**
    * Packs usable in the security group's `packs:` list.
    */
   public const array SECURITY = [
@@ -62,6 +102,19 @@ final class Packs {
    */
   public static function isPatternPack(string $name): bool {
     return in_array($name, self::PATTERN, TRUE);
+  }
+
+  /**
+   * The delimiter-less regexes a pattern pack expands to.
+   *
+   * @param string $name
+   *   The pack name.
+   *
+   * @return list<string>
+   *   The pack's regexes, or an empty list when the pack is unknown.
+   */
+  public static function patterns(string $name): array {
+    return self::PATTERN_DEFINITIONS[$name] ?? [];
   }
 
   /**
