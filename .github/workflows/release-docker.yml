@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      is_release: ${{ steps.version.outputs.is_release }}
     steps:
       - name: Resolve release version
         id: version
@@ -30,6 +31,13 @@ jobs:
           version="${INPUTS_VERSION:-${REF_NAME}}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Release version: $version"
+          # Only a stable X.Y.Z (or vX.Y.Z) release may move the "latest" tag; a
+          # pre-release such as 1.2.3-rc1 publishes its own tag but never latest.
+          if printf '%s' "$version" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
 
   release-image:
     name: Build and push ${{ matrix.name }}
@@ -75,7 +83,7 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
           tags: |
             type=raw,value=${{ needs.prepare.outputs.version }}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.is_release == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
