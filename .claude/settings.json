@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./skilltest version *)",
+      "Bash(./skilltest *)",
+      "Bash(./.build/skilltest.phar version *)",
+      "Bash(./.build/skilltest.phar *)"
+    ]
+  }
+}
