@@ -9,7 +9,7 @@ use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 
 /**
- * The deterministic `security` group: a static supply-chain scan of skill files.
+ * The deterministic `security` group: a supply-chain scan of shipped files.
  *
  * Every regular file a skill ships - not just `SKILL.md`, but bundled scripts,
  * references, and fixtures - is scanned line by line for danger patterns before
