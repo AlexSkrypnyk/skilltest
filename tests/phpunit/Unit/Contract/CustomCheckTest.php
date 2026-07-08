@@ -69,7 +69,7 @@ final class CustomCheckTest extends TestCase {
   public function testMalformedEntryYieldsNull(array $check): void {
     $runner = fn(string $command, string $cwd): array => [0, ''];
 
-    $this->assertNull((new CustomCheck('/root', $runner))->run($check, '/t.jsonl', 'skills/foo'));
+    $this->assertNotInstanceOf(CheckResult::class, (new CustomCheck('/root', $runner))->run($check, '/t.jsonl', 'skills/foo'));
   }
 
   public static function dataProviderMalformedEntryYieldsNull(): \Iterator {

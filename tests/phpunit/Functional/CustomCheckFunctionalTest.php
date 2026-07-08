@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
+use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Contract\CustomCheck;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -53,7 +54,7 @@ final class CustomCheckFunctionalTest extends TestCase {
 
     $result = (new CustomCheck($this->workdir))->run(['name' => 'echo-args', 'run' => 'php check.php'], 'transcript.jsonl', 'skills/foo');
 
-    $this->assertNotNull($result);
+    $this->assertInstanceOf(CheckResult::class, $result);
     $this->assertTrue($result->pass);
     $this->assertSame('check.echo-args', $result->id);
     $this->assertSame('verified', $result->message);
@@ -66,7 +67,7 @@ final class CustomCheckFunctionalTest extends TestCase {
 
     $result = (new CustomCheck($this->workdir))->run(['name' => 'boom', 'run' => 'php check.php'], 'transcript.jsonl', 'skills/foo');
 
-    $this->assertNotNull($result);
+    $this->assertInstanceOf(CheckResult::class, $result);
     $this->assertFalse($result->pass);
     $this->assertStringContainsString('failed (exit 2).', $result->message);
     $this->assertSame('', $result->evidence);
@@ -78,7 +79,7 @@ final class CustomCheckFunctionalTest extends TestCase {
 
     $result = (new CustomCheck($this->workdir, NULL, 0.5))->run(['name' => 'hang', 'run' => 'php check.php'], 'transcript.jsonl', 'skills/foo');
 
-    $this->assertNotNull($result);
+    $this->assertInstanceOf(CheckResult::class, $result);
     $this->assertFalse($result->pass);
     $this->assertStringContainsString('failed (exit ' . CustomCheck::TIMEOUT_EXIT . ').', $result->message);
   }
@@ -95,10 +96,12 @@ final class CustomCheckFunctionalTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path)) {
