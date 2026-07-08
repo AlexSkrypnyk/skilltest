@@ -10,9 +10,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/alexskrypnyk/skilltest.svg)](https://github.com/alexskrypnyk/skilltest/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/alexskrypnyk/skilltest.svg)](https://github.com/alexskrypnyk/skilltest/pulls)
 [![Test PHP](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-php.yml/badge.svg)](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-php.yml)
-[![Test Node.js](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-nodejs.yml/badge.svg)](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-nodejs.yml)
-[![Test Shell](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-shell.yml/badge.svg)](https://github.com/alexskrypnyk/skilltest/actions/workflows/test-shell.yml)
-[![codecov](https://codecov.io/gh/alexskrypnyk/skilltest/graph/badge.svg?token=7WEB1IXBYT)](https://codecov.io/gh/alexskrypnyk/skilltest)
+[![codecov](https://codecov.io/gh/alexskrypnyk/skilltest/graph/badge.svg)](https://codecov.io/gh/alexskrypnyk/skilltest)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/alexskrypnyk/skilltest)
 ![LICENSE](https://img.shields.io/github/license/alexskrypnyk/skilltest)
 ![Renovate](https://img.shields.io/badge/renovate-enabled-green?logo=renovatebot)
@@ -69,4 +67,4 @@ To pull the latest infrastructure from the template into this project, ask
 Claude Code to "update scaffold" - see [`AGENTS.md`](AGENTS.md) for details.
 
 ---
-_This repository was created using the [skilltest](https://getskilltest.dev/) project template_
+_This repository was created using the [Scaffold](https://getscaffold.dev/) project template_
