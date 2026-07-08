@@ -9,3 +9,7 @@
 
 # Claude Code fetches the project update skill on demand; do not commit it.
 /.claude/skills/update-consumer-scaffold/
+
+# Ignore everything in .claude except the shared settings used by all clones.
+/.claude/*
+!/.claude/settings.json
