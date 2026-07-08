@@ -5,6 +5,7 @@
         {
             "in": "./",
             "exclude": [
+                ".docker",
                 "docs",
                 "prd",
                 "tests"
@@ -12,12 +13,14 @@
         }
     ],
     "blacklist": [
+        ".dockerignore",
         ".editorconfig",
         ".gitattributes",
         ".github",
         ".gitignore",
         "CLAUDE.md",
         "box.json",
+        "install.sh",
         "phpcs.xml",
         "phpstan.neon",
         "phpunit.xml",

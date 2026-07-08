@@ -1,0 +1,27 @@
+# Agent image: the base for `--env docker` llm trials.
+#
+# Ships the Claude Code CLI plus git and common shell tooling. Extended per
+# repository through `llm.docker.setup`. Contains no credentials: they enter
+# only as explicit env vars at container start.
+
+# syntax=docker/dockerfile:1
+
+FROM node:22-bookworm-slim
+
+LABEL org.opencontainers.image.source="https://github.com/alexskrypnyk/skilltest"
+LABEL org.opencontainers.image.description="skilltest agent base: Claude Code CLI plus common tooling for --env docker trials"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        jq \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g @anthropic-ai/claude-code
+
+WORKDIR /work
+CMD ["bash"]

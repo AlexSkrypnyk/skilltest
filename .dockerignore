@@ -1,0 +1,13 @@
+# Keep the tool-image build context lean: drop everything Composer rebuilds or
+# that never belongs in the image. Source, tests, and manifests stay - Composer
+# scans the autoload-dev classmap (tests/phpunit) during install, and Box then
+# applies its own excludes from box.json when compiling the PHAR.
+.git
+.github
+.idea
+.artifacts
+.build
+.logs
+.phpunit.cache
+vendor
+vendor-bin

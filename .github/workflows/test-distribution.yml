@@ -1,0 +1,148 @@
+name: Test distribution
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tool-image:
+    name: Tool image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build the tool image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: .docker/Dockerfile.tool
+          load: true
+          tags: skilltest:test
+          build-args: |
+            VERSION=0.0.0-test
+          provenance: false
+
+      - name: Run the tool against a mounted fixture repo
+        run: |
+          out="$(docker run --rm -v "$PWD/tests/fixtures/distribution":/work -w /work skilltest:test version)"
+          echo "$out"
+          echo "$out" | grep -q 'skilltest 0.0.0-test'
+
+      - name: Run the deterministic-gate one-liner
+        run: docker run --rm -v "$PWD/tests/fixtures/distribution":/work -w /work skilltest:test
+
+  agent-image:
+    name: Agent image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build the agent image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: .docker/Dockerfile.agent
+          load: true
+          tags: skilltest-agent:test
+          provenance: false
+
+      - name: Verify the Claude Code CLI runs
+        run: docker run --rm skilltest-agent:test claude --version
+
+  install-script:
+    name: Install script
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Lint install.sh
+        run: shellcheck install.sh
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: 8.3
+          tools: composer:2.10
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Build PHAR
+        run: composer build
+
+      - name: Stage a local release tree
+        run: |
+          mkdir -p .artifacts/release/releases/latest/download
+          mkdir -p .artifacts/release/releases/download/9.9.9
+          cp .build/skilltest.phar .artifacts/release/releases/latest/download/skilltest.phar
+          cp .build/skilltest.phar .artifacts/release/releases/download/9.9.9/skilltest.phar
+          ( cd .artifacts/release/releases/latest/download && sha256sum skilltest.phar > skilltest.phar.sha256 )
+          ( cd .artifacts/release/releases/download/9.9.9 && sha256sum skilltest.phar > skilltest.phar.sha256 )
+
+      - name: Serve the local release tree
+        run: |
+          php -S 127.0.0.1:8791 -t .artifacts/release &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+          sleep 1
+
+      - name: Install the latest release
+        env:
+          SKILLTEST_RELEASE_BASE_URL: http://127.0.0.1:8791/releases
+          SKILLTEST_INSTALL_DIR: ${{ github.workspace }}/.artifacts/bin
+        run: |
+          bash install.sh
+          "${SKILLTEST_INSTALL_DIR}/skilltest" version
+
+      - name: Fail loudly on a checksum mismatch
+        env:
+          SKILLTEST_RELEASE_BASE_URL: http://127.0.0.1:8791/releases
+          SKILLTEST_INSTALL_DIR: ${{ github.workspace }}/.artifacts/bin-bad
+        run: |
+          printf '%s  skilltest.phar\n' 0000000000000000000000000000000000000000000000000000000000000000 > .artifacts/release/releases/latest/download/skilltest.phar.sha256
+          if bash install.sh; then
+            echo "FAIL: install.sh succeeded despite a checksum mismatch"
+            exit 1
+          fi
+          echo "install.sh correctly refused the tampered download"
+          if [ -e "${SKILLTEST_INSTALL_DIR}/skilltest" ]; then
+            echo "FAIL: a binary was installed despite the mismatch"
+            exit 1
+          fi
+
+      - name: Honour a .skilltest-version pin
+        env:
+          SKILLTEST_RELEASE_BASE_URL: http://127.0.0.1:8791/releases
+          SKILLTEST_INSTALL_DIR: ${{ github.workspace }}/.artifacts/bin-pin
+        run: |
+          mkdir -p .artifacts/pinrepo
+          echo "9.9.9" > .artifacts/pinrepo/.skilltest-version
+          ( cd .artifacts/pinrepo && bash "$GITHUB_WORKSPACE/install.sh" )
+          "${SKILLTEST_INSTALL_DIR}/skilltest" version
+
+      - name: Stop the local server
+        if: always()
+        run: kill "${SERVER_PID}" || true
