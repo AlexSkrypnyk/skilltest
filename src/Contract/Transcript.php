@@ -91,9 +91,9 @@ final class Transcript {
   public function bashCommands(): array {
     $commands = [];
 
-    foreach ($this->toolUses as $tool_use) {
-      if ($tool_use['name'] === self::BASH_TOOL && isset($tool_use['input']['command']) && is_string($tool_use['input']['command'])) {
-        $commands[] = $tool_use['input']['command'];
+    foreach ($this->toolUses as $toolUse) {
+      if ($toolUse['name'] === self::BASH_TOOL && isset($toolUse['input']['command']) && is_string($toolUse['input']['command'])) {
+        $commands[] = $toolUse['input']['command'];
       }
     }
 
@@ -109,9 +109,9 @@ final class Transcript {
   public function skillInvocations(): array {
     $skills = [];
 
-    foreach ($this->toolUses as $tool_use) {
-      if ($tool_use['name'] === self::SKILL_TOOL && isset($tool_use['input']['skill']) && is_string($tool_use['input']['skill'])) {
-        $skills[] = $tool_use['input']['skill'];
+    foreach ($this->toolUses as $toolUse) {
+      if ($toolUse['name'] === self::SKILL_TOOL && isset($toolUse['input']['skill']) && is_string($toolUse['input']['skill'])) {
+        $skills[] = $toolUse['input']['skill'];
       }
     }
 
