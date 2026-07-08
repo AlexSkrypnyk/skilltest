@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use AlexSkrypnyk\SkillTest\Command\ValidateCommand;
 use AlexSkrypnyk\SkillTest\Command\VersionCommand;
 use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Application;
@@ -15,6 +16,7 @@ use Symfony\Component\Console\Application;
 $application = new Application(Version::NAME, Version::id());
 
 $application->add(new VersionCommand());
+$application->add(new ValidateCommand());
 
 $application->run();
 // @codeCoverageIgnoreEnd

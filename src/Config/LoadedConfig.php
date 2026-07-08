@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AlexSkrypnyk\SkillTest\Config;
+
+/**
+ * The whole repository configuration after a successful load.
+ *
+ * Bundles the repo config (typed and raw) with every discovered, loaded skill,
+ * ready for schema and coherence validation. A load that reaches this point has
+ * already passed the hard gates (parse, schema major); everything left is a
+ * finding, not a fatal error.
+ */
+final class LoadedConfig {
+
+  /**
+   * Constructs a LoadedConfig.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   *   The typed repo configuration.
+   * @param array<mixed> $repoData
+   *   The raw parsed `skilltest.yml`, or an empty array when absent.
+   * @param string $repoFile
+   *   The `skilltest.yml` path, or an empty string when absent.
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skills
+   *   The discovered, loaded skills.
+   */
+  public function __construct(
+    public readonly RepoConfig $repo,
+    public readonly array $repoData,
+    public readonly string $repoFile,
+    public readonly array $skills,
+  ) {}
+
+}
