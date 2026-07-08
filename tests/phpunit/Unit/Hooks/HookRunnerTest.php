@@ -134,12 +134,12 @@ final class HookRunnerTest extends TestCase {
     $this->assertSame([], (new HookRunner('/root', self::runnerReturning(0, ''), self::readiness(TRUE)))->run([]));
   }
 
-  #[DataProvider('dataProviderZeroCaseHook')]
+  #[DataProvider('dataProviderReadyHookWithoutCasesYieldsNoResults')]
   public function testReadyHookWithoutCasesYieldsNoResults(array $hooks): void {
     $this->assertSame([], (new HookRunner('/root', self::runnerReturning(0, ''), self::readiness(TRUE)))->run($hooks));
   }
 
-  public static function dataProviderZeroCaseHook(): \Iterator {
+  public static function dataProviderReadyHookWithoutCasesYieldsNoResults(): \Iterator {
     yield 'explicit empty cases' => [[['script' => 'hooks/x.php', 'cases' => []]]];
     yield 'no cases key' => [[['script' => 'hooks/x.php']]];
   }
@@ -164,7 +164,7 @@ final class HookRunnerTest extends TestCase {
     $this->assertSame([TRUE, TRUE, TRUE], array_map(static fn(CheckResult $r): bool => $r->pass, $results));
   }
 
-  #[DataProvider('dataProviderConfigError')]
+  #[DataProvider('dataProviderConfigErrorsThrow')]
   public function testConfigErrorsThrow(array $hooks, bool $ready, string $message, string $pointer): void {
     $runner = new HookRunner('/root', self::runnerReturning(2, ''), self::readiness($ready));
 
@@ -178,7 +178,7 @@ final class HookRunnerTest extends TestCase {
     }
   }
 
-  public static function dataProviderConfigError(): \Iterator {
+  public static function dataProviderConfigErrorsThrow(): \Iterator {
     yield 'missing script key' => [[['cases' => []]], TRUE, 'hook is missing a script.', 'hooks.0.script'];
     yield 'empty script string' => [[['script' => '', 'cases' => []]], TRUE, 'hook is missing a script.', 'hooks.0.script'];
     yield 'script not runnable' => [[['script' => 'hooks/x.php', 'cases' => []]], FALSE, 'hook script not found or not executable: hooks/x.php', 'hooks.0.script'];

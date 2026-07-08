@@ -19,9 +19,10 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * fails the moment a hook stops blocking what it must block.
  *
  * A declared script that is missing or not executable is a configuration error
- * that aborts the run, so a hook can never silently pass by not running. Process
- * execution and the filesystem probe are both funnelled through injectable
- * closures so the verdict logic is unit-testable without spawning a process.
+ * that aborts the run, so a hook can never silently pass by not running.
+ * Process execution and the filesystem probe are both funnelled through
+ * injectable closures so the verdict logic is unit-testable without spawning a
+ * process.
  */
 final class HookRunner {
 
