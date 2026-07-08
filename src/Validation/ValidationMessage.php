@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Validation;
  * reader always knows where to look. Errors fail validation; warnings are
  * reported but do not.
  */
-final class ValidationMessage {
+final readonly class ValidationMessage {
 
   /**
    * Constructs a ValidationMessage.
@@ -26,10 +26,10 @@ final class ValidationMessage {
    *   The human-readable description.
    */
   public function __construct(
-    public readonly bool $isError,
-    public readonly string $file,
-    public readonly string $pointer,
-    public readonly string $message,
+    public bool $isError,
+    public string $file,
+    public string $pointer,
+    public string $message,
   ) {}
 
   /**

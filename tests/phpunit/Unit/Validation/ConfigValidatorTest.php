@@ -277,7 +277,7 @@ final class ConfigValidatorTest extends TestCase {
    *   The rendered findings.
    */
   protected function rendered(array $findings): array {
-    return array_map(static fn(ValidationMessage $message): string => $message->render(), $findings);
+    return array_map(static fn(ValidationMessage $validation_message): string => $validation_message->render(), $findings);
   }
 
 }

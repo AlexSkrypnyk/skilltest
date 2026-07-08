@@ -12,7 +12,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * already passed the hard gates (parse, schema major); everything left is a
  * finding, not a fatal error.
  */
-final class LoadedConfig {
+final readonly class LoadedConfig {
 
   /**
    * Constructs a LoadedConfig.
@@ -27,10 +27,10 @@ final class LoadedConfig {
    *   The discovered, loaded skills.
    */
   public function __construct(
-    public readonly RepoConfig $repo,
-    public readonly array $repoData,
-    public readonly string $repoFile,
-    public readonly array $skills,
+    public RepoConfig $repo,
+    public array $repoData,
+    public string $repoFile,
+    public array $skills,
   ) {}
 
 }

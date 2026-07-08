@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * are readable (unknown keys are warned about, never fatal); a different major
  * is rejected by the loader with a pointer to the migrate command.
  */
-final class SchemaVersion {
+final readonly class SchemaVersion implements \Stringable {
 
   /**
    * The major schema version this tool reads.
@@ -32,8 +32,8 @@ final class SchemaVersion {
    *   The minor component.
    */
   public function __construct(
-    public readonly int $major,
-    public readonly int $minor,
+    public int $major,
+    public int $minor,
   ) {}
 
   /**

@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * built-in defaults, with CLI overrides on top. This is what `validate
  * --show-config` prints, so precedence is observable rather than a mystery.
  */
-final class EffectiveConfig {
+final readonly class EffectiveConfig {
 
   /**
    * The default per-model pass-rate threshold.
@@ -68,27 +68,27 @@ final class EffectiveConfig {
    *   The repo model aliases, carried through for display.
    */
   public function __construct(
-    public readonly string $skill,
-    public readonly string $path,
-    public readonly array $contract,
-    public readonly array $security,
-    public readonly ?string $transcript,
-    public readonly array $models,
-    public readonly float $threshold,
-    public readonly int $trials,
-    public readonly ?int $maxTurns,
-    public readonly string $environment,
-    public readonly ?string $judgeModel,
-    public readonly array $rubric,
-    public readonly array $tasks,
-    public readonly array $checks,
-    public readonly array $modelAliases,
+    public string $skill,
+    public string $path,
+    public array $contract,
+    public array $security,
+    public ?string $transcript,
+    public array $models,
+    public float $threshold,
+    public int $trials,
+    public ?int $maxTurns,
+    public string $environment,
+    public ?string $judgeModel,
+    public array $rubric,
+    public array $tasks,
+    public array $checks,
+    public array $modelAliases,
   ) {}
 
   /**
    * Resolves the effective configuration for a skill.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param array<mixed> $eval
    *   The parsed `eval.yaml` for this skill.
@@ -102,32 +102,32 @@ final class EffectiveConfig {
    * @return self
    *   The merged configuration.
    */
-  public static function resolve(RepoConfig $repo, array $eval, array $cli, string $name, string $path): self {
+  public static function resolve(RepoConfig $repo_config, array $eval, array $cli, string $name, string $path): self {
     $llm = Data::toArray(Data::get($eval, 'llm'));
 
     return new self(
       Data::toStringOrNull(Data::get($eval, 'skill')) ?? $name,
       $path,
-      self::resolveContract($repo, $eval),
+      self::resolveContract($repo_config, $eval),
       self::resolveSecurity($eval),
       Data::toStringOrNull(Data::get($eval, 'deterministic', 'transcript')),
-      self::resolveModels($repo, $llm, $cli),
+      self::resolveModels($repo_config, $llm, $cli),
       Data::toFloatOrNull($cli['threshold'] ?? NULL) ?? Data::toFloatOrNull(Data::get($llm, 'threshold')) ?? self::DEFAULT_THRESHOLD,
       Data::toIntOrNull($cli['trials'] ?? NULL) ?? Data::toIntOrNull(Data::get($llm, 'trials')) ?? self::DEFAULT_TRIALS,
       Data::toIntOrNull(Data::get($llm, 'max-turns')),
-      Data::toStringOrNull($cli['env'] ?? NULL) ?? $repo->environment,
-      $repo->judgeModel,
+      Data::toStringOrNull($cli['env'] ?? NULL) ?? $repo_config->environment,
+      $repo_config->judgeModel,
       Data::toStringList(Data::get($llm, 'judge', 'rubric')),
       Data::toArrayList(Data::get($llm, 'tasks')),
       Data::toArrayList(Data::get($llm, 'checks')),
-      $repo->modelAliases,
+      $repo_config->modelAliases,
     );
   }
 
   /**
    * Normalises the contract and appends repo guards to forbidden commands.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param array<mixed> $eval
    *   The parsed `eval.yaml`.
@@ -135,14 +135,14 @@ final class EffectiveConfig {
    * @return array<string, mixed>
    *   The normalised contract.
    */
-  protected static function resolveContract(RepoConfig $repo, array $eval): array {
+  protected static function resolveContract(RepoConfig $repo_config, array $eval): array {
     $contract = Data::toArray(Data::get($eval, 'contract'));
     $tools = Data::toArray(Data::get($contract, 'tools'));
     $commands = Data::toArray(Data::get($contract, 'commands'));
     $skills = Data::toArray(Data::get($contract, 'skills'));
 
     $forbidden_commands = Data::toStringMap(Data::get($commands, 'forbidden'));
-    foreach ($repo->guards as $label => $pattern) {
+    foreach ($repo_config->guards as $label => $pattern) {
       $forbidden_commands[$label] = $pattern;
     }
 
@@ -187,9 +187,9 @@ final class EffectiveConfig {
   }
 
   /**
-   * Resolves the model list by precedence: CLI, eval, repo ladder, repo default.
+   * Resolves the model list: CLI over eval over the repo ladder or default.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param array<mixed> $llm
    *   The eval `llm` block.
@@ -199,23 +199,23 @@ final class EffectiveConfig {
    * @return string[]
    *   The resolved model list.
    */
-  protected static function resolveModels(RepoConfig $repo, array $llm, array $cli): array {
-    $cli_models = self::expandModels($cli['models'] ?? NULL, $repo);
+  protected static function resolveModels(RepoConfig $repo_config, array $llm, array $cli): array {
+    $cli_models = self::expandModels($cli['models'] ?? NULL, $repo_config);
     if ($cli_models !== []) {
       return $cli_models;
     }
 
-    $eval_models = self::expandModels(Data::get($llm, 'models'), $repo);
+    $eval_models = self::expandModels(Data::get($llm, 'models'), $repo_config);
     if ($eval_models !== []) {
       return $eval_models;
     }
 
-    if ($repo->ladder !== []) {
-      return $repo->ladder;
+    if ($repo_config->ladder !== []) {
+      return $repo_config->ladder;
     }
 
-    if ($repo->defaultModel !== NULL) {
-      return [$repo->defaultModel];
+    if ($repo_config->defaultModel !== NULL) {
+      return [$repo_config->defaultModel];
     }
 
     return [];
@@ -226,19 +226,19 @@ final class EffectiveConfig {
    *
    * @param mixed $value
    *   A model value: the `ladder` keyword, a comma string, or a list.
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    *
    * @return string[]
    *   The expanded model list.
    */
-  protected static function expandModels(mixed $value, RepoConfig $repo): array {
+  protected static function expandModels(mixed $value, RepoConfig $repo_config): array {
     if ($value === self::LADDER_KEYWORD) {
-      return $repo->ladder;
+      return $repo_config->ladder;
     }
 
     if (is_string($value)) {
-      return array_values(array_filter(array_map('trim', explode(',', $value)), static fn(string $part): bool => $part !== ''));
+      return array_values(array_filter(array_map(trim(...), explode(',', $value)), static fn(string $part): bool => $part !== ''));
     }
 
     return Data::toStringList($value);

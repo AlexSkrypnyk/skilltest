@@ -23,17 +23,11 @@ use PHPUnit\Framework\TestCase;
 final class ConfigLoaderTest extends TestCase {
 
   /**
-   * The original SKILLTEST_CONFIG value, restored after each test.
-   */
-  protected string|false $originalConfigEnv = FALSE;
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
 
-    $this->originalConfigEnv = getenv(ConfigLoader::ENV_CONFIG);
     putenv(ConfigLoader::ENV_CONFIG);
   }
 
@@ -41,12 +35,7 @@ final class ConfigLoaderTest extends TestCase {
    * {@inheritdoc}
    */
   protected function tearDown(): void {
-    if ($this->originalConfigEnv === FALSE) {
-      putenv(ConfigLoader::ENV_CONFIG);
-    }
-    else {
-      putenv(ConfigLoader::ENV_CONFIG . '=' . $this->originalConfigEnv);
-    }
+    putenv(ConfigLoader::ENV_CONFIG);
 
     parent::tearDown();
   }

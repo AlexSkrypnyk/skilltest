@@ -20,7 +20,7 @@ use AlexSkrypnyk\SkillTest\Config\RepoConfig;
  * and referenced fixtures and hook scripts must exist. Coherence problems are
  * errors; unknown keys are warnings.
  */
-final class ConfigValidator {
+final readonly class ConfigValidator {
 
   /**
    * Known keys of `skilltest.yml`. A nested array descends; TRUE is a leaf.
@@ -66,7 +66,7 @@ final class ConfigValidator {
   /**
    * The repository root, used to resolve hook script paths.
    */
-  protected readonly string $root;
+  protected string $root;
 
   /**
    * Constructs a ConfigValidator.
@@ -81,23 +81,23 @@ final class ConfigValidator {
   /**
    * Validates a loaded configuration.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
    *   The loaded configuration.
    *
    * @return \AlexSkrypnyk\SkillTest\Validation\ValidationResult
    *   The accumulated findings.
    */
-  public function validate(LoadedConfig $loaded): ValidationResult {
+  public function validate(LoadedConfig $loaded_config): ValidationResult {
     $result = new ValidationResult();
 
-    if ($loaded->repoFile !== '') {
-      $this->checkUnknownKeys($loaded->repoData, self::REPO_SCHEMA, $loaded->repoFile, '', $result);
-      $this->validateRepoPatterns($loaded->repo, $loaded->repoFile, $result);
-      $this->validateHooks($loaded->repo, $loaded->repoFile, $result);
-      $this->validateModelAliases($loaded->repo, $loaded->repoFile, $result);
+    if ($loaded_config->repoFile !== '') {
+      $this->checkUnknownKeys($loaded_config->repoData, self::REPO_SCHEMA, $loaded_config->repoFile, '', $result);
+      $this->validateRepoPatterns($loaded_config->repo, $loaded_config->repoFile, $result);
+      $this->validateHooks($loaded_config->repo, $loaded_config->repoFile, $result);
+      $this->validateModelAliases($loaded_config->repo, $loaded_config->repoFile, $result);
     }
 
-    foreach ($loaded->skills as $skill) {
+    foreach ($loaded_config->skills as $skill) {
       $this->checkUnknownKeys($skill->data, self::EVAL_SCHEMA, $skill->file, '', $result);
       $this->validateSkill($skill, $result);
     }
@@ -116,16 +116,16 @@ final class ConfigValidator {
    *   The file the data came from.
    * @param string $prefix
    *   The dotted pointer prefix for nested keys.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append warnings to.
    */
-  protected function checkUnknownKeys(array $data, array $schema, string $file, string $prefix, ValidationResult $result): void {
+  protected function checkUnknownKeys(array $data, array $schema, string $file, string $prefix, ValidationResult $validation_result): void {
     foreach ($data as $key => $value) {
       $key = (string) $key;
       $pointer = $prefix === '' ? $key : $prefix . '.' . $key;
 
       if (!array_key_exists($key, $schema)) {
-        $result->addWarning($file, $pointer, 'unknown key (ignored).');
+        $validation_result->addWarning($file, $pointer, 'unknown key (ignored).');
 
         continue;
       }
@@ -133,7 +133,7 @@ final class ConfigValidator {
       $sub_schema = $schema[$key];
 
       if (is_array($sub_schema) && is_array($value)) {
-        $this->checkUnknownKeys($value, $sub_schema, $file, $pointer, $result);
+        $this->checkUnknownKeys($value, $sub_schema, $file, $pointer, $validation_result);
       }
     }
   }
@@ -141,14 +141,14 @@ final class ConfigValidator {
   /**
    * Runs the per-skill coherence checks.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
    *   The loaded skill.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append findings to.
    */
-  protected function validateSkill(LoadedSkill $skill, ValidationResult $result): void {
-    $file = $skill->file;
-    $data = $skill->data;
+  protected function validateSkill(LoadedSkill $loaded_skill, ValidationResult $validation_result): void {
+    $file = $loaded_skill->file;
+    $data = $loaded_skill->data;
     $contract = Data::toArray(Data::get($data, 'contract'));
 
     $this->disjointList(
@@ -157,7 +157,7 @@ final class ConfigValidator {
       $file,
       'contract.tools',
       'tool',
-      $result,
+      $validation_result,
     );
     $this->disjointList(
       Data::toStringList(Data::get($contract, 'skills', 'required')),
@@ -165,14 +165,14 @@ final class ConfigValidator {
       $file,
       'contract.skills',
       'skill',
-      $result,
+      $validation_result,
     );
 
-    $this->disjointCommands($contract, $file, $result);
-    $this->validateCommandPatterns($contract, $file, $result);
-    $this->validateSecurityPacks($data, $file, $result);
-    $this->validateFixture($skill, $result);
-    $this->validateRubric($data, $skill, $result);
+    $this->disjointCommands($contract, $file, $validation_result);
+    $this->validateCommandPatterns($contract, $file, $validation_result);
+    $this->validateSecurityPacks($data, $file, $validation_result);
+    $this->validateFixture($loaded_skill, $validation_result);
+    $this->validateRubric($data, $loaded_skill, $validation_result);
   }
 
   /**
@@ -188,12 +188,12 @@ final class ConfigValidator {
    *   The dotted pointer to the block.
    * @param string $noun
    *   A singular noun naming the entries, for the message.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function disjointList(array $required, array $forbidden, string $file, string $pointer, string $noun, ValidationResult $result): void {
+  protected function disjointList(array $required, array $forbidden, string $file, string $pointer, string $noun, ValidationResult $validation_result): void {
     foreach (array_intersect($required, $forbidden) as $name) {
-      $result->addError($file, $pointer, sprintf("%s '%s' is in both required and forbidden.", $noun, $name));
+      $validation_result->addError($file, $pointer, sprintf("%s '%s' is in both required and forbidden.", $noun, $name));
     }
   }
 
@@ -204,19 +204,19 @@ final class ConfigValidator {
    *   The contract block.
    * @param string $file
    *   The file the contract came from.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function disjointCommands(array $contract, string $file, ValidationResult $result): void {
+  protected function disjointCommands(array $contract, string $file, ValidationResult $validation_result): void {
     $required = Data::toStringMap(Data::get($contract, 'commands', 'required'));
     $forbidden = Data::toStringMap(Data::get($contract, 'commands', 'forbidden'));
 
     foreach (array_intersect(array_keys($required), array_keys($forbidden)) as $label) {
-      $result->addError($file, 'contract.commands', sprintf("command '%s' is in both required and forbidden.", $label));
+      $validation_result->addError($file, 'contract.commands', sprintf("command '%s' is in both required and forbidden.", $label));
     }
 
     foreach (array_intersect(array_values($required), array_values($forbidden)) as $pattern) {
-      $result->addError($file, 'contract.commands', sprintf("command pattern '%s' is in both required and forbidden.", $pattern));
+      $validation_result->addError($file, 'contract.commands', sprintf("command pattern '%s' is in both required and forbidden.", $pattern));
     }
   }
 
@@ -227,15 +227,15 @@ final class ConfigValidator {
    *   The contract block.
    * @param string $file
    *   The file the contract came from.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateCommandPatterns(array $contract, string $file, ValidationResult $result): void {
+  protected function validateCommandPatterns(array $contract, string $file, ValidationResult $validation_result): void {
     $commands = Data::toArray(Data::get($contract, 'commands'));
 
     foreach (['required', 'forbidden'] as $kind) {
       foreach (Data::toStringMap(Data::get($commands, $kind)) as $label => $pattern) {
-        $this->validatePattern($pattern, $file, sprintf('contract.commands.%s.%s', $kind, $label), $result);
+        $this->validatePattern($pattern, $file, sprintf('contract.commands.%s.%s', $kind, $label), $validation_result);
       }
     }
   }
@@ -249,22 +249,22 @@ final class ConfigValidator {
    *   The file the pattern came from.
    * @param string $pointer
    *   The dotted pointer to the pattern.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validatePattern(string $pattern, string $file, string $pointer, ValidationResult $result): void {
+  protected function validatePattern(string $pattern, string $file, string $pointer, ValidationResult $validation_result): void {
     $pack = Packs::reference($pattern);
 
     if ($pack !== NULL) {
       if (!Packs::isPatternPack($pack)) {
-        $result->addError($file, $pointer, sprintf("unknown pattern pack '%s'.", $pack));
+        $validation_result->addError($file, $pointer, sprintf("unknown pattern pack '%s'.", $pack));
       }
 
       return;
     }
 
     if (!Pcre::compiles($pattern)) {
-      $result->addError($file, $pointer, sprintf('pattern does not compile: %s', $pattern));
+      $validation_result->addError($file, $pointer, sprintf('pattern does not compile: %s', $pattern));
     }
   }
 
@@ -275,13 +275,13 @@ final class ConfigValidator {
    *   The parsed `eval.yaml`.
    * @param string $file
    *   The file the data came from.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateSecurityPacks(array $data, string $file, ValidationResult $result): void {
+  protected function validateSecurityPacks(array $data, string $file, ValidationResult $validation_result): void {
     foreach (Data::toStringList(Data::get($data, 'security', 'packs')) as $pack) {
       if (!Packs::isSecurityPack($pack)) {
-        $result->addError($file, 'security.packs', sprintf("unknown security pack '%s'.", $pack));
+        $validation_result->addError($file, 'security.packs', sprintf("unknown security pack '%s'.", $pack));
       }
     }
   }
@@ -289,22 +289,22 @@ final class ConfigValidator {
   /**
    * Validates that a declared transcript fixture exists.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
    *   The loaded skill.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateFixture(LoadedSkill $skill, ValidationResult $result): void {
-    $transcript = $skill->effective->transcript;
+  protected function validateFixture(LoadedSkill $loaded_skill, ValidationResult $validation_result): void {
+    $transcript = $loaded_skill->effective->transcript;
 
     if ($transcript === NULL) {
       return;
     }
 
-    $path = str_starts_with($transcript, '/') ? $transcript : dirname($skill->file) . '/' . $transcript;
+    $path = str_starts_with($transcript, '/') ? $transcript : dirname($loaded_skill->file) . '/' . $transcript;
 
     if (!is_file($path)) {
-      $result->addError($skill->file, 'deterministic.transcript', sprintf('fixture not found: %s', $transcript));
+      $validation_result->addError($loaded_skill->file, 'deterministic.transcript', sprintf('fixture not found: %s', $transcript));
     }
   }
 
@@ -313,62 +313,62 @@ final class ConfigValidator {
    *
    * @param array<mixed> $data
    *   The parsed `eval.yaml`.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
    *   The loaded skill.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateRubric(array $data, LoadedSkill $skill, ValidationResult $result): void {
+  protected function validateRubric(array $data, LoadedSkill $loaded_skill, ValidationResult $validation_result): void {
     $llm = Data::toArray(Data::get($data, 'llm'));
 
     if (!array_key_exists('judge', $llm)) {
       return;
     }
 
-    if ($skill->effective->rubric === []) {
-      $result->addError($skill->file, 'llm.judge.rubric', 'rubric must not be empty when a judge is declared.');
+    if ($loaded_skill->effective->rubric === []) {
+      $validation_result->addError($loaded_skill->file, 'llm.judge.rubric', 'rubric must not be empty when a judge is declared.');
     }
   }
 
   /**
    * Validates repo alias and guard patterns.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param string $file
    *   The repo config file path.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateRepoPatterns(RepoConfig $repo, string $file, ValidationResult $result): void {
-    foreach ($repo->aliases as $name => $pattern) {
+  protected function validateRepoPatterns(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    foreach ($repo_config->aliases as $name => $pattern) {
       if (!Pcre::compiles($pattern)) {
-        $result->addError($file, 'aliases.' . $name, sprintf('pattern does not compile: %s', $pattern));
+        $validation_result->addError($file, 'aliases.' . $name, sprintf('pattern does not compile: %s', $pattern));
       }
     }
 
-    foreach ($repo->guards as $label => $pattern) {
-      $this->validatePattern($pattern, $file, 'guards.' . $label, $result);
+    foreach ($repo_config->guards as $label => $pattern) {
+      $this->validatePattern($pattern, $file, 'guards.' . $label, $validation_result);
     }
   }
 
   /**
    * Validates that every declared hook has an existing script.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param string $file
    *   The repo config file path.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateHooks(RepoConfig $repo, string $file, ValidationResult $result): void {
-    foreach ($repo->hooks as $index => $hook) {
+  protected function validateHooks(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    foreach ($repo_config->hooks as $index => $hook) {
       $pointer = sprintf('hooks.%d.script', $index);
       $script = Data::toStringOrNull(Data::get($hook, 'script'));
 
       if ($script === NULL) {
-        $result->addError($file, $pointer, 'hook is missing a script.');
+        $validation_result->addError($file, $pointer, 'hook is missing a script.');
 
         continue;
       }
@@ -376,7 +376,7 @@ final class ConfigValidator {
       $path = str_starts_with($script, '/') ? $script : $this->root . '/' . $script;
 
       if (!is_file($path)) {
-        $result->addError($file, $pointer, sprintf('hook script not found: %s', $script));
+        $validation_result->addError($file, $pointer, sprintf('hook script not found: %s', $script));
       }
     }
   }
@@ -384,20 +384,20 @@ final class ConfigValidator {
   /**
    * Validates that every referenced model alias is defined.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.
    * @param string $file
    *   The repo config file path.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function validateModelAliases(RepoConfig $repo, string $file, ValidationResult $result): void {
-    foreach ($repo->ladder as $index => $alias) {
-      $this->checkAlias($repo->modelAliases, $alias, $file, sprintf('models.ladder.%d', $index), $result);
+  protected function validateModelAliases(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    foreach ($repo_config->ladder as $index => $alias) {
+      $this->checkAlias($repo_config->modelAliases, $alias, $file, sprintf('models.ladder.%d', $index), $validation_result);
     }
 
-    $this->checkAlias($repo->modelAliases, $repo->defaultModel, $file, 'models.default', $result);
-    $this->checkAlias($repo->modelAliases, $repo->judgeModel, $file, 'models.judge', $result);
+    $this->checkAlias($repo_config->modelAliases, $repo_config->defaultModel, $file, 'models.default', $validation_result);
+    $this->checkAlias($repo_config->modelAliases, $repo_config->judgeModel, $file, 'models.judge', $validation_result);
   }
 
   /**
@@ -411,12 +411,12 @@ final class ConfigValidator {
    *   The repo config file path.
    * @param string $pointer
    *   The dotted pointer to the reference.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append errors to.
    */
-  protected function checkAlias(array $aliases, ?string $reference, string $file, string $pointer, ValidationResult $result): void {
+  protected function checkAlias(array $aliases, ?string $reference, string $file, string $pointer, ValidationResult $validation_result): void {
     if ($reference !== NULL && !array_key_exists($reference, $aliases)) {
-      $result->addError($file, $pointer, sprintf("undefined model alias '%s'.", $reference));
+      $validation_result->addError($file, $pointer, sprintf("undefined model alias '%s'.", $reference));
     }
   }
 

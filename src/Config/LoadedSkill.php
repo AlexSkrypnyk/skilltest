@@ -7,11 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * One discovered skill after loading: its file, raw data, and merged config.
  *
- * The raw parsed `eval.yaml` is kept alongside the merged {@see EffectiveConfig}
+ * The raw parsed `eval.yaml` is kept next to the merged {@see EffectiveConfig}
  * so schema checks can inspect the keys as written while coherence checks work
  * from the normalised, merged view.
  */
-final class LoadedSkill {
+final readonly class LoadedSkill {
 
   /**
    * Constructs a LoadedSkill.
@@ -24,9 +24,9 @@ final class LoadedSkill {
    *   The merged effective configuration.
    */
   public function __construct(
-    public readonly string $file,
-    public readonly array $data,
-    public readonly EffectiveConfig $effective,
+    public string $file,
+    public array $data,
+    public EffectiveConfig $effective,
   ) {}
 
 }

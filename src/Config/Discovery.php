@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * level below each skills path (matching the plugin convention), so both
  * `skills/<name>/SKILL.md` and `skills/<group>/<name>/SKILL.md` are found.
  */
-final class Discovery {
+final readonly class Discovery {
 
   /**
    * The marker file that identifies a skill directory.
@@ -21,12 +21,7 @@ final class Discovery {
   /**
    * The repository root, used to resolve the skills paths.
    */
-  protected readonly string $root;
-
-  /**
-   * The repo configuration providing the skills paths.
-   */
-  protected readonly RepoConfig $repo;
+  protected string $root;
 
   /**
    * Constructs a Discovery.
@@ -36,9 +31,8 @@ final class Discovery {
    * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo
    *   The repo configuration.
    */
-  public function __construct(string $root, RepoConfig $repo) {
+  public function __construct(string $root, protected RepoConfig $repo) {
     $this->root = rtrim($root, '/');
-    $this->repo = $repo;
   }
 
   /**
@@ -51,7 +45,7 @@ final class Discovery {
     $found = [];
 
     foreach ($this->repo->skillsPaths as $skills_path) {
-      $relative_base = trim($skills_path, '/');
+      $relative_base = trim((string) $skills_path, '/');
       $absolute_base = $this->root . '/' . $relative_base;
 
       if (!is_dir($absolute_base)) {
@@ -117,10 +111,12 @@ final class Discovery {
     $directories = [];
 
     foreach ($entries as $entry) {
-      if ($entry === '.' || $entry === '..') {
+      if ($entry === '.') {
         continue;
       }
-
+      if ($entry === '..') {
+        continue;
+      }
       if (is_dir($absolute_dir . '/' . $entry)) {
         $directories[] = $entry;
       }

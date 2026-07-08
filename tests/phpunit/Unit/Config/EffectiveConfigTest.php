@@ -18,14 +18,14 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(EffectiveConfig::class)]
 final class EffectiveConfigTest extends TestCase {
 
-  #[DataProvider('dataProviderModels')]
+  #[DataProvider('dataProviderModelsPrecedence')]
   public function testModelsPrecedence(array $repo, array $eval, array $cli, array $expected): void {
     $config = EffectiveConfig::resolve(RepoConfig::fromArray($repo), $eval, $cli, 'name', 'skills/name');
 
     $this->assertSame($expected, $config->models);
   }
 
-  public static function dataProviderModels(): \Iterator {
+  public static function dataProviderModelsPrecedence(): \Iterator {
     yield 'empty everywhere' => [[], [], [], []];
     yield 'repo ladder' => [['models' => ['ladder' => ['haiku', 'sonnet']]], [], [], ['haiku', 'sonnet']];
     yield 'repo default only' => [['models' => ['default' => 'sonnet']], [], [], ['sonnet']];
@@ -42,7 +42,7 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertSame('foo', $config->skill);
     $this->assertSame('skills/foo', $config->path);
     $this->assertSame([], $config->models);
-    $this->assertSame(0.8, $config->threshold);
+    $this->assertEqualsWithDelta(0.8, $config->threshold, PHP_FLOAT_EPSILON);
     $this->assertSame(1, $config->trials);
     $this->assertNull($config->maxTurns);
     $this->assertSame('host', $config->environment);
@@ -87,7 +87,7 @@ final class EffectiveConfigTest extends TestCase {
     $config = EffectiveConfig::resolve($repo, $eval, [], 'dir-name', 'skills/dir-name');
 
     $this->assertSame('custom-name', $config->skill);
-    $this->assertSame(0.9, $config->threshold);
+    $this->assertEqualsWithDelta(0.9, $config->threshold, PHP_FLOAT_EPSILON);
     $this->assertSame(3, $config->trials);
     $this->assertSame(8, $config->maxTurns);
     $this->assertSame('docker', $config->environment);
@@ -96,9 +96,11 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertSame('fixtures/transcript.jsonl', $config->transcript);
     $this->assertSame(['baseline', 'custom'], $config->security['packs']);
     $this->assertSame(['SECRET'], $config->security['forbidden-tokens']);
-    $this->assertSame(['Bash', 'Skill'], $config->contract['tools']['allowed']);
-    $this->assertSame(['drives' => '\bharness\b'], $config->contract['commands']['required']);
-    $this->assertSame(['raw git' => 'pack:git-mutations', 'broker bypass' => 'pack:gh-mutations'], $config->contract['commands']['forbidden']);
+    $this->assertSame([
+      'tools' => ['allowed' => ['Bash', 'Skill'], 'required' => ['Skill'], 'forbidden' => []],
+      'commands' => ['required' => ['drives' => '\bharness\b'], 'forbidden' => ['raw git' => 'pack:git-mutations', 'broker bypass' => 'pack:gh-mutations']],
+      'skills' => ['required' => ['harness:build'], 'forbidden' => []],
+    ], $config->contract);
     $this->assertCount(1, $config->tasks);
     $this->assertCount(1, $config->checks);
   }
@@ -112,7 +114,7 @@ final class EffectiveConfigTest extends TestCase {
       'skills/name',
     );
 
-    $this->assertSame(0.5, $config->threshold);
+    $this->assertEqualsWithDelta(0.5, $config->threshold, PHP_FLOAT_EPSILON);
     $this->assertSame(9, $config->trials);
     $this->assertSame('docker', $config->environment);
   }
@@ -126,7 +128,7 @@ final class EffectiveConfigTest extends TestCase {
       'skills/name',
     );
 
-    $this->assertSame(0.7, $config->threshold);
+    $this->assertEqualsWithDelta(0.7, $config->threshold, PHP_FLOAT_EPSILON);
     $this->assertSame(2, $config->trials);
   }
 
@@ -144,10 +146,17 @@ final class EffectiveConfigTest extends TestCase {
 
     $this->assertSame('foo', $array['skill']);
     $this->assertSame('skills/foo', $array['path']);
-    $this->assertSame(['haiku'], $array['llm']['models']);
-    $this->assertSame(0.8, $array['llm']['threshold']);
-    $this->assertSame(['model' => NULL, 'rubric' => []], $array['llm']['judge']);
-    $this->assertSame(['haiku' => 'claude-haiku'], $array['models']['aliases']);
+
+    $llm = $array['llm'];
+    $this->assertIsArray($llm);
+    $this->assertSame(['haiku'], $llm['models']);
+    $this->assertEqualsWithDelta(0.8, $llm['threshold'], PHP_FLOAT_EPSILON);
+    $this->assertSame(['model' => NULL, 'rubric' => []], $llm['judge']);
+
+    $models = $array['models'];
+    $this->assertIsArray($models);
+    $this->assertSame(['haiku' => 'claude-haiku'], $models['aliases']);
+
     $this->assertSame(['transcript' => NULL], $array['deterministic']);
     $this->assertArrayHasKey('contract', $array);
     $this->assertArrayHasKey('security', $array);

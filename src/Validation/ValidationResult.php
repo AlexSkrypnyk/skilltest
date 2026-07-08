@@ -22,11 +22,11 @@ final class ValidationResult {
   /**
    * Appends a finding.
    *
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationMessage $message
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationMessage $validation_message
    *   The finding to append.
    */
-  public function add(ValidationMessage $message): void {
-    $this->messages[] = $message;
+  public function add(ValidationMessage $validation_message): void {
+    $this->messages[] = $validation_message;
   }
 
   /**
@@ -74,7 +74,7 @@ final class ValidationResult {
    *   The error findings.
    */
   public function errors(): array {
-    return array_values(array_filter($this->messages, static fn(ValidationMessage $message): bool => $message->isError));
+    return array_values(array_filter($this->messages, static fn(ValidationMessage $validation_message): bool => $validation_message->isError));
   }
 
   /**
@@ -84,7 +84,7 @@ final class ValidationResult {
    *   The warning findings.
    */
   public function warnings(): array {
-    return array_values(array_filter($this->messages, static fn(ValidationMessage $message): bool => !$message->isError));
+    return array_values(array_filter($this->messages, static fn(ValidationMessage $validation_message): bool => !$validation_message->isError));
   }
 
   /**

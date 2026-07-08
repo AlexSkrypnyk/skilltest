@@ -89,7 +89,6 @@ class ValidateCommand extends Command {
       return '.';
     }
     // @codeCoverageIgnoreEnd
-
     return $cwd;
   }
 
@@ -116,7 +115,7 @@ class ValidateCommand extends Command {
   /**
    * Reports a fatal load error and returns the config-error exit code.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $exception
+   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
    *   The load error.
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
@@ -126,8 +125,8 @@ class ValidateCommand extends Command {
    * @return int
    *   The config-error exit code.
    */
-  protected function reportLoadError(ConfigException $exception, OutputInterface $output, bool $is_json): int {
-    $message = ValidationMessage::error($exception->configFile(), $exception->pointer(), $exception->getMessage());
+  protected function reportLoadError(ConfigException $config_exception, OutputInterface $output, bool $is_json): int {
+    $message = ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
 
     if ($is_json) {
       $output->writeln($this->encode(['ok' => FALSE, 'errors' => [$message->toArray()], 'warnings' => []]));
@@ -144,24 +143,24 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
    *   The loaded configuration.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
    * @param bool $show_config
    *   Whether to include the merged configuration.
    */
-  protected function writeJson(OutputInterface $output, LoadedConfig $loaded, ValidationResult $result, bool $show_config): void {
+  protected function writeJson(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config): void {
     $payload = [
-      'ok' => !$result->hasErrors(),
-      'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $result->errors()),
-      'warnings' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $result->warnings()),
+      'ok' => !$validation_result->hasErrors(),
+      'errors' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->errors()),
+      'warnings' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->warnings()),
     ];
 
     if ($show_config) {
       $config = [];
 
-      foreach ($loaded->skills as $skill) {
+      foreach ($loaded_config->skills as $skill) {
         $config[$skill->effective->skill] = $skill->effective->toArray();
       }
 
@@ -176,36 +175,36 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
    *   The loaded configuration.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
    * @param bool $show_config
    *   Whether to print the merged configuration.
    */
-  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded, ValidationResult $result, bool $show_config): void {
+  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config): void {
     if ($show_config) {
-      foreach ($loaded->skills as $skill) {
+      foreach ($loaded_config->skills as $skill) {
         $output->writeln('# ' . $skill->effective->skill);
         $output->writeln(Yaml::dump($skill->effective->toArray(), 6, 2));
       }
     }
 
-    foreach ($result->warnings() as $warning) {
+    foreach ($validation_result->warnings() as $warning) {
       $output->writeln('WARNING ' . $warning->render());
     }
 
-    foreach ($result->errors() as $error) {
+    foreach ($validation_result->errors() as $error) {
       $output->writeln('ERROR ' . $error->render());
     }
 
-    if ($result->hasErrors()) {
-      $output->writeln(sprintf('FAILED: %d error(s).', count($result->errors())));
+    if ($validation_result->hasErrors()) {
+      $output->writeln(sprintf('FAILED: %d error(s).', count($validation_result->errors())));
 
       return;
     }
 
-    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded->skills)));
+    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded_config->skills)));
   }
 
   /**

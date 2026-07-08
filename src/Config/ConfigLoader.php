@@ -16,7 +16,7 @@ use Symfony\Component\Yaml\Yaml;
  * that survives is returned as a {@see LoadedConfig} for schema and coherence
  * validation, which accumulate findings rather than throw.
  */
-final class ConfigLoader {
+final readonly class ConfigLoader {
 
   /**
    * The repo config filename at the repository root.
@@ -31,7 +31,7 @@ final class ConfigLoader {
   /**
    * The repository root.
    */
-  protected readonly string $root;
+  protected string $root;
 
   /**
    * Constructs a ConfigLoader.
@@ -135,7 +135,6 @@ final class ConfigLoader {
       throw new ConfigException('unable to read file.', $file);
     }
     // @codeCoverageIgnoreEnd
-
     try {
       $parsed = Yaml::parse($contents);
     }

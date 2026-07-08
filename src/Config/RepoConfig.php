@@ -12,7 +12,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * aliases and ladder, and the default execution environment. Built-in defaults
  * apply for every value the file omits.
  */
-final class RepoConfig {
+final readonly class RepoConfig {
 
   /**
    * The default skills paths when the file specifies none.
@@ -60,19 +60,19 @@ final class RepoConfig {
    *   The `report` block.
    */
   public function __construct(
-    public readonly array $skillsPaths,
-    public readonly string $evalFile,
-    public readonly array $exclude,
-    public readonly array $aliases,
-    public readonly array $guards,
-    public readonly array $hooks,
-    public readonly array $commandResolve,
-    public readonly array $modelAliases,
-    public readonly array $ladder,
-    public readonly ?string $defaultModel,
-    public readonly ?string $judgeModel,
-    public readonly string $environment,
-    public readonly array $report,
+    public array $skillsPaths,
+    public string $evalFile,
+    public array $exclude,
+    public array $aliases,
+    public array $guards,
+    public array $hooks,
+    public array $commandResolve,
+    public array $modelAliases,
+    public array $ladder,
+    public ?string $defaultModel,
+    public ?string $judgeModel,
+    public string $environment,
+    public array $report,
   ) {}
 
   /**

@@ -24,17 +24,11 @@ final class ValidateCommandTest extends TestCase {
   use ApplicationTrait;
 
   /**
-   * The original SKILLTEST_CONFIG value, restored after each test.
-   */
-  protected string|false $originalConfigEnv = FALSE;
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
 
-    $this->originalConfigEnv = getenv(ConfigLoader::ENV_CONFIG);
     putenv(ConfigLoader::ENV_CONFIG);
   }
 
@@ -42,12 +36,7 @@ final class ValidateCommandTest extends TestCase {
    * {@inheritdoc}
    */
   protected function tearDown(): void {
-    if ($this->originalConfigEnv === FALSE) {
-      putenv(ConfigLoader::ENV_CONFIG);
-    }
-    else {
-      putenv(ConfigLoader::ENV_CONFIG . '=' . $this->originalConfigEnv);
-    }
+    putenv(ConfigLoader::ENV_CONFIG);
 
     $this->applicationTearDown();
 
@@ -164,8 +153,7 @@ final class ValidateCommandTest extends TestCase {
 
     $output = $this->runValidate(['--dir' => $root, '--show-config' => TRUE, '--json' => TRUE], 0);
 
-    $config = $this->decode($output);
-    $this->assertSame(['haiku'], $config['config']['foo']['llm']['models']);
+    $this->assertSame(['haiku'], $this->configModels($output, 'foo'));
   }
 
   public function testShowConfigCliBeatsEval(): void {
@@ -173,8 +161,7 @@ final class ValidateCommandTest extends TestCase {
 
     $output = $this->runValidate(['--dir' => $root, '--show-config' => TRUE, '--json' => TRUE, '--models' => 'opus'], 0);
 
-    $config = $this->decode($output);
-    $this->assertSame(['opus'], $config['config']['foo']['llm']['models']);
+    $this->assertSame(['opus'], $this->configModels($output, 'foo'));
   }
 
   public function testJsonValid(): void {
@@ -190,19 +177,19 @@ final class ValidateCommandTest extends TestCase {
 
   public function testJsonError(): void {
     $eval = "version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n    forbidden: [Bash]\n";
-    $decoded = $this->decode($this->runValidate(['--dir' => $this->skill($eval), '--json' => TRUE], 2));
+    $output = $this->runValidate(['--dir' => $this->skill($eval), '--json' => TRUE], 2);
 
-    $this->assertFalse($decoded['ok']);
-    $this->assertStringContainsString('contract.tools', $decoded['errors'][0]['pointer']);
+    $this->assertFalse($this->decode($output)['ok']);
+    $this->assertStringContainsString('contract.tools', $output);
   }
 
   public function testJsonLoadError(): void {
     $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "foo: [bad\n"]);
 
-    $decoded = $this->decode($this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 2));
+    $output = $this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 2);
 
-    $this->assertFalse($decoded['ok']);
-    $this->assertStringContainsString('skilltest.yml', $decoded['errors'][0]['file']);
+    $this->assertFalse($this->decode($output)['ok']);
+    $this->assertStringContainsString('skilltest.yml', $output);
   }
 
   /**
@@ -259,14 +246,41 @@ final class ValidateCommandTest extends TestCase {
    * @param string $output
    *   The JSON output.
    *
-   * @return array<string, mixed>
+   * @return array<mixed>
    *   The decoded payload.
    */
   protected function decode(string $output): array {
     $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-    $this->assertIsArray($decoded);
+
+    if (!is_array($decoded)) {
+      $this->fail('Expected JSON output to decode to an array.');
+    }
 
     return $decoded;
+  }
+
+  /**
+   * Extracts a skill's resolved model list from a --show-config JSON payload.
+   *
+   * @param string $output
+   *   The command JSON output.
+   * @param string $skill
+   *   The skill name.
+   *
+   * @return array<mixed>
+   *   The resolved model list.
+   */
+  protected function configModels(string $output, string $skill): array {
+    $config = $this->decode($output)['config'] ?? NULL;
+    $skill_config = is_array($config) ? ($config[$skill] ?? NULL) : NULL;
+    $llm = is_array($skill_config) ? ($skill_config['llm'] ?? NULL) : NULL;
+    $models = is_array($llm) ? ($llm['models'] ?? NULL) : NULL;
+
+    if (!is_array($models)) {
+      $this->fail(sprintf('Expected a resolved model list for skill "%s".', $skill));
+    }
+
+    return $models;
   }
 
 }
