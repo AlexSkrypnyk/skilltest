@@ -26,6 +26,16 @@ final readonly class CustomCheck {
   public const string ID_PREFIX = 'check.';
 
   /**
+   * The default wall-clock budget, in seconds, for one check script.
+   */
+  public const float DEFAULT_TIMEOUT = 60.0;
+
+  /**
+   * The exit code reported when a check script exceeds its timeout.
+   */
+  public const int TIMEOUT_EXIT = 124;
+
+  /**
    * Runs a command and returns its exit code and captured stdout.
    *
    * @var \Closure(string, string): array{0: int, 1: string}
@@ -41,12 +51,15 @@ final readonly class CustomCheck {
    * @param \Closure|null $runner
    *   A runner taking the assembled command and working directory and returning
    *   `[exitCode, stdout]`. Defaults to a real process run via `proc_open`.
+   * @param float $timeout
+   *   The wall-clock budget, in seconds, before a running script is terminated.
    */
   public function __construct(
     protected string $root,
     ?\Closure $runner = NULL,
+    protected float $timeout = self::DEFAULT_TIMEOUT,
   ) {
-    $this->runner = $runner ?? self::exec(...);
+    $this->runner = $runner ?? $this->exec(...);
   }
 
   /**
@@ -131,19 +144,24 @@ final readonly class CustomCheck {
   /**
    * Runs a command through `proc_open`, capturing its exit code and stdout.
    *
+   * Stdout is the one pipe read; stderr is discarded to `/dev/null` so a chatty
+   * script cannot fill an unread pipe buffer and deadlock. The single pipe is
+   * drained without blocking while the process runs, and a script that outlives
+   * its timeout is terminated so a hang cannot block the caller indefinitely.
+   *
    * @param string $command
    *   The command to run through the shell.
    * @param string $cwd
    *   The working directory.
    *
    * @return array{0: int, 1: string}
-   *   The exit code and captured stdout.
+   *   The exit code (or the timeout code when terminated) and captured stdout.
    */
-  protected static function exec(string $command, string $cwd): array {
+  protected function exec(string $command, string $cwd): array {
     $descriptors = [
       0 => ['pipe', 'r'],
       1 => ['pipe', 'w'],
-      2 => ['pipe', 'w'],
+      2 => ['file', '/dev/null', 'w'],
     ];
 
     $process = proc_open($command, $descriptors, $pipes, $cwd);
@@ -154,17 +172,42 @@ final readonly class CustomCheck {
     }
     // @codeCoverageIgnoreEnd
     fclose($pipes[0]);
+    stream_set_blocking($pipes[1], FALSE);
 
-    $stdout = stream_get_contents($pipes[1]);
+    $stdout = '';
+    $exit_code = self::TIMEOUT_EXIT;
+    $deadline = microtime(TRUE) + $this->timeout;
+
+    while (TRUE) {
+      $chunk = fread($pipes[1], 8192);
+
+      if ($chunk !== FALSE && $chunk !== '') {
+        $stdout .= $chunk;
+
+        continue;
+      }
+
+      $status = proc_get_status($process);
+
+      if (!$status['running']) {
+        $exit_code = $status['exitcode'];
+
+        break;
+      }
+
+      if (microtime(TRUE) >= $deadline) {
+        proc_terminate($process);
+
+        break;
+      }
+
+      usleep(1000);
+    }
+
     fclose($pipes[1]);
+    proc_close($process);
 
-    // Drain stderr so a chatty script cannot block on a full pipe buffer.
-    stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
-
-    $exit_code = proc_close($process);
-
-    return [$exit_code, $stdout === FALSE ? '' : $stdout];
+    return [$exit_code, $stdout];
   }
 
 }

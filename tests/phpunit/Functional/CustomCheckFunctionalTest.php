@@ -72,6 +72,17 @@ final class CustomCheckFunctionalTest extends TestCase {
     $this->assertSame('', $result->evidence);
   }
 
+  public function testRealRunTerminatesAScriptThatOutlivesItsTimeout(): void {
+    $script = "<?php\nsleep(5);\nexit(0);\n";
+    file_put_contents($this->workdir . '/check.php', $script);
+
+    $result = (new CustomCheck($this->workdir, NULL, 0.5))->run(['name' => 'hang', 'run' => 'php check.php'], 'transcript.jsonl', 'skills/foo');
+
+    $this->assertNotNull($result);
+    $this->assertFalse($result->pass);
+    $this->assertStringContainsString('failed (exit ' . CustomCheck::TIMEOUT_EXIT . ').', $result->message);
+  }
+
   /**
    * Recursively removes a directory tree.
    *
