@@ -72,7 +72,7 @@ final class CustomCheckFunctionalTest extends TestCase {
     $this->assertSame('', $result->evidence);
   }
 
-  public function testRealRunTerminatesAScriptThatOutlivesItsTimeout(): void {
+  public function testRealRunTerminatesHungScriptAtTimeout(): void {
     $script = "<?php\nsleep(5);\nexit(0);\n";
     file_put_contents($this->workdir . '/check.php', $script);
 

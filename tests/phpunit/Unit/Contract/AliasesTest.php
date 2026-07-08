@@ -22,12 +22,12 @@ final class AliasesTest extends TestCase {
    */
   protected const array HARNESS_ALIAS = ['harness' => '(?:php\s+)?(?:\S*/)?bin/harness\b'];
 
-  #[DataProvider('dataProviderHarnessForms')]
+  #[DataProvider('dataProviderAllInvocationFormsCollapseToCanonical')]
   public function testAllInvocationFormsCollapseToCanonical(string $command): void {
     $this->assertSame('harness workflow start', Aliases::normalise($command, self::HARNESS_ALIAS));
   }
 
-  public static function dataProviderHarnessForms(): \Iterator {
+  public static function dataProviderAllInvocationFormsCollapseToCanonical(): \Iterator {
     yield 'php prefix' => ['php bin/harness workflow start'];
     yield 'relative path' => ['./bin/harness workflow start'];
     yield 'nested path' => ['tools/bin/harness workflow start'];

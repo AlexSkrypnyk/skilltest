@@ -148,7 +148,7 @@ final class ContractCheckerTest extends TestCase {
 
   public function testRepoGuardOmittedFromEvalIsStillEnforced(): void {
     // The skill's own eval.yaml declares no forbidden commands; the repo guard
-    // is folded in by EffectiveConfig and must still be enforced by the checker.
+    // is folded in by EffectiveConfig and the checker must still enforce it.
     $repo = RepoConfig::fromArray(['guards' => ['broker bypass' => 'pack:gh-mutations']]);
     $effective = EffectiveConfig::resolve($repo, [], [], 'foo', 'skills/foo');
 

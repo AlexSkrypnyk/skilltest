@@ -55,7 +55,7 @@ final class PacksTest extends TestCase {
     $this->assertSame(Packs::PATTERN, array_keys(Packs::PATTERN_DEFINITIONS), 'Pattern pack names and definitions must stay in lockstep.');
   }
 
-  #[DataProvider('dataProviderPatternPacks')]
+  #[DataProvider('dataProviderPatternsReturnNonEmptyCompilingRegexes')]
   public function testPatternsReturnNonEmptyCompilingRegexes(string $name): void {
     $patterns = Packs::patterns($name);
 
@@ -66,7 +66,7 @@ final class PacksTest extends TestCase {
     }
   }
 
-  public static function dataProviderPatternPacks(): \Iterator {
+  public static function dataProviderPatternsReturnNonEmptyCompilingRegexes(): \Iterator {
     foreach (Packs::PATTERN as $name) {
       yield $name => [$name];
     }

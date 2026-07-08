@@ -65,14 +65,14 @@ final class CustomCheckTest extends TestCase {
     yield 'whitespace stdout falls back to exit code' => [0, "  \n ", TRUE, '', 'passed.'];
   }
 
-  #[DataProvider('dataProviderSkipped')]
+  #[DataProvider('dataProviderMalformedEntryYieldsNull')]
   public function testMalformedEntryYieldsNull(array $check): void {
     $runner = fn(string $command, string $cwd): array => [0, ''];
 
     $this->assertNull((new CustomCheck('/root', $runner))->run($check, '/t.jsonl', 'skills/foo'));
   }
 
-  public static function dataProviderSkipped(): \Iterator {
+  public static function dataProviderMalformedEntryYieldsNull(): \Iterator {
     yield 'missing run' => [['name' => 'c']];
     yield 'missing name' => [['run' => 'php c.php']];
     yield 'empty run' => [['name' => 'c', 'run' => '']];
