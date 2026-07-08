@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Config;
 
 use AlexSkrypnyk\SkillTest\Config\Packs;
+use AlexSkrypnyk\SkillTest\Config\Pcre;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -48,6 +49,31 @@ final class PacksTest extends TestCase {
     yield 'baseline' => ['baseline', TRUE];
     yield 'pattern pack is not a security pack' => ['git-mutations', FALSE];
     yield 'unknown' => ['nope', FALSE];
+  }
+
+  public function testEveryPatternPackHasDefinitions(): void {
+    $this->assertSame(Packs::PATTERN, array_keys(Packs::PATTERN_DEFINITIONS), 'Pattern pack names and definitions must stay in lockstep.');
+  }
+
+  #[DataProvider('dataProviderPatternPacks')]
+  public function testPatternsReturnNonEmptyCompilingRegexes(string $name): void {
+    $patterns = Packs::patterns($name);
+
+    $this->assertNotSame([], $patterns);
+
+    foreach ($patterns as $pattern) {
+      $this->assertTrue(Pcre::compiles($pattern), sprintf("Pack '%s' pattern does not compile: %s", $name, $pattern));
+    }
+  }
+
+  public static function dataProviderPatternPacks(): \Iterator {
+    foreach (Packs::PATTERN as $name) {
+      yield $name => [$name];
+    }
+  }
+
+  public function testPatternsForUnknownPackIsEmpty(): void {
+    $this->assertSame([], Packs::patterns('nope'));
   }
 
 }
