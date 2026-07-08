@@ -179,4 +179,49 @@ final class ConfigLoaderTest extends TestCase {
     (new ConfigLoader($root->url()))->load();
   }
 
+  public function testTopLevelSequenceRejected(): void {
+    $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "- a\n- b\n"]);
+
+    $this->expectException(ConfigException::class);
+    $this->expectExceptionMessage('expected a mapping');
+
+    (new ConfigLoader($root->url()))->load();
+  }
+
+  public function testEmptyInlineMappingIsDefaults(): void {
+    $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "{}\n"]);
+
+    $loaded = (new ConfigLoader($root->url()))->load();
+
+    $this->assertSame([], $loaded->repoData);
+    $this->assertSame(['skills'], $loaded->repo->skillsPaths);
+  }
+
+  public function testMissingConfigEnvOverrideFails(): void {
+    $root = vfsStream::setup('root', NULL, []);
+    putenv(ConfigLoader::ENV_CONFIG . '=' . $root->url() . '/absent.yml');
+
+    try {
+      (new ConfigLoader($root->url()))->load();
+      $this->fail('Expected ConfigException.');
+    }
+    catch (ConfigException $config_exception) {
+      $this->assertStringContainsString('absent.yml', $config_exception->configFile());
+      $this->assertStringContainsString(ConfigLoader::ENV_CONFIG, $config_exception->getMessage());
+    }
+  }
+
+  public function testUnquotedNumericVersionRejected(): void {
+    $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "version: 1\n"]);
+
+    try {
+      (new ConfigLoader($root->url()))->load();
+      $this->fail('Expected ConfigException.');
+    }
+    catch (ConfigException $config_exception) {
+      $this->assertSame('version', $config_exception->pointer());
+      $this->assertStringContainsString('quoted string', $config_exception->getMessage());
+    }
+  }
+
 }

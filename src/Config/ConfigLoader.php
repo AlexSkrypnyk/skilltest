@@ -57,15 +57,12 @@ final class ConfigLoader {
    *   When a file will not parse or declares an unreadable schema major.
    */
   public function load(array $cli = []): LoadedConfig {
-    $repo_file = $this->repoConfigPath();
+    $repo_file = $this->repoConfigFile();
     $repo_data = [];
 
-    if (is_file($repo_file)) {
+    if ($repo_file !== '') {
       $repo_data = $this->parseFile($repo_file);
       $this->gateVersion($repo_data, $repo_file);
-    }
-    else {
-      $repo_file = '';
     }
 
     $repo = RepoConfig::fromArray($repo_data);
@@ -90,19 +87,32 @@ final class ConfigLoader {
   }
 
   /**
-   * Resolves the repo config path from the environment or the root.
+   * Resolves the repo config file to load, or an empty string when absent.
+   *
+   * An explicit environment override that points at a missing file is an
+   * error, so a typo cannot silently fall through to defaults; the default
+   * root path is optional and simply absent when the file does not exist.
    *
    * @return string
-   *   The `skilltest.yml` path to try.
+   *   The `skilltest.yml` path to load, or an empty string when there is none.
+   *
+   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   *   When the environment override points at a missing file.
    */
-  protected function repoConfigPath(): string {
+  protected function repoConfigFile(): string {
     $override = getenv(self::ENV_CONFIG);
 
     if (is_string($override) && $override !== '') {
+      if (!is_file($override)) {
+        throw new ConfigException(sprintf('configured %s file not found.', self::ENV_CONFIG), $override);
+      }
+
       return $override;
     }
 
-    return $this->root . '/' . self::CONFIG_FILE;
+    $default = $this->root . '/' . self::CONFIG_FILE;
+
+    return is_file($default) ? $default : '';
   }
 
   /**
@@ -141,6 +151,12 @@ final class ConfigLoader {
       throw new ConfigException('expected a mapping at the top level.', $file);
     }
 
+    // A non-empty sequence is an array too; only a mapping (or an empty
+    // document, which parses to an empty array) is a valid config file.
+    if ($parsed !== [] && array_is_list($parsed)) {
+      throw new ConfigException('expected a mapping at the top level.', $file);
+    }
+
     return $parsed;
   }
 
@@ -153,14 +169,23 @@ final class ConfigLoader {
    *   The file path, for the error message.
    *
    * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
-   *   When the version is malformed or a different major.
+   *   When the version is not a string, malformed, or a different major.
    */
   protected function gateVersion(array $data, string $file): void {
     $raw = Data::get($data, 'version');
-    $scalar = (is_string($raw) || is_int($raw) || is_float($raw)) ? $raw : NULL;
+
+    if ($raw === NULL) {
+      return;
+    }
+
+    // The version must be a quoted string; an unquoted YAML number such as
+    // 1.10 would parse to the float 1.1 and silently lose the minor.
+    if (!is_string($raw)) {
+      throw new ConfigException('version must be a quoted string, e.g. "1" or "1.2".', $file, 'version');
+    }
 
     try {
-      $version = SchemaVersion::parse($scalar);
+      $version = SchemaVersion::parse($raw);
     }
     catch (\InvalidArgumentException $invalid_argument_exception) {
       throw new ConfigException($invalid_argument_exception->getMessage(), $file, 'version');
