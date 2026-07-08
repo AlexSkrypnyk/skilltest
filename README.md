@@ -33,10 +33,58 @@ From a clone:
     composer install
     ./skilltest version
 
-Once releases are published, download the standalone PHAR instead:
+## Install
+
+skilltest is consumed as a tool, never as a project dependency - no Composer require, no vendor directory. Pick the artifact that fits the machine; all forms report the same `skilltest version`.
+
+### Install script (recommended, requires PHP >= 8.3)
+
+    curl -fsSL https://raw.githubusercontent.com/alexskrypnyk/skilltest/main/install.sh | bash
+
+Downloads the latest release PHAR, verifies its SHA-256 checksum, and installs it to `/usr/local/bin/skilltest` (falling back to `~/bin` when that is not writable). Pin a release with a `.skilltest-version` file in the repository, or with `SKILLTEST_VERSION=<tag>`.
+
+### PHAR (manual, requires PHP >= 8.3)
 
     curl -fsSLO https://github.com/alexskrypnyk/skilltest/releases/latest/download/skilltest.phar
-    php skilltest.phar version
+    curl -fsSLO https://github.com/alexskrypnyk/skilltest/releases/latest/download/skilltest.phar.sha256
+    sha256sum -c skilltest.phar.sha256
+    chmod +x skilltest.phar && mv skilltest.phar /usr/local/bin/skilltest
+
+### Docker (no PHP on the host)
+
+    docker run --rm -v "$PWD":/work -w /work ghcr.io/alexskrypnyk/skilltest:latest
+
+The tool image (`ghcr.io/alexskrypnyk/skilltest`) bundles the PHAR on a PHP runtime and runs the deterministic suite and every offline command. A separate agent image (`ghcr.io/alexskrypnyk/skilltest-agent`) is the base for `--env docker` llm trials.
+
+## CI recipes
+
+Per-push gate (free, deterministic - no model, no network, no tokens):
+
+```yaml
+jobs:
+  skilltest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD":/work -w /work ghcr.io/alexskrypnyk/skilltest:latest
+```
+
+Scheduled llm + matrix run with a regression gate (spends tokens, nightly):
+
+```yaml
+jobs:
+  skilltest-llm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -fsSL https://raw.githubusercontent.com/alexskrypnyk/skilltest/main/install.sh | bash
+      - run: skilltest matrix --output results.json
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - run: skilltest gate --baseline .skilltest/baseline.json --current results.json --format github-actions
+      - uses: actions/upload-artifact@v4
+        with: {name: skilltest-results, path: results.json}
+```
 
 ## Documentation
 

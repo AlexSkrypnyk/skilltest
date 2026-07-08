@@ -58,9 +58,27 @@ jobs:
           ./.build/skilltest.phar --version
           ./.build/skilltest.phar || exit 1
 
+      - name: Verify reported version matches the release tag
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+        run: |
+          reported="$(./.build/skilltest.phar version --json | jq -r '.tool.version')"
+          echo "Reported version: $reported"
+          if [ "$reported" != "$RELEASE_VERSION" ]; then
+            echo "FAIL: skilltest reported '$reported' but the release tag is '$RELEASE_VERSION'"
+            exit 1
+          fi
+
+      - name: Generate SHA-256 checksums
+        working-directory: .build
+        run: |
+          sha256sum skilltest.phar > skilltest.phar.sha256
+          cat skilltest.phar.sha256
+
       - name: Create Release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           files: |
             ./.build/skilltest.phar
+            ./.build/skilltest.phar.sha256
