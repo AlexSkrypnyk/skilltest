@@ -97,7 +97,7 @@ final readonly class RepoConfig {
     $hooks = Data::toArrayList(Data::get($data, 'hooks'));
 
     $excludes = array_map(
-      static fn(mixed $item): ExcludeEntry => ExcludeEntry::fromValue($item),
+      ExcludeEntry::fromValue(...),
       array_values(Data::toArray(Data::get($paths, 'exclude'))),
     );
 

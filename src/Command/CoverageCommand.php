@@ -19,11 +19,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Coverage command.
  *
- * Renders the skill-to-eval coverage grid - which skills have an `eval.yaml`, a
- * transcript fixture, and llm tasks - in text, markdown, or JSON, and enforces
- * the coverage gate: a discovered skill with no `eval.yaml` that is not excluded
- * fails with exit 1, while a configuration error (including an exclusion with no
- * reason) fails with exit 2.
+ * Renders the skill-to-eval coverage grid - which skills have an `eval.yaml`,
+ * a transcript fixture, and llm tasks - in text, markdown, or JSON, and
+ * enforces the coverage gate. A discovered skill with no `eval.yaml` that is
+ * not excluded fails with exit 1; a configuration error such as an exclusion
+ * with no reason fails with exit 2.
  */
 class CoverageCommand extends Command {
 

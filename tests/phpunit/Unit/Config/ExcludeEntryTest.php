@@ -28,20 +28,18 @@ final class ExcludeEntryTest extends TestCase {
   /**
    * Data provider for testFromValue.
    *
-   * @return array<string, array{mixed, string, string|null}>
+   * @return \Iterator<string, array{mixed, string, (string | null)}>
    *   Raw value, expected skill, and expected reason.
    */
-  public static function dataProviderFromValue(): array {
-    return [
-      'bare string is a skill with no reason' => ['foo', 'foo', NULL],
-      'mapping with skill and reason' => [['skill' => 'foo', 'reason' => 'legacy'], 'foo', 'legacy'],
-      'mapping without a reason' => [['skill' => 'foo'], 'foo', NULL],
-      'mapping with a blank reason' => [['skill' => 'foo', 'reason' => '  '], 'foo', NULL],
-      'mapping without a skill' => [['reason' => 'orphan'], '', 'orphan'],
-      'empty mapping' => [[], '', NULL],
-      'null value' => [NULL, '', NULL],
-      'numeric skill is coerced' => [42, '42', NULL],
-    ];
+  public static function dataProviderFromValue(): \Iterator {
+    yield 'bare string is a skill with no reason' => ['foo', 'foo', NULL];
+    yield 'mapping with skill and reason' => [['skill' => 'foo', 'reason' => 'legacy'], 'foo', 'legacy'];
+    yield 'mapping without a reason' => [['skill' => 'foo'], 'foo', NULL];
+    yield 'mapping with a blank reason' => [['skill' => 'foo', 'reason' => '  '], 'foo', NULL];
+    yield 'mapping without a skill' => [['reason' => 'orphan'], '', 'orphan'];
+    yield 'empty mapping' => [[], '', NULL];
+    yield 'null value' => [NULL, '', NULL];
+    yield 'numeric skill is coerced' => [42, '42', NULL];
   }
 
 }

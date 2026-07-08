@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CoverageRow::class)]
 final class CoverageRowTest extends TestCase {
 
-  #[DataProvider('dataProviderStatus')]
+  #[DataProvider('dataProviderStatusAndViolation')]
   public function testStatusAndViolation(bool $eval, bool $excluded, string $expected_status, bool $expected_violation): void {
     $row = new CoverageRow('foo', 'skills/foo', $eval, FALSE, 0, $excluded, NULL);
 
@@ -28,16 +28,14 @@ final class CoverageRowTest extends TestCase {
   /**
    * Data provider for testStatusAndViolation.
    *
-   * @return array<string, array{bool, bool, string, bool}>
+   * @return \Iterator<string, array{bool, bool, string, bool}>
    *   Eval presence, exclusion, expected status, and expected violation.
    */
-  public static function dataProviderStatus(): array {
-    return [
-      'eval present is covered' => [TRUE, FALSE, CoverageRow::STATUS_COVERED, FALSE],
-      'no eval but excluded' => [FALSE, TRUE, CoverageRow::STATUS_EXCLUDED, FALSE],
-      'no eval and not excluded' => [FALSE, FALSE, CoverageRow::STATUS_UNCOVERED, TRUE],
-      'eval wins over a redundant exclusion' => [TRUE, TRUE, CoverageRow::STATUS_COVERED, FALSE],
-    ];
+  public static function dataProviderStatusAndViolation(): \Iterator {
+    yield 'eval present is covered' => [TRUE, FALSE, CoverageRow::STATUS_COVERED, FALSE];
+    yield 'no eval but excluded' => [FALSE, TRUE, CoverageRow::STATUS_EXCLUDED, FALSE];
+    yield 'no eval and not excluded' => [FALSE, FALSE, CoverageRow::STATUS_UNCOVERED, TRUE];
+    yield 'eval wins over a redundant exclusion' => [TRUE, TRUE, CoverageRow::STATUS_COVERED, FALSE];
   }
 
   public function testToArray(): void {

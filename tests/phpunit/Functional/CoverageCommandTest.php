@@ -96,10 +96,7 @@ final class CoverageCommandTest extends TestCase {
     $this->assertFalse($decoded['ok']);
     $this->assertSame(['total' => 2, 'covered' => 1, 'excluded' => 0, 'uncovered' => 1], $decoded['summary']);
 
-    $by_skill = [];
-    foreach ($decoded['skills'] as $skill) {
-      $by_skill[$skill['skill']] = $skill;
-    }
+    $by_skill = $this->skillsByName($decoded);
 
     $this->assertSame(['skill' => 'covered', 'path' => 'skills/covered', 'eval' => TRUE, 'transcript' => TRUE, 'tasks' => 2, 'excluded' => FALSE, 'reason' => NULL], $by_skill['covered']);
     $this->assertSame(['skill' => 'lonely', 'path' => 'skills/lonely', 'eval' => FALSE, 'transcript' => FALSE, 'tasks' => 0, 'excluded' => FALSE, 'reason' => NULL], $by_skill['lonely']);
@@ -168,7 +165,7 @@ final class CoverageCommandTest extends TestCase {
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
-    $this->assertStringContainsString('missing a reason', $decoded['errors'][0]['message']);
+    $this->assertStringContainsString('missing a reason', $this->firstErrorMessage($decoded));
   }
 
   public function testDefaultsToCurrentDirectory(): void {
@@ -214,6 +211,58 @@ final class CoverageCommandTest extends TestCase {
     }
 
     return $decoded;
+  }
+
+  /**
+   * Indexes a decoded coverage payload's skill rows by skill name.
+   *
+   * @param array<mixed> $decoded
+   *   The decoded payload.
+   *
+   * @return array<string, array<mixed>>
+   *   The per-skill rows keyed by skill name.
+   */
+  protected function skillsByName(array $decoded): array {
+    $skills = $decoded['skills'] ?? NULL;
+
+    if (!is_array($skills)) {
+      $this->fail('Expected a skills array in the coverage payload.');
+    }
+
+    $by_name = [];
+
+    foreach ($skills as $skill) {
+      $name = is_array($skill) ? ($skill['skill'] ?? NULL) : NULL;
+
+      if (!is_string($name)) {
+        $this->fail('Expected each skill row to carry a string name.');
+      }
+
+      $by_name[$name] = $skill;
+    }
+
+    return $by_name;
+  }
+
+  /**
+   * Extracts the first error message from a decoded coverage payload.
+   *
+   * @param array<mixed> $decoded
+   *   The decoded payload.
+   *
+   * @return string
+   *   The first error message.
+   */
+  protected function firstErrorMessage(array $decoded): string {
+    $errors = $decoded['errors'] ?? NULL;
+    $first = is_array($errors) ? ($errors[0] ?? NULL) : NULL;
+    $message = is_array($first) ? ($first['message'] ?? NULL) : NULL;
+
+    if (!is_string($message)) {
+      $this->fail('Expected an error message in the coverage payload.');
+    }
+
+    return $message;
   }
 
 }
