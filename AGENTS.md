@@ -6,9 +6,7 @@ code in this repository.
 
 ## Project Overview
 
-This project was created from the skilltest template and provides a foundation
-for Shell scripts, PHP CLI applications, and/or NodeJS projects with integrated
-testing, code quality tools, and CI/CD workflows.
+skilltest is a standalone test runner for AI agent skills - the `SKILL.md`-based skills used by Claude Code and compatible runtimes. It is a PHP CLI application (Symfony Console) distributed as a single executable, giving skill repositories a token-free deterministic CI-gate suite and an opt-in llm suite. The authoritative product specification is the PRD set in `prd/README.md`.
 
 
 ## PHP Application Architecture
@@ -35,8 +33,8 @@ To add a Symfony Console command:
 
 ### Namespace Structure
 
-- Source code: `AlexSkrypnyk\App\`
-- Tests: `AlexSkrypnyk\App\Tests\`
+- Source code: `AlexSkrypnyk\SkillTest\`
+- Tests: `AlexSkrypnyk\SkillTest\Tests\`
 - Autoloading: PSR-4 via Composer
 
 ## Commands
@@ -68,7 +66,7 @@ composer test-coverage
 # Coverage reports: .logs/.coverage-html/index.html, .logs/cobertura.xml
 
 # Run specific test file
-./vendor/bin/phpunit tests/phpunit/Functional/JokeCommandTest.php
+./vendor/bin/phpunit tests/phpunit/Functional/VersionCommandTest.php
 
 # Run specific test method
 ./vendor/bin/phpunit --filter testMethodName

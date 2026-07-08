@@ -4,6 +4,7 @@
 /.gitattributes  export-ignore
 /.github         export-ignore
 /.gitignore      export-ignore
+/prd             export-ignore
 /tests           export-ignore
 /phpcs.xml       export-ignore
 /phpstan.neon    export-ignore

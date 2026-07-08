@@ -6,6 +6,7 @@
             "in": "./",
             "exclude": [
                 "docs",
+                "prd",
                 "tests"
             ]
         }
