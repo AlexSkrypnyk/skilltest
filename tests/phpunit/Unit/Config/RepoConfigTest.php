@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Config;
 
+use AlexSkrypnyk\SkillTest\Config\ExcludeEntry;
 use AlexSkrypnyk\SkillTest\Config\RepoConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -14,6 +15,7 @@ use PHPUnit\Framework\TestCase;
  * Unit test for the repo-level configuration value object.
  */
 #[CoversClass(RepoConfig::class)]
+#[CoversClass(ExcludeEntry::class)]
 final class RepoConfigTest extends TestCase {
 
   public function testDefaults(): void {
@@ -21,7 +23,7 @@ final class RepoConfigTest extends TestCase {
 
     $this->assertSame(['skills'], $repo->skillsPaths);
     $this->assertSame('eval.yaml', $repo->evalFile);
-    $this->assertSame([], $repo->exclude);
+    $this->assertSame([], $repo->excludes);
     $this->assertSame([], $repo->aliases);
     $this->assertSame([], $repo->guards);
     $this->assertSame([], $repo->hooks);
@@ -36,7 +38,7 @@ final class RepoConfigTest extends TestCase {
 
   public function testFull(): void {
     $repo = RepoConfig::fromArray([
-      'paths' => ['skills' => 'my-skills', 'eval-file' => 'eval.yml', 'exclude' => ['foo']],
+      'paths' => ['skills' => 'my-skills', 'eval-file' => 'eval.yml', 'exclude' => [['skill' => 'foo', 'reason' => 'legacy']]],
       'aliases' => ['harness' => 'bin/harness'],
       'commands' => ['resolve' => ['binary' => 'bin/harness', 'list-args' => ['list', '--json']]],
       'guards' => ['broker bypass' => 'pack:gh-mutations'],
@@ -48,7 +50,9 @@ final class RepoConfigTest extends TestCase {
 
     $this->assertSame(['my-skills'], $repo->skillsPaths);
     $this->assertSame('eval.yml', $repo->evalFile);
-    $this->assertSame(['foo'], $repo->exclude);
+    $this->assertCount(1, $repo->excludes);
+    $this->assertSame('foo', $repo->excludes[0]->skill);
+    $this->assertSame('legacy', $repo->excludes[0]->reason);
     $this->assertSame(['harness' => 'bin/harness'], $repo->aliases);
     $this->assertSame(['broker bypass' => 'pack:gh-mutations'], $repo->guards);
     $this->assertCount(1, $repo->hooks);

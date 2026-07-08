@@ -95,6 +95,7 @@ final readonly class ConfigValidator {
       $this->validateRepoPatterns($loaded_config->repo, $loaded_config->repoFile, $result);
       $this->validateHooks($loaded_config->repo, $loaded_config->repoFile, $result);
       $this->validateModelAliases($loaded_config->repo, $loaded_config->repoFile, $result);
+      $this->validateExcludes($loaded_config->repo, $loaded_config->repoFile, $result);
     }
 
     foreach ($loaded_config->skills as $skill) {
@@ -417,6 +418,32 @@ final readonly class ConfigValidator {
   protected function checkAlias(array $aliases, ?string $reference, string $file, string $pointer, ValidationResult $validation_result): void {
     if ($reference !== NULL && !array_key_exists($reference, $aliases)) {
       $validation_result->addError($file, $pointer, sprintf("undefined model alias '%s'.", $reference));
+    }
+  }
+
+  /**
+   * Requires every coverage-gate exclusion to name a skill and give a reason.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
+   *   The repo configuration.
+   * @param string $file
+   *   The repo config file path.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateExcludes(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    foreach ($repo_config->excludes as $index => $entry) {
+      $pointer = sprintf('paths.exclude.%d', $index);
+
+      if ($entry->skill === '') {
+        $validation_result->addError($file, $pointer, 'exclude entry is missing a skill name.');
+
+        continue;
+      }
+
+      if ($entry->reason === NULL) {
+        $validation_result->addError($file, $pointer, sprintf("excluded skill '%s' is missing a reason.", $entry->skill));
+      }
     }
   }
 

@@ -58,6 +58,7 @@ final class ConfigLoaderTest extends TestCase {
     $this->assertSame($root->url() . '/skilltest.yml', $loaded->repoFile);
     $this->assertSame(['haiku'], $loaded->repo->ladder);
     $this->assertCount(1, $loaded->skills);
+    $this->assertSame(['skills/bare'], $loaded->skillsWithoutEval);
 
     $skill = $loaded->skills[0];
     $this->assertInstanceOf(LoadedSkill::class, $skill);

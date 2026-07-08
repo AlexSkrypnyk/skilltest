@@ -115,6 +115,32 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertCount(2, $result->errors());
   }
 
+  public function testExcludeWithoutReasonFails(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['paths' => ['exclude' => [['skill' => 'legacy']]]], []);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . "/skilltest.yml: paths.exclude.0 - excluded skill 'legacy' is missing a reason.", $rendered);
+  }
+
+  public function testExcludeWithoutSkillFails(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['paths' => ['exclude' => [['reason' => 'orphan']]]], []);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . '/skilltest.yml: paths.exclude.0 - exclude entry is missing a skill name.', $rendered);
+  }
+
+  public function testExcludeWithReasonPasses(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['paths' => ['exclude' => [['skill' => 'legacy', 'reason' => 'not yet testable']]]], []);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
   public function testDisjointToolsAndSkills(): void {
     $root = $this->root();
 
