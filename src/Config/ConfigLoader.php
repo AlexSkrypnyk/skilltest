@@ -69,11 +69,14 @@ final readonly class ConfigLoader {
 
     $discovery = new Discovery($this->root, $repo);
     $skills = [];
+    $skills_without_eval = [];
 
     foreach ($discovery->skills() as $skill_dir) {
       $eval_file = $this->root . '/' . $skill_dir . '/' . $repo->evalFile;
 
       if (!is_file($eval_file)) {
+        $skills_without_eval[] = $skill_dir;
+
         continue;
       }
 
@@ -83,7 +86,7 @@ final readonly class ConfigLoader {
       $skills[] = new LoadedSkill($eval_file, $eval_data, $effective);
     }
 
-    return new LoadedConfig($repo, $repo_data, $repo_file, $skills);
+    return new LoadedConfig($repo, $repo_data, $repo_file, $skills, $skills_without_eval);
   }
 
   /**

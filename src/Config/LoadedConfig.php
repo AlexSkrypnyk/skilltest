@@ -25,12 +25,16 @@ final readonly class LoadedConfig {
    *   The `skilltest.yml` path, or an empty string when absent.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skills
    *   The discovered, loaded skills.
+   * @param string[] $skillsWithoutEval
+   *   The root-relative directories of discovered skills that have no
+   *   `eval.yaml`; the coverage gate names each one that is not excluded.
    */
   public function __construct(
     public RepoConfig $repo,
     public array $repoData,
     public string $repoFile,
     public array $skills,
+    public array $skillsWithoutEval = [],
   ) {}
 
 }

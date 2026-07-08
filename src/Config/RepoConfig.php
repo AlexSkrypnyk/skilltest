@@ -36,8 +36,8 @@ final readonly class RepoConfig {
    *   Directories that contain skill directories.
    * @param string $evalFile
    *   The per-skill config filename.
-   * @param array<mixed> $exclude
-   *   Skill names exempt from the coverage gate, as declared.
+   * @param \AlexSkrypnyk\SkillTest\Config\ExcludeEntry[] $excludes
+   *   Skills exempt from the coverage gate, each with its declared reason.
    * @param array<string, string> $aliases
    *   Command normalisation patterns keyed by canonical name.
    * @param array<string, string> $guards
@@ -62,7 +62,7 @@ final readonly class RepoConfig {
   public function __construct(
     public array $skillsPaths,
     public string $evalFile,
-    public array $exclude,
+    public array $excludes,
     public array $aliases,
     public array $guards,
     public array $hooks,
@@ -96,10 +96,15 @@ final readonly class RepoConfig {
 
     $hooks = Data::toArrayList(Data::get($data, 'hooks'));
 
+    $excludes = array_map(
+      static fn(mixed $item): ExcludeEntry => ExcludeEntry::fromValue($item),
+      array_values(Data::toArray(Data::get($paths, 'exclude'))),
+    );
+
     return new self(
       $skills_paths,
       Data::toStringOrNull(Data::get($paths, 'eval-file')) ?? self::DEFAULT_EVAL_FILE,
-      Data::toArray(Data::get($paths, 'exclude')),
+      $excludes,
       Data::toStringMap(Data::get($data, 'aliases')),
       Data::toStringMap(Data::get($data, 'guards')),
       $hooks,
