@@ -50,6 +50,7 @@ final readonly class ConfigValidator {
       'skills' => ['required' => TRUE, 'forbidden' => TRUE],
     ],
     'security' => ['packs' => TRUE, 'forbidden-tokens' => TRUE],
+    'structure' => ['suppress' => TRUE, 'params' => TRUE],
     'deterministic' => ['transcript' => TRUE],
     'llm' => [
       'tasks' => TRUE,
