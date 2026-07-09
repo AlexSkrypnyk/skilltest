@@ -176,7 +176,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString('expects at least one path', $output);
   }
 
-  #[DataProvider('dataProviderInvalidFlags')]
+  #[DataProvider('dataProviderInvalidFlagsAreErrors')]
   public function testInvalidFlagsAreErrors(array $input, string $message): void {
     $input['--dir'] = vfsStream::setup('root')->url();
 
@@ -185,7 +185,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString($message, $output);
   }
 
-  public static function dataProviderInvalidFlags(): \Iterator {
+  public static function dataProviderInvalidFlagsAreErrors(): \Iterator {
     yield 'unknown action' => [['action' => 'destroy'], 'unknown action'];
     yield 'unknown format' => [['action' => 'count', 'targets' => ['x'], '--format' => 'xml'], 'unknown format'];
     yield 'unknown sort' => [['action' => 'count', 'targets' => ['x'], '--sort' => 'size'], 'unknown sort'];

@@ -24,8 +24,9 @@ final class TokenCounterTest extends TestCase {
   /**
    * A tiny handcrafted tiktoken-format vocabulary for deterministic tests.
    *
-   * Tokens, base64-encoded one per line with their rank: `h`, `e`, `l`, `o`,
-   * `he`, `ll`, `hell`, `hello`, ` world`, `it`, `'s`.
+   * Base64-encoded tokens, one per line with their rank: the single letters
+   * of 'hello', its two letter pairs, the words 'hell' and 'hello', the
+   * space-prefixed ' world', 'it', and the contraction suffix.
    */
   protected const string VOCAB = "aA== 0\nZQ== 1\nbA== 2\nbw== 3\naGU= 4\nbGw= 5\naGVsbA== 6\naGVsbG8= 7\nIHdvcmxk 8\naXQ= 9\nJ3M= 10\n";
 
@@ -104,7 +105,7 @@ final class TokenCounterTest extends TestCase {
     $counter->count('hello');
   }
 
-  #[DataProvider('dataProviderMalformedVocab')]
+  #[DataProvider('dataProviderMalformedVocabIsConfigError')]
   public function testMalformedVocabIsConfigError(string $vocab, string $message): void {
     $counter = new TokenCounter($this->vocabFile($vocab));
 
@@ -114,7 +115,7 @@ final class TokenCounterTest extends TestCase {
     $counter->count('hello');
   }
 
-  public static function dataProviderMalformedVocab(): \Iterator {
+  public static function dataProviderMalformedVocabIsConfigError(): \Iterator {
     yield 'empty file has no ranks' => ["\n\n", 'contains no ranks'];
     yield 'line without a rank' => ["aGVsbG8=\n", "line 1 is not a 'base64token rank' pair"];
     yield 'line with a non-numeric rank' => ["aGVsbG8= x\n", "line 1 is not a 'base64token rank' pair"];
