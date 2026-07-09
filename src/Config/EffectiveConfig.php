@@ -134,7 +134,7 @@ final readonly class EffectiveConfig {
   }
 
   /**
-   * Resolves the judge model: CLI override, then `models.judge`, then a default.
+   * Resolves the judge model from the CLI, `models.judge`, or a fallback.
    *
    * The default is the ladder's weakest model (or the repo default), never the
    * execution model, so the judge stays a cheap, pinned model that does not

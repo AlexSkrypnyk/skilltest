@@ -161,7 +161,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertCount(2, $trial->criteria);
   }
 
-  public function testMalformedVerdictFailsTrialAsAJudgeFailure(): void {
+  public function testMalformedVerdictFailsTheTrial(): void {
     $config = $this->loadJudged(self::RUBRIC_TAIL);
 
     $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts(['I cannot tell from the transcript.']))->run($config, []);
@@ -173,7 +173,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertSame('claude-opus-4-8', $trial->judgeModel);
   }
 
-  public function testJudgeProcessFailureFailsTrialAsAJudgeFailure(): void {
+  public function testJudgeProcessFailureFailsTheTrial(): void {
     $config = $this->loadJudged(self::RUBRIC_TAIL);
 
     $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([[1, '']]))->run($config, []);
@@ -221,7 +221,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertSame('claude-opus-4-8', $models[1]->trials[0]->judgeModel);
   }
 
-  public function testJudgeIsNotSpentOnAFailedAgentRun(): void {
+  public function testJudgeIsNotSpentOnFailedAgentRun(): void {
     $config = $this->loadJudged(self::RUBRIC_TAIL);
     $called = FALSE;
     $judge = function () use (&$called): array {
@@ -241,7 +241,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertNotContains('judge.verdict', $this->checkIds($trial));
   }
 
-  public function testRubricWithoutAJudgeModelThrows(): void {
+  public function testRubricWithoutJudgeModelThrows(): void {
     $this->root = $this->buildRepo("version: \"1\"\n", "version: \"1\"\n" . self::CONTRACT . self::RUBRIC_TAIL);
     $config = (new ConfigLoader($this->root))->load(['models' => 'claude-haiku-4-5']);
 
@@ -344,6 +344,8 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   An optional injected custom-check runner.
    * @param int $parallel
    *   The concurrency.
+   * @param \Closure|null $judge
+   *   An optional injected judge runner.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.

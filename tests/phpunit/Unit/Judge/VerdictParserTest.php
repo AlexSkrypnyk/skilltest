@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Judge;
 
 use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
 use AlexSkrypnyk\SkillTest\Judge\JudgeException;
+use AlexSkrypnyk\SkillTest\Judge\JudgeVerdict;
 use AlexSkrypnyk\SkillTest\Judge\VerdictParser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -47,18 +48,18 @@ final class VerdictParserTest extends TestCase {
     $this->assertSame('Both criteria hold.', $verdict->reasoning);
   }
 
-  public function testMalformedFixtureIsAJudgeFailure(): void {
+  public function testMalformedFixtureFailsTheJudge(): void {
     $this->expectException(JudgeException::class);
 
     $this->parseFixture('malformed-verdict.json');
   }
 
-  #[DataProvider('dataProviderParses')]
+  #[DataProvider('dataProviderParsesHardenedInput')]
   public function testParsesHardenedInput(string $raw, array $expected): void {
     $this->assertSame($expected, $this->flatten((new VerdictParser())->parse($raw)->criteria));
   }
 
-  public static function dataProviderParses(): \Iterator {
+  public static function dataProviderParsesHardenedInput(): \Iterator {
     yield 'id falls back to position' => ['{"criteria":[{"pass":true},{"pass":false}]}', [[1, TRUE, FALSE], [2, FALSE, FALSE]]];
     yield 'string booleans are clamped' => ['{"criteria":[{"id":1,"pass":"true"},{"id":2,"pass":"false"}]}', [[1, TRUE, FALSE], [2, FALSE, FALSE]]];
     yield 'top-level unknown marks every criterion' => ['{"criteria":[{"id":1,"pass":true}],"unknown":true}', [[1, FALSE, TRUE]]];
@@ -74,14 +75,14 @@ final class VerdictParserTest extends TestCase {
     $this->assertSame('', (new VerdictParser())->parse('{"criteria":[{"id":1,"pass":true}]}')->reasoning);
   }
 
-  #[DataProvider('dataProviderMalformed')]
+  #[DataProvider('dataProviderMalformedInputThrows')]
   public function testMalformedInputThrows(string $raw): void {
     $this->expectException(JudgeException::class);
 
     (new VerdictParser())->parse($raw);
   }
 
-  public static function dataProviderMalformed(): \Iterator {
+  public static function dataProviderMalformedInputThrows(): \Iterator {
     yield 'not json at all' => ['the transcript was truncated'];
     yield 'not an object' => ['[1, 2, 3]'];
     yield 'no criteria key' => ['{"reasoning":"ok"}'];
@@ -100,7 +101,7 @@ final class VerdictParserTest extends TestCase {
    * @return \AlexSkrypnyk\SkillTest\Judge\JudgeVerdict
    *   The parsed verdict.
    */
-  protected function parseFixture(string $name): \AlexSkrypnyk\SkillTest\Judge\JudgeVerdict {
+  protected function parseFixture(string $name): JudgeVerdict {
     return (new VerdictParser())->parse((string) file_get_contents(dirname(__DIR__, 2) . '/Fixtures/judge/' . $name));
   }
 

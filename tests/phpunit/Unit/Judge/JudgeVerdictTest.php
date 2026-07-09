@@ -27,8 +27,8 @@ final class JudgeVerdictTest extends TestCase {
     $this->assertSame(2, $verdict->total());
     $this->assertSame(2, $verdict->passedCount());
     $this->assertSame(0, $verdict->unknowns());
-    $this->assertFalse($verdict->blocks(UnknownPolicy::FAIL));
-    $this->assertFalse($verdict->blocks(UnknownPolicy::IGNORE));
+    $this->assertFalse($verdict->blocks(UnknownPolicy::Fail));
+    $this->assertFalse($verdict->blocks(UnknownPolicy::Ignore));
     $this->assertSame('both hold', $verdict->reasoning);
   }
 
@@ -39,8 +39,8 @@ final class JudgeVerdictTest extends TestCase {
     ], '');
 
     $this->assertSame(1, $verdict->passedCount());
-    $this->assertTrue($verdict->blocks(UnknownPolicy::FAIL));
-    $this->assertTrue($verdict->blocks(UnknownPolicy::IGNORE));
+    $this->assertTrue($verdict->blocks(UnknownPolicy::Fail));
+    $this->assertTrue($verdict->blocks(UnknownPolicy::Ignore));
   }
 
   public function testAbstentionBlocksOnlyUnderFail(): void {
@@ -50,8 +50,8 @@ final class JudgeVerdictTest extends TestCase {
     ], '');
 
     $this->assertSame(1, $verdict->unknowns());
-    $this->assertTrue($verdict->blocks(UnknownPolicy::FAIL));
-    $this->assertFalse($verdict->blocks(UnknownPolicy::IGNORE));
+    $this->assertTrue($verdict->blocks(UnknownPolicy::Fail));
+    $this->assertFalse($verdict->blocks(UnknownPolicy::Ignore));
   }
 
   public function testToArrayRendersEveryCriterion(): void {

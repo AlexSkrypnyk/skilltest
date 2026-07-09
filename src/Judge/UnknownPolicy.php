@@ -15,15 +15,11 @@ namespace AlexSkrypnyk\SkillTest\Judge;
  */
 enum UnknownPolicy: string {
 
-  /**
-   * An abstained criterion blocks the trial.
-   */
-  case FAIL = 'fail';
+  // An abstained criterion blocks the trial.
+  case Fail = 'fail';
 
-  /**
-   * An abstained criterion does not block the trial, but is still reported.
-   */
-  case IGNORE = 'ignore';
+  // An abstained criterion does not block the trial, but is still reported.
+  case Ignore = 'ignore';
 
   /**
    * Resolves a configured policy value, defaulting to the strict policy.
@@ -35,7 +31,7 @@ enum UnknownPolicy: string {
    *   The matching policy, or FAIL when the value is unset or unrecognised.
    */
   public static function fromConfig(?string $value): self {
-    return $value === NULL ? self::FAIL : (self::tryFrom($value) ?? self::FAIL);
+    return $value === NULL ? self::Fail : (self::tryFrom($value) ?? self::Fail);
   }
 
 }

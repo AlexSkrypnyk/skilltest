@@ -56,7 +56,7 @@ final class JudgeTest extends TestCase {
     $this->assertStringContainsString('(none)', $this->command);
   }
 
-  public function testNonZeroExitIsAJudgeFailure(): void {
+  public function testNonZeroExitFailsTheJudge(): void {
     $judge = new Judge('claude', $this->runner([1, 'stderr leaked to stdout']));
 
     $this->expectException(JudgeException::class);
@@ -65,7 +65,7 @@ final class JudgeTest extends TestCase {
     $judge->evaluate(['crit'], 'task', '{}', 'haiku', '/repo');
   }
 
-  public function testUnparseableVerdictIsAJudgeFailure(): void {
+  public function testUnparseableVerdictFailsTheJudge(): void {
     $judge = new Judge('claude', $this->runner([0, 'I cannot tell from the transcript.']));
 
     $this->expectException(JudgeException::class);
@@ -73,8 +73,8 @@ final class JudgeTest extends TestCase {
     $judge->evaluate(['crit'], 'task', '{}', 'haiku', '/repo');
   }
 
-  #[DataProvider('dataProviderIncompleteVerdict')]
-  public function testVerdictNotMatchingTheRubricIsAJudgeFailure(string $verdict): void {
+  #[DataProvider('dataProviderIncompleteVerdictFailsTheJudge')]
+  public function testIncompleteVerdictFailsTheJudge(string $verdict): void {
     $judge = new Judge('claude', $this->runner([0, $verdict]));
 
     $this->expectException(JudgeException::class);
@@ -83,7 +83,7 @@ final class JudgeTest extends TestCase {
     $judge->evaluate(['names the issue', 'lists changes'], 'task', '{}', 'haiku', '/repo');
   }
 
-  public static function dataProviderIncompleteVerdict(): \Iterator {
+  public static function dataProviderIncompleteVerdictFailsTheJudge(): \Iterator {
     yield 'fewer criteria than the rubric' => ['{"criteria":[{"id":1,"pass":true}]}'];
     yield 'more criteria than the rubric' => ['{"criteria":[{"id":1,"pass":true},{"id":2,"pass":true},{"id":3,"pass":true}]}'];
     yield 'an out-of-range id' => ['{"criteria":[{"id":1,"pass":true},{"id":3,"pass":true}]}'];

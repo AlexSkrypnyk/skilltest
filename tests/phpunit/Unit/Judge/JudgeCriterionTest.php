@@ -24,12 +24,12 @@ final class JudgeCriterionTest extends TestCase {
   }
 
   public static function dataProviderBlocks(): \Iterator {
-    yield 'passed never blocks under fail' => [TRUE, FALSE, UnknownPolicy::FAIL, FALSE];
-    yield 'passed never blocks under ignore' => [TRUE, FALSE, UnknownPolicy::IGNORE, FALSE];
-    yield 'failed blocks under fail' => [FALSE, FALSE, UnknownPolicy::FAIL, TRUE];
-    yield 'failed blocks under ignore' => [FALSE, FALSE, UnknownPolicy::IGNORE, TRUE];
-    yield 'unknown blocks under fail' => [FALSE, TRUE, UnknownPolicy::FAIL, TRUE];
-    yield 'unknown does not block under ignore' => [FALSE, TRUE, UnknownPolicy::IGNORE, FALSE];
+    yield 'passed never blocks under fail' => [TRUE, FALSE, UnknownPolicy::Fail, FALSE];
+    yield 'passed never blocks under ignore' => [TRUE, FALSE, UnknownPolicy::Ignore, FALSE];
+    yield 'failed blocks under fail' => [FALSE, FALSE, UnknownPolicy::Fail, TRUE];
+    yield 'failed blocks under ignore' => [FALSE, FALSE, UnknownPolicy::Ignore, TRUE];
+    yield 'unknown blocks under fail' => [FALSE, TRUE, UnknownPolicy::Fail, TRUE];
+    yield 'unknown does not block under ignore' => [FALSE, TRUE, UnknownPolicy::Ignore, FALSE];
   }
 
   public function testToArray(): void {

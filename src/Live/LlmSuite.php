@@ -342,9 +342,9 @@ final readonly class LlmSuite {
    *
    * Runs only when the skill declares a rubric; a failed agent run is already a
    * failing trial with a partial transcript, so the judge is not spent on it,
-   * though the pinned model is still reported so a judged skill records the same
-   * judge model on every trial. A judge failure (an unparseable verdict or a
-   * broken judge process) folds in a distinct failing check rather than a
+   * though the pinned model is still reported so a judged skill records one
+   * judge model across every trial. A judge failure (an unparseable verdict or
+   * a broken judge process) folds in a distinct failing check rather than a
    * silent pass; a verdict that blocks under the abstention policy folds in a
    * rubric check naming the tally.
    *

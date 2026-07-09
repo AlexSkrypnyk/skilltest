@@ -23,10 +23,10 @@ final class UnknownPolicyTest extends TestCase {
   }
 
   public static function dataProviderFromConfig(): \Iterator {
-    yield 'null defaults to fail' => [NULL, UnknownPolicy::FAIL];
-    yield 'fail' => ['fail', UnknownPolicy::FAIL];
-    yield 'ignore' => ['ignore', UnknownPolicy::IGNORE];
-    yield 'unrecognised defaults to fail' => ['maybe', UnknownPolicy::FAIL];
+    yield 'null defaults to fail' => [NULL, UnknownPolicy::Fail];
+    yield 'fail' => ['fail', UnknownPolicy::Fail];
+    yield 'ignore' => ['ignore', UnknownPolicy::Ignore];
+    yield 'unrecognised defaults to fail' => ['maybe', UnknownPolicy::Fail];
   }
 
 }

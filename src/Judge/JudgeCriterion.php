@@ -44,7 +44,7 @@ final readonly class JudgeCriterion {
    */
   public function blocks(UnknownPolicy $policy): bool {
     if ($this->unknown) {
-      return $policy === UnknownPolicy::FAIL;
+      return $policy === UnknownPolicy::Fail;
     }
 
     return !$this->pass;
