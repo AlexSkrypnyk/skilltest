@@ -55,6 +55,16 @@ final class LlmReportTest extends TestCase {
     $this->assertCount(3, $artifacts);
   }
 
+  public function testArtifactsIncludeMockLogsAlongsideTranscripts(): void {
+    $trials = [new TrialResult(1, TRUE, [], 1, 1, 1, 0.0, 10, 'tx', 'artifacts/t.jsonl', [], NULL, ['artifacts/t__mock-github.jsonl' => 'log-content'])];
+    $skill = new SkillOutcome('s', 'skills/s', [new TaskOutcome('t', [new ModelOutcome('m', 'm', $trials, 0.8)])], 0.8, 1);
+
+    $artifacts = (new LlmReport([$skill]))->artifacts();
+
+    $this->assertSame('tx', $artifacts['artifacts/t.jsonl']);
+    $this->assertSame('log-content', $artifacts['artifacts/t__mock-github.jsonl']);
+  }
+
   public function testToResultsMatchesSchema(): void {
     $document = $this->report()->toResults('1', ['name' => 'skilltest', 'version' => '1.0.0'], [
       'id' => 'st-20260709-1200',

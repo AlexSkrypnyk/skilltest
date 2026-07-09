@@ -22,6 +22,29 @@ final class AgentCommandTest extends TestCase {
     $this->assertSame($expected, AgentCommand::build($binary, $prompt, $model, $max_turns, $allowed));
   }
 
+  public function testAppendsMcpConfigWithTheStrictFlag(): void {
+    $command = AgentCommand::build('claude', 'go', NULL, NULL, ['Bash'], '/ws/.skilltest-mcp.json');
+
+    $this->assertStringContainsString('--allowedTools ' . escapeshellarg('Bash'), $command);
+    $this->assertStringContainsString('--mcp-config ' . escapeshellarg('/ws/.skilltest-mcp.json') . ' --strict-mcp-config', $command);
+  }
+
+  #[DataProvider('dataProviderMcpConfigOmittedWhenEmpty')]
+  public function testMcpConfigOmittedWhenEmpty(?string $mcp_config): void {
+    $this->assertStringNotContainsString('--mcp-config', AgentCommand::build('claude', 'go', NULL, NULL, [], $mcp_config));
+  }
+
+  /**
+   * Data provider for the omitted MCP config.
+   *
+   * @return \Iterator<string, array{string|null}>
+   *   The cases.
+   */
+  public static function dataProviderMcpConfigOmittedWhenEmpty(): \Iterator {
+    yield 'null is omitted' => [NULL];
+    yield 'empty string is omitted' => [''];
+  }
+
   /**
    * Data provider for command building.
    *

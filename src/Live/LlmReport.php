@@ -118,16 +118,20 @@ final readonly class LlmReport {
   }
 
   /**
-   * The per-trial transcripts, keyed by their document-relative path.
+   * The per-trial transcripts and mock logs, keyed by document-relative path.
    *
    * @return array<string, string>
-   *   The transcript contents keyed by relative path.
+   *   The artifact contents keyed by relative path.
    */
   public function artifacts(): array {
     $artifacts = [];
 
     foreach ($this->eachTrial() as $trial) {
       $artifacts[$trial->transcriptPath] = $trial->transcript;
+
+      foreach ($trial->mockLogs as $path => $content) {
+        $artifacts[$path] = $content;
+      }
     }
 
     return $artifacts;

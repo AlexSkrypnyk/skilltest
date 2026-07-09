@@ -53,7 +53,25 @@ After each agent turn the responder replies, stops, or abstains; abstention fail
 
 ## Hermetic external services: MCP mocks (P2)
 
-For skills that call MCP tools, a task may declare `mcp-mocks`: skilltest launches each mock as a local stdio MCP server serving fixture responses (exact-match, schema-match, or per-field regex-match against tool arguments), so live runs need no real service, no credentials, and no network. Unmatched calls fail loudly naming the missing fixture. This keeps llm trials reproducible for skills whose side effects would otherwise hit shared external state.
+For skills that call MCP tools, a task may declare `mcp-mocks`: skilltest launches each mock as a local stdio MCP server serving fixture responses, so live runs need no real service, no credentials, and no network. Each mock names a server and its tools, and every tool lists responses whose matcher is one of exact full-argument match (`match`), per-field regex over the arguments (`match-regex`), or a JSON Schema the arguments must validate against (`match-schema`):
+
+```yaml
+- name: file-an-issue
+  prompt: "Open a GitHub issue titled 'Bug'."
+  mcp-mocks:
+    - server: github
+      tools:
+        - name: create_issue
+          responses:
+            - match: {title: "Bug", repo: "acme/widget"}
+              response: "Created issue #42"
+            - match-regex: {title: "^Feature: "}
+              response-file: fixtures/feature.json
+            - match-schema: {type: object, required: [title]}
+              response: {ok: true}
+```
+
+The first response whose matcher accepts the call wins; its `response` (a string verbatim, a structure as JSON) or `response-file` (read from the skill directory) is returned as the tool result. The mocked tools are added to the trial's allowed tools, and the agent is pointed at only these servers, so no host MCP configuration leaks in. An unmatched or unknown call returns an MCP tool error naming the tool and the closest declared fixture, and also fails the trial deterministically - a mock never silently returns empty success. Every call (tool, arguments, matched fixture or the miss) is captured to a per-server log that lands in the run artifacts. This keeps llm trials reproducible for skills whose side effects would otherwise hit shared external state. `skilltest record` wires the same mocks, so a recorded fixture of an MCP-calling skill is hermetic too.
 
 ## Recording
 

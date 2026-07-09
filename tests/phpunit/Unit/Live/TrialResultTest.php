@@ -51,8 +51,16 @@ final class TrialResultTest extends TestCase {
     $this->assertSame('artifacts/haiku-2.jsonl', $row['transcript']);
     $this->assertSame([], $row['judge']);
     $this->assertNull($row['judge_model']);
+    $this->assertSame([], $row['mocks']);
     $this->assertSame('contract.tools.required', $this->path($row, 'contract', 0, 'check'));
     $this->assertTrue($this->path($row, 'contract', 0, 'pass'));
+  }
+
+  public function testToArrayListsMockLogPaths(): void {
+    $mock_logs = ['artifacts/alpha__invoked__haiku__t1__mock-github.jsonl' => '{"tool":"create_issue","matched":true}'];
+    $trial = new TrialResult(1, TRUE, [], 1, 1, 1, 0.0, 10, 'jsonl', 'artifacts/t.jsonl', [], NULL, $mock_logs);
+
+    $this->assertSame(['artifacts/alpha__invoked__haiku__t1__mock-github.jsonl'], $trial->toArray()['mocks']);
   }
 
   public function testToArrayRendersJudgeCriteriaAndModel(): void {
