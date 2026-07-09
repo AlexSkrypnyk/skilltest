@@ -71,7 +71,7 @@ final class ProcessPoolFunctionalTest extends TestCase {
     $this->assertSame(50000, strlen($results['big'][1]));
   }
 
-  public function testTimeoutTerminatesAHangQuickly(): void {
+  public function testTimeoutTerminatesHangQuickly(): void {
     $started = microtime(TRUE);
 
     $results = (new ProcessPool(1, 0.3))->run(['slow' => [$this->sh('sleep 5'), $this->workdir]]);
@@ -80,7 +80,7 @@ final class ProcessPoolFunctionalTest extends TestCase {
     $this->assertLessThan(3.0, microtime(TRUE) - $started);
   }
 
-  public function testForceKillsACommandThatIgnoresTermination(): void {
+  public function testForceKillsCommandThatIgnoresTermination(): void {
     $results = (new ProcessPool(1, 0.3))->run(['stubborn' => [$this->sh('trap "" TERM; while :; do :; done'), $this->workdir]]);
 
     $this->assertSame(ProcessPool::TIMEOUT_EXIT, $results['stubborn'][0]);
@@ -132,10 +132,12 @@ final class ProcessPoolFunctionalTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path)) {

@@ -13,7 +13,7 @@ namespace AlexSkrypnyk\SkillTest\Process;
  * SIGTERM-then-SIGKILL routine live here once rather than drifting apart in two
  * copies.
  */
-trait ProcessTermination {
+trait ProcessTerminationTrait {
 
   /**
    * The exit code reported when a command exceeds its timeout.

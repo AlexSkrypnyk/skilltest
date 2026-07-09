@@ -16,11 +16,11 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * fixture is copied in, its declared repos are materialised as detached
  * `git worktree` checkouts (cheap, offline, sharing the source object store),
  * the skill under test is installed into the workspace discovery path so the
- * agent can find it, and the agent's start directory is resolved from the task's
- * `workdir`. Everything is removed afterwards - worktrees through git's own
- * bookkeeping, then the directory tree - so a run leaves no trace and repeated
- * trials never collide. The git seam is injectable so assembly is testable
- * without a real repository.
+ * agent can find it, and the agent's start directory is resolved from the
+ * task's `workdir`. Everything is removed afterwards - worktrees through
+ * git's own bookkeeping, then the directory tree - so a run leaves no trace
+ * and repeated trials never collide. The git seam is injectable so assembly is
+ * testable without a real repository.
  */
 final class TrialWorkspace {
 
@@ -288,10 +288,12 @@ final class TrialWorkspace {
     }
 
     foreach (scandir($source) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $from = $source . '/' . $item;
       $to = $dest . '/' . $item;
 
@@ -317,10 +319,12 @@ final class TrialWorkspace {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path) && !is_link($path)) {

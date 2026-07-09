@@ -8,6 +8,7 @@ use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
 use AlexSkrypnyk\SkillTest\Live\TaskOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -18,6 +19,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(SkillOutcome::class)]
 final class SkillOutcomeTest extends TestCase {
+
+  use ArrayPathTrait;
 
   public function testMinimalModelIsTheWeakestThatPassesEveryTask(): void {
     $tasks = [
@@ -61,10 +64,10 @@ final class SkillOutcomeTest extends TestCase {
 
     $this->assertSame('run', $row['skill']);
     $this->assertSame('skills/run', $row['path']);
-    $this->assertSame('a', $row['llm']['tasks'][0]['task']);
-    $this->assertSame('sonnet', $row['llm']['verdict']['minimal_model']);
-    $this->assertSame(0.8, $row['llm']['verdict']['threshold']);
-    $this->assertSame(3, $row['llm']['verdict']['trials']);
+    $this->assertSame('a', $this->path($row, 'llm', 'tasks', 0, 'task'));
+    $this->assertSame('sonnet', $this->path($row, 'llm', 'verdict', 'minimal_model'));
+    $this->assertEqualsWithDelta(0.8, $this->path($row, 'llm', 'verdict', 'threshold'), PHP_FLOAT_EPSILON);
+    $this->assertSame(3, $this->path($row, 'llm', 'verdict', 'trials'));
   }
 
   /**

@@ -24,7 +24,7 @@ final class TranscriptMetricsTest extends TestCase {
     $this->assertSame(4211, $metrics->tokensIn);
     $this->assertSame(883, $metrics->tokensOut);
     $this->assertSame(6, $metrics->turns);
-    $this->assertSame(0.0132, $metrics->cost);
+    $this->assertEqualsWithDelta(0.0132, $metrics->cost, PHP_FLOAT_EPSILON);
   }
 
   public function testLastResultWins(): void {
@@ -42,7 +42,7 @@ final class TranscriptMetricsTest extends TestCase {
     $this->assertSame(0, $metrics->tokensIn);
     $this->assertSame(0, $metrics->tokensOut);
     $this->assertSame(0, $metrics->turns);
-    $this->assertSame(0.0, $metrics->cost);
+    $this->assertEqualsWithDelta(0.0, $metrics->cost, PHP_FLOAT_EPSILON);
   }
 
   public function testZeroesOnNegativeOrNonNumericUsage(): void {
@@ -53,7 +53,7 @@ final class TranscriptMetricsTest extends TestCase {
     $this->assertSame(0, $metrics->tokensIn);
     $this->assertSame(0, $metrics->tokensOut);
     $this->assertSame(0, $metrics->turns);
-    $this->assertSame(0.0, $metrics->cost);
+    $this->assertEqualsWithDelta(0.0, $metrics->cost, PHP_FLOAT_EPSILON);
   }
 
   public function testAcceptsFloatTokenCounts(): void {

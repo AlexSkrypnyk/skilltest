@@ -22,7 +22,7 @@ namespace AlexSkrypnyk\SkillTest\Process;
  */
 final readonly class ProcessRunner {
 
-  use ProcessTermination;
+  use ProcessTerminationTrait;
 
   /**
    * The default wall-clock budget, in seconds, for one command.

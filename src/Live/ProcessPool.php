@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
-use AlexSkrypnyk\SkillTest\Process\ProcessTermination;
+use AlexSkrypnyk\SkillTest\Process\ProcessTerminationTrait;
 
 /**
  * Runs many commands concurrently under a bounded worker pool and a timeout.
@@ -13,18 +13,18 @@ use AlexSkrypnyk\SkillTest\Process\ProcessTermination;
  * them one at a time wastes wall-clock; this drives up to `concurrency` child
  * processes at once and starts the next queued command the moment a slot frees.
  * Each command carries its own working directory (its trial workspace) and its
- * stdout is captured verbatim as that trial's transcript; stderr is discarded so
- * a chatty agent cannot deadlock on an unread pipe. Every process is bounded by
- * the same wall-clock timeout - a hang is terminated (escalating to an
+ * stdout is captured verbatim as that trial's transcript; stderr is discarded
+ * so a chatty agent cannot deadlock on an unread pipe. Every process is bounded
+ * by the same wall-clock timeout - a hang is terminated (escalating to an
  * untrappable SIGKILL) and reported with the timeout exit code rather than
- * stalling the whole pool. Commands run through `exec` so the tracked process is
- * the agent itself, not a wrapping shell that would outlive a kill. Results are
- * returned keyed and ordered exactly as the commands were given, so a caller
- * gets the same outcome whether concurrency is 1 or 16.
+ * stalling the whole pool. Commands run through `exec` so the tracked process
+ * is the agent itself, not a wrapping shell that would outlive a kill. Results
+ * are returned keyed and ordered exactly as the commands were given, so a
+ * caller gets the same outcome whether concurrency is 1 or 16.
  */
 final readonly class ProcessPool {
 
-  use ProcessTermination;
+  use ProcessTerminationTrait;
 
   /**
    * Constructs a ProcessPool.

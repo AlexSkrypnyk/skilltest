@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\TaskOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +18,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(TaskOutcome::class)]
 final class TaskOutcomeTest extends TestCase {
+
+  use ArrayPathTrait;
 
   public function testPassesOnlyWhenEveryModelPasses(): void {
     $task = new TaskOutcome('invoked', [self::model('haiku', TRUE), self::model('sonnet', TRUE)]);
@@ -42,7 +45,7 @@ final class TaskOutcomeTest extends TestCase {
     $row = $task->toArray();
 
     $this->assertSame('invoked', $row['task']);
-    $this->assertSame('haiku', $row['models'][0]['alias']);
+    $this->assertSame('haiku', $this->path($row, 'models', 0, 'alias'));
   }
 
   /**

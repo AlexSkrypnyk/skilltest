@@ -336,9 +336,14 @@ final class LlmCommandTest extends TestCase {
   protected function model(array $decoded): array {
     $model = $this->pathArray($decoded, 'skills', 0, 'llm', 'tasks', 0, 'models', 0);
 
-    foreach ($model['trials'] as &$trial) {
+    $trials = [];
+    foreach ($this->pathArray($model, 'trials') as $trial) {
+      $trial = is_array($trial) ? $trial : [];
       $trial['duration_ms'] = 0;
+      $trials[] = $trial;
     }
+
+    $model['trials'] = $trials;
 
     return $model;
   }
@@ -483,10 +488,12 @@ final class LlmCommandTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path) && !is_link($path)) {

@@ -169,9 +169,7 @@ class LlmCommand extends Command {
    *   The environment map.
    */
   protected function environmentMap(): array {
-    $env = getenv();
-
-    return is_array($env) ? $env : [];
+    return getenv();
   }
 
   /**

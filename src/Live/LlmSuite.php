@@ -76,7 +76,7 @@ final readonly class LlmSuite {
    *   An override for the workspace git runner, for tests.
    * @param \Closure|null $checkRunner
    *   An override for the custom-check process runner, for tests.
-   * @param string|null $workspaceBase
+   * @param string|null $workspace_base
    *   An override for the workspace base directory, for tests.
    */
   public function __construct(
@@ -87,10 +87,10 @@ final readonly class LlmSuite {
     ?\Closure $pool = NULL,
     protected ?\Closure $git = NULL,
     protected ?\Closure $checkRunner = NULL,
-    ?string $workspaceBase = NULL,
+    ?string $workspace_base = NULL,
   ) {
     $this->pool = $pool ?? (new ProcessPool($parallel, $timeout))->run(...);
-    $this->workspaceBase = $workspaceBase ?? rtrim($root, '/') . '/.artifacts/tmp/skilltest-llm';
+    $this->workspaceBase = $workspace_base ?? rtrim($root, '/') . '/.artifacts/tmp/skilltest-llm';
   }
 
   /**
@@ -381,8 +381,8 @@ final readonly class LlmSuite {
     foreach ($tasks as $task) {
       $name = Data::toStringOrNull(Data::get($task, 'name'));
 
-      // A missing name is a malformed task regardless of the selection, so it is
-      // rejected before the glob filter rather than silently skipped by it.
+      // A missing name is a malformed task regardless of the selection, so
+      // it is rejected before the glob filter rather than silently skipped.
       if ($name === NULL || $name === '') {
         throw new ConfigException("an llm task requires a 'name'.", $config_file, 'llm.tasks');
       }

@@ -52,7 +52,7 @@ final class TrialWorkspaceTest extends TestCase {
     $this->assertNull($inputs['workdir']);
   }
 
-  #[DataProvider('dataProviderInvalid')]
+  #[DataProvider('dataProviderRejectsInvalidInputs')]
   public function testRejectsInvalidInputs(array $task, string $expected): void {
     $this->expectException(ConfigException::class);
     $this->expectExceptionMessage($expected);
@@ -63,31 +63,29 @@ final class TrialWorkspaceTest extends TestCase {
   /**
    * Data provider for invalid inputs.
    *
-   * @return array<string, array{array<mixed>, string}>
+   * @return \Iterator<string, array{array<mixed>, string}>
    *   The cases.
    */
-  public static function dataProviderInvalid(): array {
-    return [
-      'repo without source' => [
-        ['inputs' => ['repos' => [['dest' => 'sub']]]],
-        "a repos entry requires a 'source'.",
-      ],
-      'repo without dest' => [
-        ['inputs' => ['repos' => [['source' => '.']]]],
-        "a repos entry requires a 'dest'.",
-      ],
-      'dest with parent segment' => [
-        ['inputs' => ['repos' => [['source' => '.', 'dest' => '../escape']]]],
-        'must be a relative path without a ".." segment',
-      ],
-      'absolute dest' => [
-        ['inputs' => ['repos' => [['source' => '.', 'dest' => '/etc']]]],
-        'must be a relative path without a ".." segment',
-      ],
-      'workdir with parent segment' => [
-        ['inputs' => ['workdir' => 'a/../..']],
-        'must be a relative path without a ".." segment',
-      ],
+  public static function dataProviderRejectsInvalidInputs(): \Iterator {
+    yield 'repo without source' => [
+      ['inputs' => ['repos' => [['dest' => 'sub']]]],
+      "a repos entry requires a 'source'.",
+    ];
+    yield 'repo without dest' => [
+      ['inputs' => ['repos' => [['source' => '.']]]],
+      "a repos entry requires a 'dest'.",
+    ];
+    yield 'dest with parent segment' => [
+      ['inputs' => ['repos' => [['source' => '.', 'dest' => '../escape']]]],
+      'must be a relative path without a ".." segment',
+    ];
+    yield 'absolute dest' => [
+      ['inputs' => ['repos' => [['source' => '.', 'dest' => '/etc']]]],
+      'must be a relative path without a ".." segment',
+    ];
+    yield 'workdir with parent segment' => [
+      ['inputs' => ['workdir' => 'a/../..']],
+      'must be a relative path without a ".." segment',
     ];
   }
 

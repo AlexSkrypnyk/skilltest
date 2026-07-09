@@ -25,35 +25,33 @@ final class AgentCommandTest extends TestCase {
   /**
    * Data provider for command building.
    *
-   * @return array<string, array{string, string, string|null, int|null, string[], string}>
+   * @return \Iterator<string, array{string, string, (string | null), (int | null), array<string>, string}>
    *   The cases.
    */
-  public static function dataProviderBuild(): array {
-    return [
-      'bare prompt only' => [
-        'claude', 'do the thing', NULL, NULL, [],
-        "claude -p 'do the thing' --output-format stream-json --verbose",
-      ],
-      'model, turns, and tools' => [
-        'claude', 'go', 'claude-haiku-4-5', 6, ['Bash', 'Edit'],
-        "claude -p 'go' --output-format stream-json --verbose --model 'claude-haiku-4-5' --max-turns 6 --allowedTools 'Bash,Edit'",
-      ],
-      'empty model is omitted' => [
-        'claude', 'go', '', NULL, [],
-        "claude -p 'go' --output-format stream-json --verbose",
-      ],
-      'zero turns is still emitted' => [
-        'claude', 'go', NULL, 0, [],
-        "claude -p 'go' --output-format stream-json --verbose --max-turns 0",
-      ],
-      'command-prefix binary is used verbatim' => [
-        'php /tmp/stub.php', 'go', NULL, NULL, ['Bash'],
-        "php /tmp/stub.php -p 'go' --output-format stream-json --verbose --allowedTools 'Bash'",
-      ],
-      'prompt with quotes is escaped' => [
-        'claude', "it's go time", NULL, NULL, [],
-        "claude -p 'it'\\''s go time' --output-format stream-json --verbose",
-      ],
+  public static function dataProviderBuild(): \Iterator {
+    yield 'bare prompt only' => [
+      'claude', 'do the thing', NULL, NULL, [],
+      "claude -p 'do the thing' --output-format stream-json --verbose",
+    ];
+    yield 'model, turns, and tools' => [
+      'claude', 'go', 'claude-haiku-4-5', 6, ['Bash', 'Edit'],
+      "claude -p 'go' --output-format stream-json --verbose --model 'claude-haiku-4-5' --max-turns 6 --allowedTools 'Bash,Edit'",
+    ];
+    yield 'empty model is omitted' => [
+      'claude', 'go', '', NULL, [],
+      "claude -p 'go' --output-format stream-json --verbose",
+    ];
+    yield 'zero turns is still emitted' => [
+      'claude', 'go', NULL, 0, [],
+      "claude -p 'go' --output-format stream-json --verbose --max-turns 0",
+    ];
+    yield 'command-prefix binary is used verbatim' => [
+      'php /tmp/stub.php', 'go', NULL, NULL, ['Bash'],
+      "php /tmp/stub.php -p 'go' --output-format stream-json --verbose --allowedTools 'Bash'",
+    ];
+    yield 'prompt with quotes is escaped' => [
+      'claude', "it's go time", NULL, NULL, [],
+      "claude -p 'it'\\''s go time' --output-format stream-json --verbose",
     ];
   }
 

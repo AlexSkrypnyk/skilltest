@@ -12,8 +12,8 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * the summed trials, tokens, and cost that make the price of a run a number
  * rather than a surprise. It also collects the per-trial transcripts as
  * artifacts keyed by the relative path the document references them by, so a
- * `--output-dir` write lands each transcript beside the results file without the
- * document ever inlining one.
+ * `--output-dir` write lands each transcript beside the results file without
+ * the document ever inlining one.
  */
 final readonly class LlmReport {
 

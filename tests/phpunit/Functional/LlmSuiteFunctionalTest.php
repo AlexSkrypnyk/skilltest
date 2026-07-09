@@ -195,7 +195,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->suite($this->pool([]))->run($config, []);
   }
 
-  public function testNamelessTaskThrowsEvenUnderAGlob(): void {
+  public function testNamelessTaskThrowsEvenUnderGlob(): void {
     $config = $this->load("llm:\n  tasks:\n    - prompt: no name here\n");
 
     $this->expectException(ConfigException::class);
@@ -242,7 +242,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   The pool closure.
    */
   protected function pool(array $outcomes): \Closure {
-    $queue = array_map(static fn($outcome): array => is_array($outcome) ? $outcome : [0, $outcome], $outcomes);
+    $queue = array_map(static fn(array|string $outcome): array => is_array($outcome) ? $outcome : [0, $outcome], $outcomes);
     $index = 0;
 
     return function (array $commands) use ($queue, &$index): array {
@@ -309,10 +309,12 @@ final class LlmSuiteFunctionalTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path) && !is_link($path)) {

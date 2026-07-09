@@ -9,6 +9,7 @@ use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
 use AlexSkrypnyk\SkillTest\Live\TaskOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(LlmReport::class)]
 final class LlmReportTest extends TestCase {
 
+  use ArrayPathTrait;
   use SchemaValidationTrait;
 
   public function testAggregatesGatesFailuresAndTotals(): void {
@@ -31,7 +33,7 @@ final class LlmReportTest extends TestCase {
     $this->assertTrue($report->failed());
     $this->assertSame(3, $report->trials());
     $this->assertSame(['in' => 60, 'out' => 30], $report->tokens());
-    $this->assertSame(0.06, $report->cost());
+    $this->assertEqualsWithDelta(0.06, $report->cost(), PHP_FLOAT_EPSILON);
   }
 
   public function testPassingReportDoesNotFail(): void {
@@ -62,12 +64,12 @@ final class LlmReportTest extends TestCase {
       'environment' => 'host',
     ]);
 
-    $this->assertSame(2, $document['totals']['checks']);
-    $this->assertSame(1, $document['totals']['failures']);
-    $this->assertSame(3, $document['totals']['trials']);
-    $this->assertSame(['in' => 60, 'out' => 30], $document['totals']['tokens']);
+    $this->assertSame(2, $this->path($document, 'totals', 'checks'));
+    $this->assertSame(1, $this->path($document, 'totals', 'failures'));
+    $this->assertSame(3, $this->path($document, 'totals', 'trials'));
+    $this->assertSame(['in' => 60, 'out' => 30], $this->path($document, 'totals', 'tokens'));
     $this->assertSame([], $document['hooks']);
-    $this->assertSame([], $document['coverage']['violations']);
+    $this->assertSame([], $this->path($document, 'coverage', 'violations'));
     $this->assertMatchesResultsSchema((string) json_encode($document));
   }
 

@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -16,6 +17,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(TrialResult::class)]
 final class TrialResultTest extends TestCase {
+
+  use ArrayPathTrait;
 
   public function testFailuresSelectsOnlyFailedChecks(): void {
     $checks = [
@@ -43,10 +46,10 @@ final class TrialResultTest extends TestCase {
     $this->assertSame(18422, $row['duration_ms']);
     $this->assertSame(6, $row['turns']);
     $this->assertSame(['in' => 4211, 'out' => 883], $row['tokens']);
-    $this->assertSame(0.0132, $row['cost_usd']);
+    $this->assertEqualsWithDelta(0.0132, $row['cost_usd'], PHP_FLOAT_EPSILON);
     $this->assertSame('artifacts/haiku-2.jsonl', $row['transcript']);
-    $this->assertSame('contract.tools.required', $row['contract'][0]['check']);
-    $this->assertTrue($row['contract'][0]['pass']);
+    $this->assertSame('contract.tools.required', $this->path($row, 'contract', 0, 'check'));
+    $this->assertTrue($this->path($row, 'contract', 0, 'pass'));
   }
 
 }
