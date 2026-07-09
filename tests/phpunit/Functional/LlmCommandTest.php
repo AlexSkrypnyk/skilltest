@@ -105,7 +105,27 @@ final class LlmCommandTest extends TestCase {
 
     $this->assertStringContainsString('alpha invoked haiku PASS (pass_rate 1.00, 3/3 trials)', $output);
     $this->assertStringContainsString('3 trial(s)', $output);
-    $this->assertSame([], glob($root . '/.artifacts/tmp/skilltest-llm/ws-*') ?: [], 'Trial workspaces should be cleaned up.');
+    $this->assertSame([], glob($root . '/.skilltest/tmp/ws-*') ?: [], 'Trial workspaces should be cleaned up.');
+  }
+
+  public function testBeforeTaskHookFailureExitsTwo(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+    file_put_contents($root . '/skilltest.yml', "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n  default: haiku\nllm:\n  lifecycle:\n    before-task:\n      - command: exit 7\n        error-on-fail: true\n");
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 2);
+
+    $this->assertStringContainsString("lifecycle before-task hook 'exit 7' failed with exit 7", $output);
+  }
+
+  public function testAfterRunHookFailureWarns(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+    file_put_contents($root . '/skilltest.yml', "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n  default: haiku\nllm:\n  lifecycle:\n    after-run:\n      - command: exit 4\n");
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 0);
+
+    $this->assertStringContainsString("WARNING lifecycle after-run hook 'exit 4' failed", $output);
   }
 
   public function testFailingContractGatesNonZero(): void {

@@ -8,6 +8,8 @@ use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
+use AlexSkrypnyk\SkillTest\Live\Lifecycle;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
@@ -280,6 +282,49 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertSame('invoked', $report->skills[0]->tasks[0]->task);
   }
 
+  public function testLifecycleHooksFireInOrderWithSubstitutedVariables(): void {
+    // 'workdir' is a structural input, not a template variable, so it is
+    // skipped while 'site' becomes '{{ vars.site }}'.
+    $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n      inputs:\n        workdir: sub\n        site: example\n");
+    $log = $this->root . '/hooks.log';
+    $target = escapeshellarg($log);
+    $lifecycle = new Lifecycle($this->root, [
+      'before-run' => [['command' => 'echo before-run >> ' . $target]],
+      'before-task' => [['command' => 'echo "before-task {{ task }} {{ trial }} {{ model }} {{ vars.site }}" >> ' . $target]],
+      'after-task' => [['command' => 'echo after-task >> ' . $target]],
+      'after-run' => [['command' => 'echo after-run >> ' . $target]],
+    ]);
+
+    $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, NULL, $lifecycle)->run($config, []);
+
+    $this->assertSame("before-run\nbefore-task invoked 1 claude-haiku-4-5 example\nafter-task\nafter-run\n", (string) file_get_contents($log));
+  }
+
+  public function testBeforeTaskFailureAbortsWithConfigError(): void {
+    $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+    $lifecycle = new Lifecycle($this->root, ['before-task' => [['command' => 'exit 3', 'error-on-fail' => TRUE]]]);
+
+    $this->expectException(ConfigException::class);
+    $this->expectExceptionMessage("lifecycle before-task hook 'exit 3' failed with exit 3");
+
+    $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, NULL, $lifecycle)->run($config, []);
+  }
+
+  public function testAfterTaskFailureWarnsButDoesNotFailTheRun(): void {
+    $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+    $warnings = [];
+    $warn = function (string $message) use (&$warnings): void {
+      $warnings[] = $message;
+    };
+    $lifecycle = new Lifecycle($this->root, ['after-task' => [['command' => 'exit 1']]], NULL, $warn);
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, NULL, $lifecycle)->run($config, []);
+
+    $this->assertFalse($report->failed());
+    $this->assertCount(1, $warnings);
+    $this->assertStringContainsString("lifecycle after-task hook 'exit 1' failed", $warnings[0]);
+  }
+
   public function testNoTasksThrows(): void {
     $config = $this->load('');
 
@@ -346,12 +391,16 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   The concurrency.
    * @param \Closure|null $judge
    *   An optional injected judge runner.
+   * @param \AlexSkrypnyk\SkillTest\Live\Lifecycle|null $lifecycle
+   *   An optional lifecycle; defaults to one with no hooks.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.
    */
-  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL): LlmSuite {
-    return new LlmSuite($this->root, 'stub', $parallel, 300.0, $pool, NULL, $check_runner, $this->root . '/.artifacts/tmp/ws', $judge);
+  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL, ?Lifecycle $lifecycle = NULL): LlmSuite {
+    $environment = new HostEnvironment($this->root, $parallel, 300.0, $pool, NULL, $this->root . '/.artifacts/tmp/ws');
+
+    return new LlmSuite($this->root, 'stub', $environment, $lifecycle ?? new Lifecycle($this->root, []), $parallel, 300.0, $check_runner, $judge);
   }
 
   /**

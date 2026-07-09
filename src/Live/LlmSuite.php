@@ -29,8 +29,11 @@ use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
  * workspace is torn down whether its trial passed, failed, or threw. A trial
  * passes only when every contract and custom check passes and the agent exited
  * cleanly within its timeout; a task passes on a model when its pass rate meets
- * the threshold, with no retries to mask a flaky skill. The process, git, and
- * check seams are injectable so the whole orchestration is testable without a
+ * the threshold, with no retries to mask a flaky skill. Trials run through an
+ * injected {@see EnvironmentInterface} - where a trial runs and what it can
+ * touch, never what passing means - and a {@see Lifecycle} brackets the run
+ * and every trial with deterministic setup and teardown hooks; both, and the
+ * check seam, are injectable so the whole orchestration is testable without a
  * real agent.
  */
 final readonly class LlmSuite {
@@ -61,18 +64,6 @@ final readonly class LlmSuite {
   public const string ENV_TIMEOUT = 'SKILLTEST_TRIAL_TIMEOUT';
 
   /**
-   * Runs a pool of commands and returns each one's exit, stdout, and duration.
-   *
-   * @var \Closure(array<array-key, array{0: string, 1: string}>): array<array-key, array{0: int, 1: string, 2: int}>
-   */
-  protected \Closure $pool;
-
-  /**
-   * The base directory trial workspaces are assembled under.
-   */
-  protected string $workspaceBase;
-
-  /**
    * The judge that scores a trial when its skill declares a rubric.
    */
   protected Judge $judge;
@@ -84,34 +75,29 @@ final readonly class LlmSuite {
    *   The repository root.
    * @param string $binary
    *   The resolved agent binary or command prefix.
+   * @param \AlexSkrypnyk\SkillTest\Live\EnvironmentInterface $environment
+   *   The environment trials are assembled, run, and torn down in.
+   * @param \AlexSkrypnyk\SkillTest\Live\Lifecycle $lifecycle
+   *   The lifecycle hooks bracketing the run and every trial.
    * @param int $parallel
-   *   The maximum number of concurrent trials.
+   *   The maximum number of workspaces assembled and run concurrently.
    * @param float $timeout
-   *   The per-trial wall-clock budget, in seconds.
-   * @param \Closure|null $pool
-   *   An override for the concurrent process runner, for tests.
-   * @param \Closure|null $git
-   *   An override for the workspace git runner, for tests.
+   *   The per-trial wall-clock budget, in seconds, for the timeout message.
    * @param \Closure|null $checkRunner
    *   An override for the custom-check process runner, for tests.
-   * @param string|null $workspace_base
-   *   An override for the workspace base directory, for tests.
    * @param \Closure|null $judge_runner
    *   An override for the judge process runner, for tests.
    */
   public function __construct(
     protected string $root,
     protected string $binary,
+    protected EnvironmentInterface $environment,
+    protected Lifecycle $lifecycle,
     protected int $parallel = 1,
     protected float $timeout = self::DEFAULT_TIMEOUT,
-    ?\Closure $pool = NULL,
-    protected ?\Closure $git = NULL,
     protected ?\Closure $checkRunner = NULL,
-    ?string $workspace_base = NULL,
     ?\Closure $judge_runner = NULL,
   ) {
-    $this->pool = $pool ?? (new ProcessPool($parallel, $timeout))->run(...);
-    $this->workspaceBase = $workspace_base ?? rtrim($root, '/') . '/.artifacts/tmp/skilltest-llm';
     $this->judge = new Judge($binary, $judge_runner, $timeout);
   }
 
@@ -131,7 +117,9 @@ final readonly class LlmSuite {
    *   configured, or a workspace cannot be assembled.
    */
   public function run(LoadedConfig $config, array $task_globs): LlmReport {
-    $skills = [];
+    // Resolve and validate the selection before any hook fires, so a
+    // configuration error surfaces without disturbing external state.
+    $selected = [];
 
     foreach ($config->skills as $skill) {
       $effective = $skill->effective;
@@ -149,14 +137,32 @@ final readonly class LlmSuite {
         throw new ConfigException(sprintf("skill '%s' declares a judge rubric but no judge model; set models.judge, a ladder, or models.default.", $effective->skill), $skill->file, 'models.judge');
       }
 
-      $skills[] = new SkillOutcome($effective->skill, $effective->path, $this->taskOutcomes($config, $skill, $entries), $effective->threshold, $effective->trials);
+      $selected[] = [$skill, $entries];
     }
 
-    if ($skills === []) {
+    if ($selected === []) {
       throw new ConfigException($task_globs === [] ? 'no llm tasks are declared for the selected skills.' : sprintf('no llm tasks matched --task %s.', implode(', ', $task_globs)));
     }
 
-    return new LlmReport($skills);
+    $this->environment->prepare();
+
+    try {
+      $this->lifecycle->beforeRun([]);
+
+      $skills = [];
+
+      foreach ($selected as [$skill, $entries]) {
+        $effective = $skill->effective;
+        $skills[] = new SkillOutcome($effective->skill, $effective->path, $this->taskOutcomes($config, $skill, $entries), $effective->threshold, $effective->trials);
+      }
+
+      $this->lifecycle->afterRun([]);
+
+      return new LlmReport($skills);
+    }
+    finally {
+      $this->environment->teardown();
+    }
   }
 
   /**
@@ -211,7 +217,8 @@ final readonly class LlmSuite {
   protected function runTrials(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token): array {
     $effective = $skill->effective;
     $allowed = Data::toStringList(Data::get($effective->contract, 'tools', 'allowed'));
-    $command = AgentCommand::build($this->binary, $entry['prompt'], $this->resolveModelId($token, $effective->modelAliases), $effective->maxTurns, $allowed);
+    $model_id = $this->resolveModelId($token, $effective->modelAliases);
+    $command = AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed);
 
     $total = max(1, $effective->trials);
     $limit = max(1, $this->parallel);
@@ -219,7 +226,7 @@ final readonly class LlmSuite {
 
     for ($start = 0; $start < $total; $start += $limit) {
       $numbers = range($start + 1, min($start + $limit, $total));
-      $results += $this->runBatch($config, $skill, $entry, $inputs, $token, $command, $numbers);
+      $results += $this->runBatch($config, $skill, $entry, $inputs, $token, $model_id, $command, $numbers);
     }
 
     ksort($results);
@@ -240,6 +247,8 @@ final readonly class LlmSuite {
    *   The parsed task inputs.
    * @param string $token
    *   The model alias or id from configuration.
+   * @param string $model_id
+   *   The resolved model id, for the hook template variables.
    * @param string $command
    *   The assembled agent command.
    * @param int[] $numbers
@@ -247,34 +256,83 @@ final readonly class LlmSuite {
    *
    * @return array<int, \AlexSkrypnyk\SkillTest\Live\TrialResult>
    *   The graded trials keyed by trial number.
+   *
+   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   *   When a workspace cannot be assembled or a `before-task` hook aborts.
    */
-  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token, string $command, array $numbers): array {
+  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token, string $model_id, string $command, array $numbers): array {
+    $effective = $skill->effective;
     $workspaces = [];
-    $commands = [];
+    $batch = [];
     $graded = [];
 
     try {
       foreach ($numbers as $number) {
-        $workspace = new TrialWorkspace($this->workspaceBase . '/' . uniqid('ws-', TRUE), $this->root, $skill->effective->skill, $skill->effective->path, $inputs, $this->git);
-        $workspace->assemble();
+        $workspace = $this->environment->setup($effective->skill, $effective->path, $inputs);
         $workspaces[$number] = $workspace;
-        $commands[$number] = [$command, $workspace->agentDir()];
+        $this->lifecycle->beforeTask($this->taskVars($effective, $entry, $model_id, $number, $workspace));
+        $batch[$number] = [$workspace, $command];
       }
 
-      $outcomes = ($this->pool)($commands);
+      $outcomes = $this->environment->exec($batch);
 
       foreach ($numbers as $number) {
         [$exit_code, $stdout, $duration_ms] = $outcomes[$number];
+        $this->lifecycle->afterTask($this->taskVars($effective, $entry, $model_id, $number, $workspaces[$number]));
         $graded[$number] = $this->grade($config, $skill, $entry, $token, $number, $exit_code, $stdout, $duration_ms, $workspaces[$number]);
       }
     }
     finally {
       foreach ($workspaces as $workspace) {
-        $workspace->cleanup();
+        $this->environment->cleanup($workspace);
       }
     }
 
     return $graded;
+  }
+
+  /**
+   * Builds the template variables one trial's lifecycle hooks receive.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
+   *   The skill's effective configuration.
+   * @param array{name: string, prompt: string, task: array<mixed>} $entry
+   *   The task entry, whose `inputs` supply the `vars.*` variables.
+   * @param string $model_id
+   *   The resolved model id.
+   * @param int $number
+   *   The 1-based trial number.
+   * @param \AlexSkrypnyk\SkillTest\Live\TrialWorkspace $workspace
+   *   The trial workspace, supplying the `workspace` variable.
+   *
+   * @return array<string, string>
+   *   The variables keyed by name, including `vars.*` from the task inputs.
+   */
+  protected function taskVars(EffectiveConfig $effective, array $entry, string $model_id, int $number, TrialWorkspace $workspace): array {
+    $vars = [
+      'skill' => $effective->skill,
+      'task' => $entry['name'],
+      'trial' => (string) $number,
+      'model' => $model_id,
+      'workspace' => $workspace->path(),
+    ];
+
+    // 'inputs' also carries structural keys: 'repos' is a list dropped by the
+    // scalar guard below, and 'workdir' is the one scalar structural key to
+    // exclude. Every other scalar input becomes a template variable.
+    foreach (Data::toArray(Data::get($entry['task'], 'inputs')) as $key => $value) {
+      if ($key === 'workdir') {
+        continue;
+      }
+
+      $string = Data::toStringOrNull($value);
+
+      if ($string !== NULL) {
+        $vars['vars.' . $key] = $string;
+      }
+    }
+
+    return $vars;
   }
 
   /**

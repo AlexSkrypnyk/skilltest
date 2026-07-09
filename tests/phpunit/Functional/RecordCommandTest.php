@@ -129,7 +129,7 @@ final class RecordCommandTest extends TestCase {
     $this->assertStringContainsString("Recorded skills/alpha/fixtures/transcript.jsonl (skill 'alpha', task 'invoked', model 'claude-haiku-4-5').", $output);
     $this->assertStringContainsString('Contract holds', $output);
     $this->assertStringContainsString('Review the fixture diff before committing.', $output);
-    $this->assertSame([], glob($root . '/.artifacts/tmp/skilltest-record/ws-*') ?: [], 'The trial workspace should be cleaned up.');
+    $this->assertSame([], glob($root . '/.skilltest/tmp/ws-*') ?: [], 'The trial workspace should be cleaned up.');
   }
 
   public function testDefaultsToFixturesPathAndHintsWhenTranscriptUnset(): void {

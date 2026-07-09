@@ -11,6 +11,8 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
+use AlexSkrypnyk\SkillTest\Live\Lifecycle;
 use AlexSkrypnyk\SkillTest\Live\LlmReport;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
@@ -131,7 +133,9 @@ class LlmCommand extends Command {
     $binary = (string) $preflight->binary();
 
     try {
-      $report = (new LlmSuite($root, $binary, $parallel, $this->timeout()))->run($filtered, $this->globs($input, 'task'));
+      $host = new HostEnvironment($root, $parallel, $this->timeout());
+      $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
+      $report = (new LlmSuite($root, $binary, $host, $lifecycle, $parallel, $this->timeout()))->run($filtered, $this->globs($input, 'task'));
     }
     catch (ConfigException $config_exception) {
       return $this->reportErrors($output, $stderr, $json, [$this->toMessage($config_exception)]);
@@ -170,6 +174,21 @@ class LlmCommand extends Command {
    */
   protected function environmentMap(): array {
     return getenv();
+  }
+
+  /**
+   * Builds the sink a failing teardown hook warns through.
+   *
+   * @param \Symfony\Component\Console\Output\OutputInterface $stderr
+   *   The error output non-aborting hook failures are written to.
+   *
+   * @return \Closure
+   *   The warn closure.
+   */
+  protected function warn(OutputInterface $stderr): \Closure {
+    return static function (string $message) use ($stderr): void {
+      $stderr->writeln('WARNING ' . $message);
+    };
   }
 
   /**
