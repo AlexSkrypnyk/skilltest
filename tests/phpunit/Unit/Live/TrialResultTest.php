@@ -90,4 +90,34 @@ final class TrialResultTest extends TestCase {
     $this->assertSame(['outcome' => 'cap-exhausted', 'followups' => 4], $trial->toArray()['responder']);
   }
 
+  public function testToArrayReportsCachedFlag(): void {
+    $live = new TrialResult(1, TRUE, [], 1, 1, 1, 0.0, 10, 'jsonl', 'artifacts/t.jsonl');
+    $replayed = new TrialResult(1, TRUE, [], 1, 1, 1, 0.0, 10, 'jsonl', 'artifacts/t.jsonl', [], NULL, [], cached: TRUE);
+
+    $this->assertFalse($live->toArray()['cached']);
+    $this->assertTrue($replayed->toArray()['cached']);
+  }
+
+  public function testCacheRoundTripIsLosslessAndFlagsTheHit(): void {
+    $checks = [
+      CheckResult::pass('contract.tools.required', 'Bash', 'Bash', 'ok'),
+      CheckResult::fail('contract.commands.forbidden', 'no push', 'git push', 'forbidden'),
+    ];
+    $criteria = [new JudgeCriterion(1, TRUE, FALSE), new JudgeCriterion(2, FALSE, TRUE)];
+    $mock_logs = ['artifacts/mock-github.jsonl' => '{"tool":"create_issue"}'];
+    $trial = new TrialResult(3, FALSE, $checks, 210, 84, 5, 0.0132, 4300, 'the-transcript', 'artifacts/haiku-3.jsonl', $criteria, 'claude-opus-4-8', $mock_logs, ResponderOutcome::CapExhausted, 4);
+
+    $restored = TrialResult::fromCache($trial->toCache());
+
+    $this->assertSame($trial->toCache(), $restored->toCache());
+    $this->assertTrue($restored->cached);
+    $this->assertFalse($trial->cached);
+    $this->assertSame('contract.commands.forbidden', $restored->checks[1]->id);
+    $this->assertInstanceOf(JudgeCriterion::class, $restored->criteria[0]);
+    $this->assertTrue($restored->criteria[1]->unknown);
+    $this->assertSame($mock_logs, $restored->mockLogs);
+    $this->assertSame(ResponderOutcome::CapExhausted, $restored->responderOutcome);
+    $this->assertSame(4, $restored->followups);
+  }
+
 }

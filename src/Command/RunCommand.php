@@ -25,6 +25,7 @@ use AlexSkrypnyk\SkillTest\Run\RunSuite;
 use AlexSkrypnyk\SkillTest\Run\SkillRunResult;
 use AlexSkrypnyk\SkillTest\Security\SecurityFinding;
 use AlexSkrypnyk\SkillTest\Structure\StructureResult;
+use AlexSkrypnyk\SkillTest\Update\UpdateNotifier;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
 use AlexSkrypnyk\SkillTest\Version;
@@ -50,6 +51,23 @@ use Symfony\Component\Console\Output\OutputInterface;
 class RunCommand extends Command {
 
   /**
+   * The directory, relative to the repo root, the update cache lives under.
+   */
+  public const string CACHE_DIR = '.skilltest/cache';
+
+  /**
+   * Constructs a RunCommand.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Update\UpdateNotifier|null $notifier
+   *   The once-a-day release-check notifier, or NULL to skip the check
+   *   entirely (the default: the notice is a wired-in production convenience,
+   *   never a test or embedded-use side effect).
+   */
+  public function __construct(protected ?UpdateNotifier $notifier = NULL) {
+    parent::__construct();
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -67,7 +85,8 @@ class RunCommand extends Command {
       ->addOption(name: 'session-log', mode: InputOption::VALUE_NONE, description: 'Write an ordered NDJSON event stream for the run (requires --session-dir)')
       ->addOption(name: 'session-dir', mode: InputOption::VALUE_REQUIRED, description: 'Directory the --session-log NDJSON stream is written to')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
-      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts');
+      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts')
+      ->addOption(name: 'no-update-check', mode: InputOption::VALUE_NONE, description: 'Skip the once-a-day check for a newer skilltest release');
   }
 
   /**
@@ -137,7 +156,35 @@ class RunCommand extends Command {
       $this->renderReport($output, $filtered, $selection, $report);
     }
 
+    $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('no-update-check'));
+
     return $report->failed() ? ExitCode::FAIL : ExitCode::PASS;
+  }
+
+  /**
+   * Prints the release-check notice after the run, when one is warranted.
+   *
+   * The notice is a diagnostic and goes to stderr so the stdout results
+   * contract is untouched; the notifier itself is silent in CI, under the
+   * opt-out flag or environment variable, and whenever it is not wired in.
+   *
+   * @param \Symfony\Component\Console\Output\OutputInterface $stderr
+   *   The error output the notice is written to.
+   * @param string $root
+   *   The repository root, under which the once-a-day cache lives.
+   * @param bool $flag_disabled
+   *   Whether `--no-update-check` was passed.
+   */
+  protected function emitUpdateNotice(OutputInterface $stderr, string $root, bool $flag_disabled): void {
+    if (!$this->notifier instanceof UpdateNotifier) {
+      return;
+    }
+
+    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . self::CACHE_DIR, $flag_disabled);
+
+    if ($notice !== NULL) {
+      $stderr->writeln($notice);
+    }
   }
 
   /**

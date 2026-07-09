@@ -14,6 +14,7 @@ use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\ResponderOutcome;
+use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -536,6 +537,68 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertArrayHasKey('artifacts/alpha__invoked__haiku__t1__mock-github.jsonl', $report->artifacts());
   }
 
+  public function testCacheHitReplaysWithoutExecuting(): void {
+    $config = $this->load("llm:\n  trials: 3\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+    $cache = new TrialCache($this->root . '/.skilltest/cache', 'v1');
+
+    $first = 0;
+    $report = $this->suite($this->countingPool(self::PASS_TRANSCRIPT, $first), NULL, 1, NULL, NULL, cache: $cache)->run($config, []);
+    $this->assertSame(3, $first);
+    $this->assertFalse($report->skills[0]->tasks[0]->models[0]->trials[0]->cached);
+
+    $second = 0;
+    $replayed = $this->suite($this->countingPool(self::PASS_TRANSCRIPT, $second), NULL, 1, NULL, NULL, cache: $cache)->run($config, []);
+    $this->assertSame(0, $second, 'A full cache hit executes no trials.');
+    $model = $replayed->skills[0]->tasks[0]->models[0];
+    $this->assertTrue($model->passed());
+    $this->assertTrue($model->trials[0]->cached);
+    $this->assertTrue($model->trials[2]->cached);
+  }
+
+  public function testFixtureChangeInvalidatesOnlyTheAffectedTask(): void {
+    $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: taskA\n      prompt: A\n      fixture: fixtures/a.txt\n    - name: taskB\n      prompt: B\n      fixture: fixtures/b.txt\n");
+    mkdir($this->root . '/skills/alpha/fixtures', 0777, TRUE);
+    file_put_contents($this->root . '/skills/alpha/fixtures/a.txt', 'a');
+    file_put_contents($this->root . '/skills/alpha/fixtures/b.txt', 'b');
+    $cache = new TrialCache($this->root . '/.skilltest/cache', 'v1');
+
+    $first = 0;
+    $this->suite($this->countingPool(self::PASS_TRANSCRIPT, $first), NULL, 1, NULL, NULL, cache: $cache)->run($config, []);
+    $this->assertSame(2, $first, 'Both tasks execute on the first run.');
+
+    file_put_contents($this->root . '/skills/alpha/fixtures/a.txt', 'changed');
+
+    $second = 0;
+    $report = $this->suite($this->countingPool(self::PASS_TRANSCRIPT, $second), NULL, 1, NULL, NULL, cache: $cache)->run($config, []);
+    $this->assertSame(1, $second, 'Only the task whose fixture changed re-executes.');
+    $this->assertFalse($report->skills[0]->tasks[0]->models[0]->trials[0]->cached, 'taskA re-ran.');
+    $this->assertTrue($report->skills[0]->tasks[1]->models[0]->trials[0]->cached, 'taskB stayed cached.');
+  }
+
+  /**
+   * A pool that returns a fixed transcript and counts every command it runs.
+   *
+   * @param string $transcript
+   *   The transcript each trial returns.
+   * @param int $count
+   *   The running count of executed commands, incremented in place.
+   *
+   * @return \Closure
+   *   The pool closure.
+   */
+  protected function countingPool(string $transcript, int &$count): \Closure {
+    return function (array $commands) use ($transcript, &$count): array {
+      $results = [];
+
+      foreach (array_keys($commands) as $key) {
+        $count++;
+        $results[$key] = [0, $transcript, 5];
+      }
+
+      return $results;
+    };
+  }
+
   /**
    * A pool that captures each command it is handed, then returns queued output.
    *
@@ -606,14 +669,16 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   An optional lifecycle; defaults to one with no hooks.
    * @param \Closure|null $responder
    *   An optional injected responder runner.
+   * @param \AlexSkrypnyk\SkillTest\Live\TrialCache|null $cache
+   *   An optional trial cache; NULL runs every trial live.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.
    */
-  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL, ?Lifecycle $lifecycle = NULL, ?\Closure $responder = NULL): LlmSuite {
+  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL, ?Lifecycle $lifecycle = NULL, ?\Closure $responder = NULL, ?TrialCache $cache = NULL): LlmSuite {
     $environment = new HostEnvironment($this->root, $parallel, 300.0, $pool, NULL, $this->root . '/.artifacts/tmp/ws');
 
-    return new LlmSuite($this->root, 'stub', $environment, $lifecycle ?? new Lifecycle($this->root, []), $parallel, 300.0, $check_runner, $judge, $responder);
+    return new LlmSuite($this->root, 'stub', $environment, $lifecycle ?? new Lifecycle($this->root, []), $parallel, 300.0, $check_runner, $judge, $responder, $cache);
   }
 
   /**

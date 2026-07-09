@@ -39,6 +39,13 @@ final class HostEnvironment implements EnvironmentInterface {
   protected string $workspaceBase;
 
   /**
+   * The paths of workspaces preserved because retention was requested.
+   *
+   * @var string[]
+   */
+  protected array $keptWorkspaces = [];
+
+  /**
    * Constructs a HostEnvironment.
    *
    * @param string $root
@@ -54,6 +61,9 @@ final class HostEnvironment implements EnvironmentInterface {
    *   An override for the workspace git runner, for tests.
    * @param string|null $workspace_base
    *   An override for the workspace base directory, for tests.
+   * @param bool $keepWorkspaces
+   *   When TRUE, workspaces are preserved instead of removed and their paths
+   *   recorded, so a run can be inspected after the fact.
    */
   public function __construct(
     protected string $root,
@@ -62,6 +72,7 @@ final class HostEnvironment implements EnvironmentInterface {
     ?\Closure $pool = NULL,
     protected ?\Closure $git = NULL,
     ?string $workspace_base = NULL,
+    protected bool $keepWorkspaces = FALSE,
   ) {
     $this->pool = $pool ?? (new ProcessPool($parallel, $timeout))->run(...);
     $this->workspaceBase = $workspace_base ?? rtrim($root, '/') . '/' . self::WORKSPACE_DIR;
@@ -121,6 +132,14 @@ final class HostEnvironment implements EnvironmentInterface {
    * {@inheritdoc}
    */
   public function cleanup(TrialWorkspace $workspace): void {
+    // Retention keeps the whole workspace tree - its worktrees included - so a
+    // failed trial can be inspected exactly as the agent left it.
+    if ($this->keepWorkspaces) {
+      $this->keptWorkspaces[] = $workspace->path();
+
+      return;
+    }
+
     $workspace->cleanup();
   }
 
@@ -129,10 +148,18 @@ final class HostEnvironment implements EnvironmentInterface {
    */
   public function teardown(): void {
     // Remove the run's scratch area, but only once it is empty, so a concurrent
-    // run's workspaces under the same base are never disturbed.
+    // run's workspaces under the same base - and any preserved by retention -
+    // are never disturbed.
     if (is_dir($this->workspaceBase) && (scandir($this->workspaceBase) ?: []) === ['.', '..']) {
       rmdir($this->workspaceBase);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function keptWorkspaces(): array {
+    return $this->keptWorkspaces;
   }
 
 }

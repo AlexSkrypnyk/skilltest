@@ -10,6 +10,8 @@ use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\JunitSchemaValidationTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
+use AlexSkrypnyk\SkillTest\Update\ReleaseClient;
+use AlexSkrypnyk\SkillTest\Update\UpdateNotifier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -91,6 +93,23 @@ final class RunCommandTest extends TestCase {
     $this->assertStringContainsString('repo coverage PASS (2 skill(s))', $output);
     $this->assertStringContainsString('0 failed, 0 suppressed.', $output);
     $this->assertFileExists($root . '/hooks/guard.ran');
+  }
+
+  public function testUpdateNoticePrintsAfterRun(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runWithNotifier(['--dir' => $root], $this->newerNotifier(), 0);
+
+    $this->assertStringContainsString('A new skilltest release is available: 2.0.0', $output);
+    $this->assertStringContainsString('self-update', $output);
+  }
+
+  public function testUpdateNoticeSuppressedByFlag(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runWithNotifier(['--dir' => $root, '--no-update-check' => TRUE], $this->newerNotifier(), 0);
+
+    $this->assertStringNotContainsString('A new skilltest release is available', $output);
   }
 
   public function testBrokenContractLineFailsAndIsNamed(): void {
@@ -629,6 +648,40 @@ final class RunCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
+  }
+
+  /**
+   * Runs the run command with an injected update notifier.
+   *
+   * @param array<string, string|bool|string[]> $input
+   *   The command input.
+   * @param \AlexSkrypnyk\SkillTest\Update\UpdateNotifier $notifier
+   *   The notifier to wire in.
+   * @param int $expected_exit
+   *   The expected exit code.
+   *
+   * @return string
+   *   The combined command output.
+   */
+  protected function runWithNotifier(array $input, UpdateNotifier $notifier, int $expected_exit): string {
+    $this->applicationInitFromCommand(new RunCommand($notifier));
+    $this->applicationGetTester()->run($input, ['capture_stderr_separately' => TRUE]);
+
+    $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
+
+    return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
+  }
+
+  /**
+   * Builds a notifier whose remote release is newer than the current version.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Update\UpdateNotifier
+   *   The notifier.
+   */
+  protected function newerNotifier(): UpdateNotifier {
+    $fetcher = static fn(string $url): array => [200, json_encode(['tag_name' => '2.0.0'], JSON_THROW_ON_ERROR)];
+
+    return new UpdateNotifier(new ReleaseClient($fetcher), [], '1.0.0', static fn(): int => 1000);
   }
 
   /**

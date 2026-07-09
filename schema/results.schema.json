@@ -109,6 +109,7 @@
             "properties": {
                 "trial": {"type": "integer", "minimum": 1},
                 "pass": {"type": "boolean"},
+                "cached": {"type": "boolean", "description": "True when the trial was replayed from the result cache rather than executed live."},
                 "contract": {"type": "array", "items": {"$ref": "#/definitions/check"}},
                 "judge": {"type": "array", "items": {"$ref": "#/definitions/criterion"}},
                 "unknowns": {"type": "integer", "minimum": 0},
