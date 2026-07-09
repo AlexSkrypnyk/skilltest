@@ -47,12 +47,6 @@ composer lint
 
 # Auto-fix code style issues
 composer lint-fix
-
-# Individual tools
-./vendor/bin/phpcs # Check coding standards
-./vendor/bin/phpcbf # Fix coding standards
-./vendor/bin/phpstan # Static analysis (level 9)
-./vendor/bin/rector --dry-run # Check Rector suggestions
 ```
 
 ### Testing
@@ -64,12 +58,6 @@ composer test
 # Run with coverage reports
 composer test-coverage
 # Coverage reports: .logs/.coverage-html/index.html, .logs/cobertura.xml
-
-# Run specific test file
-./vendor/bin/phpunit tests/phpunit/Functional/VersionCommandTest.php
-
-# Run specific test method
-./vendor/bin/phpunit --filter testMethodName
 ```
 
 
@@ -143,20 +131,6 @@ Key workflows:
 - `.github/workflows/test-php.yml` - PHP testing
 - `.github/workflows/release-php.yml` - PHAR packaging and release
 
-
-## Documentation
-
-If using the documentation site (Docusaurus):
-
-```bash
-cd docs
-npm install
-npm start # Local dev server
-npm run build # Production build
-npm run spellcheck # CSpell validation
-```
-
-Documentation deploys automatically on releases via GitHub Actions.
 
 ## Updating from the template
 
