@@ -17,6 +17,7 @@ use AlexSkrypnyk\SkillTest\Contract\Transcript;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\RecordRunner;
@@ -150,7 +151,8 @@ class RecordCommand extends Command {
     }
 
     try {
-      $result = (new RecordRunner($root, (string) $preflight->binary(), $this->timeout()))->record($skill, $entry, $model_id);
+      $host = new HostEnvironment($root, 1, $this->timeout());
+      $result = (new RecordRunner($root, (string) $preflight->binary(), $host))->record($skill, $entry, $model_id);
     }
     catch (ConfigException $config_exception) {
       return $this->reportError($stderr, $this->toMessage($config_exception));

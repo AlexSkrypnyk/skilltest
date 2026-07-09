@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\RecordResult;
 use AlexSkrypnyk\SkillTest\Live\RecordRunner;
@@ -131,7 +132,9 @@ final class RecordRunnerFunctionalTest extends TestCase {
    *   The runner.
    */
   protected function runner(\Closure $pool): RecordRunner {
-    return new RecordRunner($this->root, 'stub', 300.0, $pool, NULL, $this->root . self::WS_BASE);
+    $environment = new HostEnvironment($this->root, 1, 300.0, $pool, NULL, $this->root . self::WS_BASE);
+
+    return new RecordRunner($this->root, 'stub', $environment);
   }
 
   /**

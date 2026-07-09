@@ -33,6 +33,7 @@ final class RepoConfigTest extends TestCase {
     $this->assertNull($repo->defaultModel);
     $this->assertNull($repo->judgeModel);
     $this->assertSame('host', $repo->environment);
+    $this->assertSame([], $repo->lifecycle);
     $this->assertSame([], $repo->report);
   }
 
@@ -44,7 +45,7 @@ final class RepoConfigTest extends TestCase {
       'guards' => ['broker bypass' => 'pack:gh-mutations'],
       'hooks' => [['script' => 'hooks/x.php', 'cases' => []], 'not-an-array'],
       'models' => ['aliases' => ['haiku' => 'claude-haiku'], 'ladder' => ['haiku'], 'default' => 'haiku', 'judge' => 'haiku'],
-      'llm' => ['environment' => 'docker'],
+      'llm' => ['environment' => 'docker', 'lifecycle' => ['before-run' => [['command' => 'php reset.php']]]],
       'report' => ['redact' => TRUE],
     ]);
 
@@ -63,6 +64,7 @@ final class RepoConfigTest extends TestCase {
     $this->assertSame('haiku', $repo->defaultModel);
     $this->assertSame('haiku', $repo->judgeModel);
     $this->assertSame('docker', $repo->environment);
+    $this->assertSame(['before-run' => [['command' => 'php reset.php']]], $repo->lifecycle);
     $this->assertSame(['redact' => TRUE], $repo->report);
   }
 
