@@ -40,13 +40,16 @@ final class DockerEnvironmentFunctionalTest extends EnvironmentTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    // The parent runs first so the shared temp repo and its `$base` are always
+    // initialized before a skip; otherwise the inherited tearDown would touch
+    // an uninitialized property when docker is present but the image is not.
+    parent::setUp();
+
     $this->image = getenv('SKILLTEST_DOCKER_TEST_IMAGE') ?: self::DEFAULT_TEST_IMAGE;
 
     if (!$this->dockerUsable($this->image)) {
       $this->markTestSkipped(sprintf('docker is unavailable or the image %s is not present locally.', $this->image));
     }
-
-    parent::setUp();
   }
 
   /**
