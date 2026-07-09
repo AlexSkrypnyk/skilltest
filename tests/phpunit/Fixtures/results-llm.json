@@ -1,0 +1,49 @@
+{
+    "version": "1",
+    "tool": {"name": "skilltest", "version": "1.0.0"},
+    "run": {"id": "st-20260708-1432", "started": "2026-07-08T14:32:00+00:00", "duration_ms": 84213, "command": "matrix", "environment": "docker"},
+    "skills": [
+        {
+            "skill": "run-harness-workflow",
+            "path": "skills/run-harness-workflow",
+            "deterministic": {
+                "structure": [{"check": "structure.frontmatter", "pass": true}],
+                "security": [],
+                "transcript": [{"check": "contract.commands.required", "label": "harness drives the workflow", "pass": true, "evidence": "php bin/harness workflow start --terse"}]
+            },
+            "llm": {
+                "tasks": [
+                    {
+                        "task": "invoked",
+                        "models": [
+                            {
+                                "model": "claude-haiku-4-5",
+                                "alias": "haiku",
+                                "trials": [
+                                    {"trial": 1, "pass": false, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": false}], "unknowns": 0, "duration_ms": 18422, "turns": 6, "tokens": {"in": 4211, "out": 883}, "cost_usd": 0.0132, "transcript": "artifacts/haiku-1.jsonl"},
+                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 20114, "turns": 7, "tokens": {"in": 4380, "out": 912}, "cost_usd": 0.0141, "transcript": "artifacts/haiku-2.jsonl"},
+                                    {"trial": 3, "pass": false, "contract": [{"check": "contract.tools.forbidden", "pass": false, "evidence": "git push origin main"}], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": false}], "unknowns": 0, "duration_ms": 19003, "turns": 6, "tokens": {"in": 4102, "out": 861}, "cost_usd": 0.0129, "transcript": "artifacts/haiku-3.jsonl"}
+                                ],
+                                "pass_rate": 0.33
+                            },
+                            {
+                                "model": "claude-sonnet-5",
+                                "alias": "sonnet",
+                                "trials": [
+                                    {"trial": 1, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 24500, "turns": 5, "tokens": {"in": 5001, "out": 1204}, "cost_usd": 0.048, "transcript": "artifacts/sonnet-1.jsonl"},
+                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 23880, "turns": 5, "tokens": {"in": 4990, "out": 1180}, "cost_usd": 0.047, "transcript": "artifacts/sonnet-2.jsonl"},
+                                    {"trial": 3, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 24100, "turns": 6, "tokens": {"in": 5040, "out": 1220}, "cost_usd": 0.049, "transcript": "artifacts/sonnet-3.jsonl"}
+                                ],
+                                "pass_rate": 1.0
+                            }
+                        ]
+                    }
+                ],
+                "verdict": {"minimal_model": "sonnet", "threshold": 0.8, "trials": 3}
+            }
+        }
+    ],
+    "hooks": [],
+    "coverage": {"violations": []},
+    "totals": {"checks": 2, "failures": 0, "trials": 6, "tokens": {"in": 27724, "out": 6260}, "cost_usd": 0.2273}
+}

@@ -8,6 +8,7 @@ use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,12 @@ final class RunCommandTest extends TestCase {
 
   use ApplicationTrait;
   use ArrayPathTrait;
+  use SchemaValidationTrait;
+
+  /**
+   * A credential environment variable name whose value must never be persisted.
+   */
+  protected const string SECRET_ENV = 'ANTHROPIC_API_KEY';
 
   /**
    * A hook script that blocks `git push` input and records every execution.
@@ -58,6 +65,7 @@ final class RunCommandTest extends TestCase {
    */
   protected function tearDown(): void {
     putenv(ConfigLoader::ENV_CONFIG);
+    putenv(self::SECRET_ENV);
 
     if ($this->tempDir !== '' && is_dir($this->tempDir)) {
       $this->remove($this->tempDir);
@@ -334,6 +342,57 @@ final class RunCommandTest extends TestCase {
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
     $this->assertNotSame([], $decoded['errors']);
+  }
+
+  public function testOutputPersistsSchemaValidResultsAdditively(): void {
+    $root = $this->realRepo();
+    $file = $root . '/results-out.json';
+
+    $this->runCommand(['--dir' => $root, '--output' => $file], 0);
+
+    $this->assertFileExists($file);
+    $this->assertMatchesResultsSchema((string) file_get_contents($file));
+    $this->assertStringContainsString('alpha structure PASS', $this->applicationGetTester()->getDisplay());
+    $this->assertStringContainsString('results written to ' . $file, $this->applicationGetTester()->getErrorOutput());
+  }
+
+  public function testOutputDirProducesTimestampedLayout(): void {
+    $root = $this->realRepo();
+
+    $this->runCommand(['--dir' => $root, '--output-dir' => $root . '/runs'], 0);
+
+    $matches = glob($root . '/runs/*/results.json') ?: [];
+    $this->assertCount(1, $matches, 'Expected exactly one timestamped run directory holding results.json.');
+    $this->assertMatchesResultsSchema((string) file_get_contents($matches[0]));
+  }
+
+  public function testSecretIsRedactedFromPersistedResults(): void {
+    $root = $this->realRepo();
+    $secret = 'sk-fake-secret-abcdef';
+    putenv(self::SECRET_ENV . '=' . $secret);
+    file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', '{"type":"tool_use","name":"Bash","input":{"command":"git push origin ' . $secret . '"}}' . "\n");
+    $file = $root . '/results-out.json';
+
+    $this->runCommand(['--dir' => $root, '--output' => $file], 1);
+
+    $content = (string) file_get_contents($file);
+    $this->assertStringNotContainsString($secret, $content);
+    $this->assertStringContainsString('[REDACTED]', $content);
+    $this->assertMatchesResultsSchema($content);
+  }
+
+  public function testRedactDisabledPersistsRawContentAndWarnsLoudly(): void {
+    $root = $this->realRepo(hooks: FALSE);
+    $secret = 'sk-fake-secret-abcdef';
+    putenv(self::SECRET_ENV . '=' . $secret);
+    file_put_contents($root . '/skilltest.yml', "version: \"1\"\nreport:\n  redact: false\n");
+    file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', '{"type":"tool_use","name":"Bash","input":{"command":"git push origin ' . $secret . '"}}' . "\n");
+    $file = $root . '/results-out.json';
+
+    $output = $this->runCommand(['--dir' => $root, '--output' => $file], 1);
+
+    $this->assertStringContainsString($secret, (string) file_get_contents($file));
+    $this->assertStringContainsString('WARNING redaction disabled', $output);
   }
 
   public function testQuietPrintsFailuresOnly(): void {

@@ -36,8 +36,10 @@ Runs the deterministic suite (`structure`, `security`, `hooks`, `transcript`) fo
 | `--group <name>` | Run one group only (`structure`, `security`, `hooks`, `transcript`) |
 | `--check <id>` | Run one check id only (debugging) |
 | `--list` | List selected skills and the checks that would run, without running |
+| `--output <file>` | Persist the results document to this file |
+| `--output-dir <dir>` | Persist the results document to a timestamped subdirectory of this directory |
 
-No network, no model, no tokens, no side effects. This is the command CI runs on every push.
+No network, no model, no tokens. This is the command CI runs on every push; it touches disk only when a persistence flag (`--output`/`--output-dir`) is given.
 
 ### `skilltest llm` (P1)
 
