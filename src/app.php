@@ -10,6 +10,7 @@ declare(strict_types=1);
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
 use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\LlmCommand;
+use AlexSkrypnyk\SkillTest\Command\RecordCommand;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
 use AlexSkrypnyk\SkillTest\Command\StructureCommand;
@@ -31,6 +32,7 @@ $application->add(new StructureCommand());
 $application->add(new TokensCommand());
 $application->add(new RunCommand());
 $application->add(new LlmCommand());
+$application->add(new RecordCommand());
 
 $application->setDefaultCommand('run');
 
