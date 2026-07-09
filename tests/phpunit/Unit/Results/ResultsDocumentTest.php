@@ -53,6 +53,13 @@ final class ResultsDocumentTest extends TestCase {
     ResultsDocument::fromString('{not valid');
   }
 
+  public function testFromStringRejectsJsonArray(): void {
+    $this->expectException(ResultsException::class);
+    $this->expectExceptionMessage('not a JSON object');
+
+    ResultsDocument::fromString('[1, 2, 3]');
+  }
+
   public function testFromFileRejectsMissingFile(): void {
     $this->expectException(ResultsException::class);
     $this->expectExceptionMessage('results file not found');

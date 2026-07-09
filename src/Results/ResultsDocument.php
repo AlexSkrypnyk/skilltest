@@ -52,7 +52,10 @@ final readonly class ResultsDocument {
   public static function fromString(string $json): self {
     $decoded = json_decode($json, TRUE);
 
-    if (!is_array($decoded)) {
+    // A results document is a keyed object; a JSON list decodes to an array too
+    // but would grade as an empty document, so it is rejected here rather than
+    // silently skewing the pass rate.
+    if (!is_array($decoded) || array_is_list($decoded)) {
       throw new ResultsException('the results file is not a JSON object.');
     }
 
