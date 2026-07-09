@@ -73,6 +73,28 @@ final class TokenCounterTest extends TestCase {
     $this->assertSame(1, $counter->count("\xFF\xFE\xFA\xFB"));
   }
 
+  public function testBpeSurfacesNonUtf8EngineFailures(): void {
+    $counter = new TokenCounter($this->vocabFile(self::VOCAB));
+    $jit = (string) ini_get('pcre.jit');
+    $backtrack = (string) ini_get('pcre.backtrack_limit');
+
+    // The JIT does not consult the backtrack limit, so it is disabled to make
+    // the whitespace-run lookahead exhaust the limit deterministically.
+    ini_set('pcre.jit', '0');
+    ini_set('pcre.backtrack_limit', '1');
+
+    try {
+      $this->expectException(\RuntimeException::class);
+      $this->expectExceptionMessage('token pre-split failed');
+
+      $counter->count(str_repeat(' ', 200) . 'x');
+    }
+    finally {
+      ini_set('pcre.jit', $jit);
+      ini_set('pcre.backtrack_limit', $backtrack);
+    }
+  }
+
   public function testMissingVocabIsConfigError(): void {
     $counter = new TokenCounter(vfsStream::setup('root')->url() . '/absent.tiktoken');
 

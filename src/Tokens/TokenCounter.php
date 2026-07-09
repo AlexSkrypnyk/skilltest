@@ -130,9 +130,16 @@ final class TokenCounter {
 
     // The splitter is a Unicode pattern, so bytes that are not valid UTF-8
     // cannot be pre-tokenised; such text gets the estimation heuristic rather
-    // than an O(n^2) merge over the whole blob or a hard failure.
+    // than an O(n^2) merge over the whole blob or a hard failure. Only that
+    // one failure downgrades: any other engine failure (backtrack, recursion,
+    // or JIT stack limits) must surface, or an exact count would silently
+    // change scales.
     if (preg_match_all(self::SPLIT_PATTERN, $text, $matches) === FALSE) {
-      return $this->estimate($text);
+      if (preg_last_error() === PREG_BAD_UTF8_ERROR) {
+        return $this->estimate($text);
+      }
+
+      throw new \RuntimeException('token pre-split failed: ' . preg_last_error_msg() . '.');
     }
 
     $count = 0;
