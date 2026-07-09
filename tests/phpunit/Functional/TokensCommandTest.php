@@ -280,6 +280,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertSame('estimate', $decoded['method']);
     $this->assertSame(10.0, $decoded['threshold']);
     $this->assertFalse($decoded['strict']);
+    $this->assertIsArray($decoded['files']);
     $this->assertSame(['path' => 'skills/foo/SKILL.md', 'tokens' => 120, 'ref_tokens' => 100, 'delta' => 20, 'growth_pct' => 20.0, 'new' => FALSE], $decoded['files'][0]);
     $this->assertIsArray($decoded['violations']);
     $this->assertCount(1, $decoded['violations']);
@@ -391,8 +392,8 @@ final class TokensCommandTest extends TestCase {
   /**
    * Runs the tokens command and asserts the exit code.
    *
-   * @param array<string, mixed> $input
-   *   The command input.
+   * @param array $input
+   *   The command input; the targets argument carries a list value.
    * @param int $expected_exit
    *   The expected exit code.
    *
