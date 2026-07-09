@@ -58,6 +58,10 @@ interface EnvironmentInterface {
   /**
    * Removes one trial's workspace and any state its assembly created.
    *
+   * When workspace retention is on the workspace is preserved instead of
+   * removed and its path recorded for {@see keptWorkspaces}, so a run can be
+   * inspected after the fact.
+   *
    * @param \AlexSkrypnyk\SkillTest\Live\TrialWorkspace $workspace
    *   The workspace to tear down.
    */
@@ -67,5 +71,13 @@ interface EnvironmentInterface {
    * Tears down the run-level state, once after all trials.
    */
   public function teardown(): void;
+
+  /**
+   * The paths of the workspaces preserved because retention was requested.
+   *
+   * @return string[]
+   *   The kept workspace paths, in cleanup order; empty when retention is off.
+   */
+  public function keptWorkspaces(): array;
 
 }

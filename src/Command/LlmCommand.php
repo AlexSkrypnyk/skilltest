@@ -18,6 +18,7 @@ use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
 use AlexSkrypnyk\SkillTest\Live\TaskOutcome;
+use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Run\Redactor;
 use AlexSkrypnyk\SkillTest\Run\ResultsWriter;
@@ -65,7 +66,10 @@ class LlmCommand extends Command {
       ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows --models')
       ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
-      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory');
+      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
+      ->addOption(name: 'keep-workspace', mode: InputOption::VALUE_NONE, description: 'Preserve each trial workspace after the run and print its path for debugging')
+      ->addOption(name: 'cache', mode: InputOption::VALUE_NONE, description: 'Reuse cached trial results keyed on the task, fixtures, model, and skill content')
+      ->addOption(name: 'no-cache', mode: InputOption::VALUE_NONE, description: 'Ignore and do not write cached trial results (overrides --cache)');
   }
 
   /**
@@ -133,9 +137,13 @@ class LlmCommand extends Command {
     $binary = (string) $preflight->binary();
 
     try {
-      $host = new HostEnvironment($root, $parallel, $this->timeout());
+      $host = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: (bool) $input->getOption('keep-workspace'));
       $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
-      $report = (new LlmSuite($root, $binary, $host, $lifecycle, $parallel, $this->timeout()))->run($filtered, $this->globs($input, 'task'));
+      $report = (new LlmSuite($root, $binary, $host, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
+
+      foreach ($host->keptWorkspaces() as $path) {
+        $stderr->writeln(sprintf('workspace preserved: %s', $path));
+      }
     }
     catch (ConfigException $config_exception) {
       return $this->reportErrors($output, $stderr, $json, [$this->toMessage($config_exception)]);
@@ -174,6 +182,28 @@ class LlmCommand extends Command {
    */
   protected function environmentMap(): array {
     return getenv();
+  }
+
+  /**
+   * Builds the trial cache, or NULL when caching is off for this run.
+   *
+   * Caching is opt-in: `--cache` turns it on and `--no-cache` forces it off, so
+   * a `--no-cache` always wins and the default is to run every trial live.
+   *
+   * @param \Symfony\Component\Console\Input\InputInterface $input
+   *   The command input.
+   * @param string $root
+   *   The repository root, under which the cache lives.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Live\TrialCache|null
+   *   The cache, or NULL when caching is disabled.
+   */
+  protected function cache(InputInterface $input, string $root): ?TrialCache {
+    if (!(bool) $input->getOption('cache') || (bool) $input->getOption('no-cache')) {
+      return NULL;
+    }
+
+    return new TrialCache(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, Version::id());
   }
 
   /**
@@ -444,7 +474,8 @@ class LlmCommand extends Command {
   protected function renderModel(OutputInterface $output, string $skill, TaskOutcome $task, ModelOutcome $model, bool $quiet): void {
     $passed = $model->passed();
     $passing = count(array_filter($model->trials, static fn(TrialResult $trial): bool => $trial->pass));
-    $line = sprintf('%s %s %s %s (pass_rate %s, %d/%d trials)', $skill, $task->task, $model->alias, $passed ? 'PASS' : 'FAIL', number_format($model->passRate(), 2), $passing, count($model->trials));
+    $cached = $model->trials !== [] && array_reduce($model->trials, static fn(bool $carry, TrialResult $trial): bool => $carry && $trial->cached, TRUE);
+    $line = sprintf('%s %s %s %s (pass_rate %s, %d/%d trials)%s', $skill, $task->task, $model->alias, $passed ? 'PASS' : 'FAIL', number_format($model->passRate(), 2), $passing, count($model->trials), $cached ? ' (cached)' : '');
 
     if ($passed) {
       if (!$quiet) {

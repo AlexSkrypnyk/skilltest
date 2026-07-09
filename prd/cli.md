@@ -131,6 +131,10 @@ Checks a `eval.yaml`, `skilltest.yml`, or `results.json` against the current sch
 
 Downloads and verifies the latest release (checksum-verified) and replaces the current executable after confirmation; `--yes` for scripts. Never runs implicitly and never blocks another command.
 
+### `skilltest cache` (P2)
+
+Manages the llm result cache that `llm --cache` reads and writes under `.skilltest/cache/`. `cache clear` removes every cached trial result so the next `--cache` run re-executes from scratch; a content change already invalidates a single task's entry, so this is the wholesale escape hatch.
+
 ### `skilltest version` (P1)
 
 Prints version, schema versions supported, and build info. `--json` for machines.

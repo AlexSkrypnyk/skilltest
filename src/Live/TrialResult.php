@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
 
@@ -61,6 +62,9 @@ final readonly class TrialResult {
    *   How the interactive conversation ended, or NULL for a single-shot task.
    * @param int $followups
    *   The number of responder replies sent, zero for a single-shot task.
+   * @param bool $cached
+   *   TRUE when the trial was replayed from the cache rather than executed
+   *   live; a cache hit reuses a prior verdict without spending a token.
    */
   public function __construct(
     public int $number,
@@ -78,6 +82,7 @@ final readonly class TrialResult {
     public array $mockLogs = [],
     public ?ResponderOutcome $responderOutcome = NULL,
     public int $followups = 0,
+    public bool $cached = FALSE,
   ) {}
 
   /**
@@ -100,6 +105,7 @@ final readonly class TrialResult {
     $row = [
       'trial' => $this->number,
       'pass' => $this->pass,
+      'cached' => $this->cached,
       'contract' => array_map(static fn(CheckResult $result): array => $result->toCheckRow(), $this->checks),
       'judge' => array_map(static fn(JudgeCriterion $criterion): array => $criterion->toArray(), $this->criteria),
       'unknowns' => count(array_filter($this->criteria, static fn(JudgeCriterion $criterion): bool => $criterion->unknown)),
@@ -119,6 +125,90 @@ final readonly class TrialResult {
     }
 
     return $row;
+  }
+
+  /**
+   * Serialises the whole trial for the result cache.
+   *
+   * Unlike {@see toArray}, this is a lossless snapshot: every field the graded
+   * trial carries - checks with their ids, criteria, the raw transcript, and
+   * the mock logs - so {@see fromCache} rebuilds an identical verdict without
+   * re-running the agent.
+   *
+   * @return array<string, mixed>
+   *   The cache row.
+   */
+  public function toCache(): array {
+    return [
+      'number' => $this->number,
+      'pass' => $this->pass,
+      'checks' => array_map(static fn(CheckResult $result): array => $result->toArray(), $this->checks),
+      'tokensIn' => $this->tokensIn,
+      'tokensOut' => $this->tokensOut,
+      'turns' => $this->turns,
+      'cost' => $this->cost,
+      'durationMs' => $this->durationMs,
+      'transcript' => $this->transcript,
+      'transcriptPath' => $this->transcriptPath,
+      'criteria' => array_map(static fn(JudgeCriterion $criterion): array => $criterion->toArray(), $this->criteria),
+      'judgeModel' => $this->judgeModel,
+      'mockLogs' => $this->mockLogs,
+      'responderOutcome' => $this->responderOutcome?->value,
+      'followups' => $this->followups,
+    ];
+  }
+
+  /**
+   * Rebuilds a cached trial, flagged as a cache hit.
+   *
+   * @param array<mixed> $data
+   *   A row produced by {@see toCache}.
+   *
+   * @return self
+   *   The rebuilt trial, with `cached` set.
+   */
+  public static function fromCache(array $data): self {
+    $checks = array_map(
+      static fn(array $row): CheckResult => new CheckResult(
+        Data::toStringOrNull(Data::get($row, 'id')) ?? '',
+        Data::toStringOrNull(Data::get($row, 'label')) ?? '',
+        (bool) Data::get($row, 'pass'),
+        Data::toStringOrNull(Data::get($row, 'evidence')) ?? '',
+        Data::toStringOrNull(Data::get($row, 'message')) ?? '',
+      ),
+      Data::toArrayList(Data::get($data, 'checks')),
+    );
+
+    $criteria = array_map(
+      static fn(array $row): JudgeCriterion => new JudgeCriterion(
+        Data::toIntOrNull(Data::get($row, 'criterion')) ?? 0,
+        (bool) Data::get($row, 'pass'),
+        (bool) Data::get($row, 'unknown'),
+      ),
+      Data::toArrayList(Data::get($data, 'criteria')),
+    );
+
+    $outcome_value = Data::toStringOrNull(Data::get($data, 'responderOutcome'));
+    $responder_outcome = $outcome_value === NULL ? NULL : ResponderOutcome::tryFrom($outcome_value);
+
+    return new self(
+      Data::toIntOrNull(Data::get($data, 'number')) ?? 0,
+      (bool) Data::get($data, 'pass'),
+      $checks,
+      Data::toIntOrNull(Data::get($data, 'tokensIn')) ?? 0,
+      Data::toIntOrNull(Data::get($data, 'tokensOut')) ?? 0,
+      Data::toIntOrNull(Data::get($data, 'turns')) ?? 0,
+      Data::toFloatOrNull(Data::get($data, 'cost')) ?? 0.0,
+      Data::toIntOrNull(Data::get($data, 'durationMs')) ?? 0,
+      Data::toStringOrNull(Data::get($data, 'transcript')) ?? '',
+      Data::toStringOrNull(Data::get($data, 'transcriptPath')) ?? '',
+      $criteria,
+      Data::toStringOrNull(Data::get($data, 'judgeModel')),
+      Data::toStringMap(Data::get($data, 'mockLogs')),
+      $responder_outcome,
+      Data::toIntOrNull(Data::get($data, 'followups')) ?? 0,
+      TRUE,
+    );
   }
 
 }

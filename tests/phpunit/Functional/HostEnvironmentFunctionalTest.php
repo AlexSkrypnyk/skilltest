@@ -99,6 +99,29 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
     $this->assertDirectoryDoesNotExist($this->workspaceBase);
   }
 
+  public function testKeptWorkspacesEmptyByDefault(): void {
+    $environment = $this->createEnvironment($this->workspaceBase);
+
+    $this->assertSame([], $environment->keptWorkspaces());
+  }
+
+  public function testRetentionPreservesWorkspacesAndRecordsPaths(): void {
+    $environment = new HostEnvironment($this->root, 1, 300.0, NULL, NULL, $this->workspaceBase, TRUE);
+    $environment->prepare();
+    $one = $environment->setup('alpha', 'skills/alpha', ['fixture' => NULL, 'repos' => [], 'workdir' => NULL]);
+    $two = $environment->setup('alpha', 'skills/alpha', ['fixture' => NULL, 'repos' => [], 'workdir' => NULL]);
+
+    $environment->cleanup($one);
+    $environment->cleanup($two);
+
+    $this->assertDirectoryExists($one->path());
+    $this->assertDirectoryExists($two->path());
+    $this->assertSame([$one->path(), $two->path()], $environment->keptWorkspaces());
+
+    $environment->teardown();
+    $this->assertDirectoryExists($this->workspaceBase);
+  }
+
   public function testSetupCleansUpHalfBuiltWorkspaceOnFailure(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();

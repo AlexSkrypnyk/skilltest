@@ -108,6 +108,49 @@ final class LlmCommandTest extends TestCase {
     $this->assertSame([], glob($root . '/.skilltest/tmp/ws-*') ?: [], 'Trial workspaces should be cleaned up.');
   }
 
+  public function testKeepWorkspacePreservesAndPrintsPaths(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '2', '--keep-workspace' => TRUE], 0);
+
+    $kept = glob($root . '/.skilltest/tmp/ws-*') ?: [];
+    $this->assertCount(2, $kept, 'Both trial workspaces should be preserved.');
+    $this->assertStringContainsString('workspace preserved: ' . $kept[0], $output);
+  }
+
+  public function testCacheReplaysIgnoringNewFailingAgent(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+
+    // A second cached run with a now-failing agent still passes, proving the
+    // agent was not re-executed.
+    $this->applicationTearDown();
+    $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+
+    $this->assertStringContainsString('alpha invoked haiku PASS', $output);
+    $this->assertStringContainsString('(cached)', $output);
+  }
+
+  public function testNoCacheReExecutesLive(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+
+    $this->applicationTearDown();
+    $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--no-cache' => TRUE], 1);
+
+    $this->assertStringContainsString('alpha invoked haiku FAIL', $output);
+    $this->assertStringNotContainsString('(cached)', $output);
+  }
+
   public function testBeforeTaskHookFailureExitsTwo(): void {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));

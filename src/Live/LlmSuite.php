@@ -107,6 +107,8 @@ final readonly class LlmSuite {
    *   An override for the judge process runner, for tests.
    * @param \Closure|null $responder_runner
    *   An override for the responder process runner, for tests.
+   * @param \AlexSkrypnyk\SkillTest\Live\TrialCache|null $cache
+   *   The trial cache, or NULL to run every trial live without caching.
    */
   public function __construct(
     protected string $root,
@@ -118,6 +120,7 @@ final readonly class LlmSuite {
     protected ?\Closure $checkRunner = NULL,
     ?\Closure $judge_runner = NULL,
     ?\Closure $responder_runner = NULL,
+    protected ?TrialCache $cache = NULL,
   ) {
     $this->judge = new Judge($binary, $judge_runner, $timeout);
     $this->responder = new Responder($binary, $responder_runner, $timeout);
@@ -245,6 +248,21 @@ final readonly class LlmSuite {
     $allowed = $this->allowedTools($effective, $mock);
     $model_id = $this->resolveModelId($token, $effective->modelAliases);
 
+    // A cache hit replays the graded trials of an unchanged task-on-model
+    // without executing the agent; the key digests everything that could change
+    // the verdict, so any change to the task, skill, fixtures, model, or tool
+    // misses and re-runs live.
+    $cache = $this->cache;
+    $key = $cache?->key($effective->skill, $entry, $model_id, $this->root . '/' . $effective->path, $inputs);
+
+    if ($cache instanceof TrialCache && $key !== NULL) {
+      $hit = $cache->get($key);
+
+      if ($hit !== NULL) {
+        return $hit;
+      }
+    }
+
     $total = max(1, $effective->trials);
     $limit = max(1, $this->parallel);
     $results = [];
@@ -255,8 +273,13 @@ final readonly class LlmSuite {
     }
 
     ksort($results);
+    $trials = array_values($results);
 
-    return array_values($results);
+    if ($cache instanceof TrialCache && $key !== NULL) {
+      $cache->put($key, $trials);
+    }
+
+    return $trials;
   }
 
   /**
