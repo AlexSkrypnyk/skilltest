@@ -293,18 +293,20 @@ final class JUnitReporter {
   /**
    * Strips characters an XML 1.0 document may not contain.
    *
-   * Evidence lifted from a transcript can carry a control byte that would make
-   * the document malformed; removing those keeps the output well-formed without
-   * altering ordinary text.
+   * Evidence lifted from a transcript can carry a control byte or an invalid
+   * UTF-8 sequence that would make the document malformed; the encoding is
+   * repaired first so a single bad byte cannot make the Unicode-aware filter
+   * drop the whole message, then the XML-illegal characters are removed.
    *
    * @param string $text
    *   The text to sanitise.
    *
    * @return string
-   *   The text with XML-illegal characters removed.
+   *   The well-formed text.
    */
   protected function safe(string $text): string {
-    $clean = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $text);
+    $utf8 = (string) mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+    $clean = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $utf8);
 
     return is_string($clean) ? $clean : '';
   }

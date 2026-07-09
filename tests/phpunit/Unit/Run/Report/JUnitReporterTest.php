@@ -130,6 +130,15 @@ final class JUnitReporterTest extends TestCase {
     $this->assertStringContainsString('evidence: badvalue', $xml);
   }
 
+  public function testPreservesTextAroundInvalidUtf8Bytes(): void {
+    $document = $this->document([$this->skill('alpha', [], [], [$this->check('contract.x', FALSE, '', "before\xFFafter", 'msg')])]);
+
+    $xml = (new JUnitReporter())->render($document);
+    $this->assertMatchesJunitSchema($xml);
+    $this->assertStringContainsString('before', $xml);
+    $this->assertStringContainsString('after', $xml);
+  }
+
   public function testMissingToolNameDefaultsToSkilltest(): void {
     $document = $this->document();
     unset($document['tool']);
