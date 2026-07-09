@@ -381,12 +381,14 @@ final readonly class LlmSuite {
     foreach ($tasks as $task) {
       $name = Data::toStringOrNull(Data::get($task, 'name'));
 
-      if ($globs !== [] && ($name === NULL || !$this->matchesGlobs($name, $globs))) {
-        continue;
-      }
-
+      // A missing name is a malformed task regardless of the selection, so it is
+      // rejected before the glob filter rather than silently skipped by it.
       if ($name === NULL || $name === '') {
         throw new ConfigException("an llm task requires a 'name'.", $config_file, 'llm.tasks');
+      }
+
+      if ($globs !== [] && !$this->matchesGlobs($name, $globs)) {
+        continue;
       }
 
       $prompt = Data::toStringOrNull(Data::get($task, 'prompt'));

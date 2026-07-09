@@ -195,6 +195,15 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->suite($this->pool([]))->run($config, []);
   }
 
+  public function testNamelessTaskThrowsEvenUnderAGlob(): void {
+    $config = $this->load("llm:\n  tasks:\n    - prompt: no name here\n");
+
+    $this->expectException(ConfigException::class);
+    $this->expectExceptionMessage("an llm task requires a 'name'");
+
+    $this->suite($this->pool([]))->run($config, ['other']);
+  }
+
   public function testNoModelsConfiguredThrows(): void {
     $this->root = $this->buildRepo("version: \"1\"\n", "version: \"1\"\nllm:\n  tasks:\n    - name: invoked\n      prompt: A\n");
     $config = (new ConfigLoader($this->root))->load();

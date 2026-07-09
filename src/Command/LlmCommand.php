@@ -76,14 +76,12 @@ class LlmCommand extends Command {
     $json = (bool) $input->getOption('json');
     $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
 
-    $preflight = new AgentPreflight($this->environmentMap());
-    $problem = $preflight->problem();
+    $parallel_option = $this->stringOption($input, 'parallel');
+    $parallel = $parallel_option === NULL ? 1 : $this->intOption($input, 'parallel');
 
-    if ($problem !== NULL) {
-      return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', $problem)]);
+    if ($parallel === NULL) {
+      return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', '--parallel must be an integer.')]);
     }
-
-    $parallel = $this->intOption($input, 'parallel') ?? 1;
 
     if ($parallel < 1) {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', '--parallel must be at least 1.')]);
@@ -111,6 +109,15 @@ class LlmCommand extends Command {
 
     if ($environment === 'docker') {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', 'the docker environment is not yet implemented; run with --env host.')]);
+    }
+
+    // The host agent is only a precondition once the run is known to target the
+    // host environment, so its preflight runs after docker has been ruled out.
+    $preflight = new AgentPreflight($this->environmentMap());
+    $problem = $preflight->problem();
+
+    if ($problem !== NULL) {
+      return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', $problem)]);
     }
 
     $filtered = $selection->filter($loaded);

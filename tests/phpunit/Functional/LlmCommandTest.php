@@ -172,6 +172,15 @@ final class LlmCommandTest extends TestCase {
     $this->assertStringContainsString('--parallel must be at least 1', $output);
   }
 
+  public function testParallelNonIntegerIsConfigError(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $output = $this->runCommand(['--dir' => $root, '--parallel' => 'abc'], 2);
+
+    $this->assertStringContainsString('--parallel must be an integer', $output);
+  }
+
   public function testDockerEnvironmentIsRejected(): void {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));

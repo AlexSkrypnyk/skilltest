@@ -32,9 +32,15 @@ final class ModelOutcomeTest extends TestCase {
   }
 
   public function testEmptyTrialsAreZeroAndFail(): void {
-    $model = new ModelOutcome('m', 'm', [], 0.0);
+    $model = new ModelOutcome('m', 'm', [], 0.8);
 
     $this->assertSame(0.0, $model->passRate());
+    $this->assertFalse($model->passed());
+  }
+
+  public function testZeroThresholdAlwaysPasses(): void {
+    $model = new ModelOutcome('m', 'm', [], 0.0);
+
     $this->assertTrue($model->passed());
   }
 
