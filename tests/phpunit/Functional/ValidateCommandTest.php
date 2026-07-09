@@ -192,6 +192,58 @@ final class ValidateCommandTest extends TestCase {
     $this->assertStringContainsString('skilltest.yml', $output);
   }
 
+  public function testUncoveredSkillWarnsButPasses(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['foo' => ['SKILL.md' => 'x']],
+    ]);
+
+    $output = $this->runValidate(['--dir' => $root->url()], 0);
+
+    $this->assertStringContainsString("WARNING skills/foo - skill 'foo' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $output);
+    $this->assertStringContainsString('OK: validated 0 skill(s); 1 discovered skill(s) have no eval.yaml (see warnings).', $output);
+  }
+
+  public function testExcludedSkillWithoutEvalIsSilent(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skilltest.yml' => "version: \"1\"\npaths:\n  exclude:\n    - skill: foo\n      reason: not yet testable\n",
+      'skills' => ['foo' => ['SKILL.md' => 'x']],
+    ]);
+
+    $output = $this->runValidate(['--dir' => $root->url()], 0);
+
+    $this->assertStringNotContainsString('WARNING', $output);
+    $this->assertStringContainsString('OK: validated 0 skill(s).', $output);
+  }
+
+  public function testMixedCoverageWarnsOnlyUncovered(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => [
+        'covered' => ['SKILL.md' => 'x', 'eval.yaml' => "version: \"1\"\nskill: covered\n"],
+        'lonely' => ['SKILL.md' => 'x'],
+      ],
+    ]);
+
+    $output = $this->runValidate(['--dir' => $root->url()], 0);
+
+    $this->assertStringContainsString("WARNING skills/lonely - skill 'lonely' has no eval.yaml", $output);
+    $this->assertStringNotContainsString("skill 'covered' has no eval.yaml", $output);
+    $this->assertStringContainsString('OK: validated 1 skill(s); 1 discovered skill(s) have no eval.yaml (see warnings).', $output);
+  }
+
+  public function testJsonUncoveredWarnings(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['foo' => ['SKILL.md' => 'x']],
+    ]);
+
+    $output = $this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0);
+    $decoded = $this->decode($output);
+
+    $this->assertTrue($decoded['ok']);
+    $this->assertSame([], $decoded['errors']);
+    $this->assertStringContainsString('"file":"skills/foo"', $output);
+    $this->assertStringContainsString('has no eval.yaml', $output);
+  }
+
   /**
    * Runs the validate command and asserts the exit code.
    *
