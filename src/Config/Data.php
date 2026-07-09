@@ -115,6 +115,40 @@ final class Data {
   }
 
   /**
+   * Coerces a value to a bool, or returns NULL.
+   *
+   * A real boolean passes through; the canonical string spellings a YAML
+   * parser can leave when a value is quoted (`true`/`false`/`1`/`0`, any case)
+   * are recognised. Everything else is NULL, so a caller falls back to its
+   * default rather than treating an unrelated value as false.
+   *
+   * @param mixed $value
+   *   The value to coerce.
+   *
+   * @return bool|null
+   *   The bool form, or NULL when the value is not a recognised boolean.
+   */
+  public static function toBoolOrNull(mixed $value): ?bool {
+    if (is_bool($value)) {
+      return $value;
+    }
+
+    if (is_string($value)) {
+      $normalised = strtolower(trim($value));
+
+      if (in_array($normalised, ['true', '1'], TRUE)) {
+        return TRUE;
+      }
+
+      if (in_array($normalised, ['false', '0'], TRUE)) {
+        return FALSE;
+      }
+    }
+
+    return NULL;
+  }
+
+  /**
    * Normalises a scalar or list into a list of strings.
    *
    * A lone scalar becomes a single-element list; a list keeps its scalar

@@ -86,6 +86,26 @@ final class DataTest extends TestCase {
     yield 'array' => [[1], NULL];
   }
 
+  #[DataProvider('dataProviderToBoolOrNull')]
+  public function testToBoolOrNull(mixed $value, ?bool $expected): void {
+    $this->assertSame($expected, Data::toBoolOrNull($value));
+  }
+
+  public static function dataProviderToBoolOrNull(): \Iterator {
+    yield 'true' => [TRUE, TRUE];
+    yield 'false' => [FALSE, FALSE];
+    yield 'string true' => ['true', TRUE];
+    yield 'string TRUE mixed case' => ['True', TRUE];
+    yield 'string one' => ['1', TRUE];
+    yield 'string false' => ['false', FALSE];
+    yield 'string zero' => ['0', FALSE];
+    yield 'padded string' => ['  false  ', FALSE];
+    yield 'other string' => ['maybe', NULL];
+    yield 'int one is not a bool' => [1, NULL];
+    yield 'null' => [NULL, NULL];
+    yield 'array' => [[TRUE], NULL];
+  }
+
   #[DataProvider('dataProviderToStringList')]
   public function testToStringList(mixed $value, array $expected): void {
     $this->assertSame($expected, Data::toStringList($value));

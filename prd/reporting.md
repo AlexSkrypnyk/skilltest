@@ -4,20 +4,20 @@ One results schema feeds everything: terminal output, JSON, JUnit, PR comments, 
 
 ## `results.json`
 
-Schema-versioned (`version: "1"`, same policy as the config files, migratable with `skilltest migrate`). Shape, abridged:
+Schema-versioned (`version: "1"`, same policy as the config files, migratable with `skilltest migrate`). A JSON Schema is committed at `schema/results.schema.json`; every persisted document validates against it, and the required invariants (`version`, `tool`, `run`, per-check `check`+`pass`, `totals`) are enforced while unknown keys are permitted so a same-major minor bump is never fatal. Shape, abridged:
 
 ```json
 {
   "version": "1",
   "tool": {"name": "skilltest", "version": "1.0.0"},
-  "run": {"id": "st-20260708-1432", "started": "...", "duration_ms": 0, "command": "matrix", "environment": "docker"},
+  "run": {"id": "st-20260708-1432", "started": "2026-07-08T14:32:00+00:00", "duration_ms": 84213, "command": "matrix", "environment": "docker"},
   "skills": [
     {
       "skill": "run-harness-workflow",
+      "path": "skills/run-harness-workflow",
       "deterministic": {
         "structure": [{"check": "structure.frontmatter", "pass": true}],
         "security": [],
-        "hooks": [{"script": "hooks/reject-gh-pr-create.php", "case": 1, "expect": "block", "pass": true}],
         "transcript": [{"check": "contract.commands.required", "label": "harness drives the workflow", "pass": true, "evidence": "php bin/harness workflow start --terse"}]
       },
       "llm": {
@@ -40,15 +40,18 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
       }
     }
   ],
+  "hooks": [{"check": "hooks.reject-gh-pr-create", "label": "blocks gh pr create", "pass": true, "evidence": "", "message": ""}],
+  "coverage": {"violations": []},
   "totals": {"checks": 0, "failures": 0, "trials": 0, "tokens": {"in": 0, "out": 0}, "cost_usd": 0.0}
 }
 ```
 
 Rules:
 
+- **Repo-level results live at the top, per-skill results nest under the skill.** `hooks` run once for the whole repo and the coverage gate is a repo property, so both sit beside `skills` rather than inside any one skill; `deterministic` under each skill carries only that skill's `structure`, `security`, and `transcript` groups.
 - **Evidence travels with failures.** Every failed check carries the matched (or missing) evidence so a report is debuggable without re-running.
-- **Transcripts are artifacts, referenced not embedded.** Each trial's transcript is written beside the results file; the JSON links to it.
-- **Redaction is on by default.** Environment secret values are scrubbed from every persisted artifact (results, transcripts, session logs) before writing; `report.redact: false` exists for local debugging and says so loudly.
+- **Transcripts are artifacts, referenced not embedded.** Each trial's transcript is written beside the results file under `--output-dir` and the JSON links to it by relative path; nothing is inlined.
+- **Redaction is on by default.** Environment secret values (credential-named variables such as `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN`) are scrubbed from every persisted artifact (results, transcripts, session logs) before writing; `report.redact: false` exists for local debugging and warns loudly on stderr.
 - **Statistics (P2):** per-task pass@k and pass^k, per-criterion pass rates across trials, and baseline deltas when `--baseline` ran.
 
 ## Terminal output

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Command;
 
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
+use AlexSkrypnyk\SkillTest\Run\Redactor;
+use AlexSkrypnyk\SkillTest\Run\ResultsWriter;
 use AlexSkrypnyk\SkillTest\Run\RunPlan;
 use AlexSkrypnyk\SkillTest\Run\RunReport;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
@@ -53,7 +56,9 @@ class RunCommand extends Command {
       ->addOption(name: 'group', mode: InputOption::VALUE_REQUIRED, description: 'Run one group only: structure, security, hooks, or transcript')
       ->addOption(name: 'check', mode: InputOption::VALUE_REQUIRED, description: 'Run one check id only')
       ->addOption(name: 'list', mode: InputOption::VALUE_NONE, description: 'List selected skills and the checks that would run, without running')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else');
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
+      ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
+      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts');
   }
 
   /**
@@ -109,18 +114,28 @@ class RunCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf("check '%s' matched nothing in this run; verify the id with --list.", $selection->check))]);
     }
 
-    if ($json) {
-      $tool = ['name' => Version::NAME, 'version' => Version::id()];
-      $run = [
+    $output_file = $this->stringOption($input, 'output');
+    $output_dir = $this->stringOption($input, 'output-dir');
+
+    if ($json || $output_file !== NULL || $output_dir !== NULL) {
+      $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
         'id' => 'st-' . date('Ymd-His'),
         'started' => $started_at,
         'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
         'command' => 'run',
         'environment' => $filtered->repo->environment,
-      ];
-      $output->writeln($this->encode($report->toResults(Version::RESULTS_SCHEMA_VERSION, $tool, $run)), OutputInterface::VERBOSITY_QUIET);
+      ]);
+
+      if ($output_file !== NULL || $output_dir !== NULL) {
+        $this->persist($filtered, $stderr, $document, $output_file, $output_dir);
+      }
+
+      if ($json) {
+        $output->writeln($this->encode($document), OutputInterface::VERBOSITY_QUIET);
+      }
     }
-    else {
+
+    if (!$json) {
       $this->renderReport($output, $filtered, $selection, $report);
     }
 
@@ -173,6 +188,60 @@ class RunCommand extends Command {
     }
     // @codeCoverageIgnoreEnd
     return $cwd;
+  }
+
+  /**
+   * Reads a string option, returning NULL when it is absent or empty.
+   *
+   * @param \Symfony\Component\Console\Input\InputInterface $input
+   *   The command input.
+   * @param string $name
+   *   The option name.
+   *
+   * @return string|null
+   *   The option value, or NULL when it is unset or blank.
+   */
+  protected function stringOption(InputInterface $input, string $name): ?string {
+    $value = $input->getOption($name);
+
+    return is_string($value) && $value !== '' ? $value : NULL;
+  }
+
+  /**
+   * Persists the results document, redacted, to the requested destinations.
+   *
+   * Redaction is on unless `report.redact` is explicitly false, in which case a
+   * loud warning is forced to stderr because secrets may then reach disk. The
+   * redactor reads the process environment so a credential exported for the run
+   * never lands in a persisted artifact.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $filtered
+   *   The selected configuration, carrying the repo `report` block.
+   * @param \Symfony\Component\Console\Output\OutputInterface $stderr
+   *   The error output for the disabled-redaction warning and write notices.
+   * @param array<string, mixed> $document
+   *   The results document to persist.
+   * @param string|null $file
+   *   The `--output` file destination, when set.
+   * @param string|null $dir
+   *   The `--output-dir` parent directory, when set.
+   */
+  protected function persist(LoadedConfig $filtered, OutputInterface $stderr, array $document, ?string $file, ?string $dir): void {
+    $redact = Data::toBoolOrNull(Data::get($filtered->repo->report, 'redact')) ?? TRUE;
+
+    if (!$redact) {
+      $stderr->writeln('WARNING redaction disabled (report.redact: false); environment secrets may be written to persisted artifacts.', OutputInterface::VERBOSITY_QUIET);
+    }
+
+    $writer = new ResultsWriter(Redactor::fromEnvironment((array) getenv(), $redact));
+
+    if ($dir !== NULL) {
+      $stderr->writeln(sprintf('results written to %s', $writer->writeDir($document, $dir, gmdate('Ymd-His'))));
+    }
+
+    if ($file !== NULL) {
+      $stderr->writeln(sprintf('results written to %s', $writer->writeFile($document, $file)));
+    }
   }
 
   /**

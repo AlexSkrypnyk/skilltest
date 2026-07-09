@@ -1,0 +1,159 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://skilltest.dev/schema/results.schema.json",
+    "title": "skilltest results.json",
+    "description": "The versioned results document every skilltest reporter, comparison, and gate consumes. Required invariants are enforced; unknown properties are permitted so a same-major minor schema bump is never fatal.",
+    "type": "object",
+    "required": ["version", "tool", "run", "skills", "totals"],
+    "properties": {
+        "version": {
+            "type": "string",
+            "pattern": "^1(\\.[0-9]+)?$",
+            "description": "The results schema version in MAJOR or MAJOR.MINOR form."
+        },
+        "tool": {
+            "type": "object",
+            "required": ["name", "version"],
+            "properties": {
+                "name": {"type": "string"},
+                "version": {"type": "string"}
+            }
+        },
+        "run": {
+            "type": "object",
+            "required": ["id", "started", "duration_ms", "command", "environment"],
+            "properties": {
+                "id": {"type": "string"},
+                "started": {"type": "string"},
+                "duration_ms": {"type": "integer", "minimum": 0},
+                "command": {"type": "string"},
+                "environment": {"type": "string"}
+            }
+        },
+        "skills": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/skill"}
+        },
+        "hooks": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/check"}
+        },
+        "coverage": {
+            "type": "object",
+            "required": ["violations"],
+            "properties": {
+                "violations": {"type": "array", "items": {"$ref": "#/definitions/check"}}
+            }
+        },
+        "totals": {"$ref": "#/definitions/totals"}
+    },
+    "definitions": {
+        "check": {
+            "type": "object",
+            "description": "One deterministic check, hook case, or coverage violation. Every renderer relies on the id and the pass verdict; failure detail (evidence, message, file, line) travels alongside.",
+            "required": ["check", "pass"],
+            "properties": {
+                "check": {"type": "string"},
+                "pass": {"type": "boolean"},
+                "label": {"type": "string"},
+                "evidence": {"type": "string"},
+                "message": {"type": "string"}
+            }
+        },
+        "skill": {
+            "type": "object",
+            "required": ["skill"],
+            "properties": {
+                "skill": {"type": "string"},
+                "path": {"type": "string"},
+                "deterministic": {
+                    "type": "object",
+                    "properties": {
+                        "structure": {"type": "array", "items": {"$ref": "#/definitions/check"}},
+                        "security": {"type": "array", "items": {"$ref": "#/definitions/check"}},
+                        "transcript": {"type": "array", "items": {"$ref": "#/definitions/check"}}
+                    }
+                },
+                "llm": {"$ref": "#/definitions/llm"}
+            }
+        },
+        "llm": {
+            "type": "object",
+            "required": ["tasks"],
+            "properties": {
+                "tasks": {"type": "array", "items": {"$ref": "#/definitions/task"}},
+                "verdict": {"$ref": "#/definitions/verdict"}
+            }
+        },
+        "task": {
+            "type": "object",
+            "required": ["task", "models"],
+            "properties": {
+                "task": {"type": "string"},
+                "models": {"type": "array", "items": {"$ref": "#/definitions/model"}}
+            }
+        },
+        "model": {
+            "type": "object",
+            "required": ["model", "trials"],
+            "properties": {
+                "model": {"type": "string"},
+                "alias": {"type": "string"},
+                "trials": {"type": "array", "items": {"$ref": "#/definitions/trial"}},
+                "pass_rate": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+        },
+        "trial": {
+            "type": "object",
+            "required": ["trial", "pass"],
+            "properties": {
+                "trial": {"type": "integer", "minimum": 1},
+                "pass": {"type": "boolean"},
+                "contract": {"type": "array", "items": {"$ref": "#/definitions/check"}},
+                "judge": {"type": "array", "items": {"$ref": "#/definitions/criterion"}},
+                "unknowns": {"type": "integer", "minimum": 0},
+                "duration_ms": {"type": "integer", "minimum": 0},
+                "turns": {"type": "integer", "minimum": 0},
+                "tokens": {"$ref": "#/definitions/tokens"},
+                "cost_usd": {"type": "number", "minimum": 0},
+                "transcript": {"type": "string"}
+            }
+        },
+        "criterion": {
+            "type": "object",
+            "required": ["criterion", "pass"],
+            "properties": {
+                "criterion": {"type": "integer", "minimum": 1},
+                "pass": {"type": "boolean"}
+            }
+        },
+        "verdict": {
+            "type": "object",
+            "required": ["minimal_model", "threshold", "trials"],
+            "properties": {
+                "minimal_model": {"type": ["string", "null"]},
+                "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+                "trials": {"type": "integer", "minimum": 0}
+            }
+        },
+        "tokens": {
+            "type": "object",
+            "required": ["in", "out"],
+            "properties": {
+                "in": {"type": "integer", "minimum": 0},
+                "out": {"type": "integer", "minimum": 0}
+            }
+        },
+        "totals": {
+            "type": "object",
+            "required": ["checks", "failures", "trials", "tokens", "cost_usd"],
+            "properties": {
+                "checks": {"type": "integer", "minimum": 0},
+                "failures": {"type": "integer", "minimum": 0},
+                "trials": {"type": "integer", "minimum": 0},
+                "tokens": {"$ref": "#/definitions/tokens"},
+                "cost_usd": {"type": "number", "minimum": 0}
+            }
+        }
+    }
+}
