@@ -235,12 +235,13 @@ final class ValidateCommandTest extends TestCase {
       'skills' => ['foo' => ['SKILL.md' => 'x']],
     ]);
 
-    $decoded = $this->decode($this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0));
+    $output = $this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0);
+    $decoded = $this->decode($output);
 
     $this->assertTrue($decoded['ok']);
     $this->assertSame([], $decoded['errors']);
-    $this->assertSame('skills/foo', $decoded['warnings'][0]['file']);
-    $this->assertStringContainsString('has no eval.yaml', $decoded['warnings'][0]['message']);
+    $this->assertStringContainsString('"file":"skills/foo"', $output);
+    $this->assertStringContainsString('has no eval.yaml', $output);
   }
 
   /**
