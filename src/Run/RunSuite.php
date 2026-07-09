@@ -7,9 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Run;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
-use AlexSkrypnyk\SkillTest\Contract\ContractChecker;
-use AlexSkrypnyk\SkillTest\Contract\CustomCheck;
-use AlexSkrypnyk\SkillTest\Contract\Transcript;
+use AlexSkrypnyk\SkillTest\Contract\TranscriptGrader;
 use AlexSkrypnyk\SkillTest\Coverage\Coverage;
 use AlexSkrypnyk\SkillTest\Hooks\HookRunner;
 use AlexSkrypnyk\SkillTest\Security\SecurityFinding;
@@ -148,18 +146,8 @@ final readonly class RunSuite {
     }
 
     $path = str_starts_with($fixture, '/') ? $fixture : dirname($skill->file) . '/' . $fixture;
-    $transcript = Transcript::fromFile($path);
 
-    $results = (new ContractChecker($loaded_config->repo->aliases))->check($transcript, $skill->effective->contract);
-
-    $custom = new CustomCheck($this->root, $this->checkRunner);
-    foreach ($skill->effective->checks as $entry) {
-      $result = $custom->run($entry, $path, dirname($skill->file));
-
-      if ($result instanceof CheckResult) {
-        $results[] = $result;
-      }
-    }
+    $results = (new TranscriptGrader($this->root, $loaded_config->repo->aliases, $this->checkRunner))->grade($path, $skill->effective->contract, $skill->effective->checks, dirname($skill->file));
 
     return [array_values(array_filter($results, static fn(CheckResult $result): bool => $selection->matches($result->id))), ''];
   }

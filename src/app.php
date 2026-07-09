@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 use AlexSkrypnyk\SkillTest\Command\CacheCommand;
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
+use AlexSkrypnyk\SkillTest\Command\GateCommand;
+use AlexSkrypnyk\SkillTest\Command\GradeCommand;
 use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\LlmCommand;
 use AlexSkrypnyk\SkillTest\Command\MatrixCommand;
@@ -47,6 +49,8 @@ $application->add(new McpServeCommand());
 $application->add(new MigrateCommand());
 $application->add(new SelfUpdateCommand());
 $application->add(new CacheCommand());
+$application->add(new GradeCommand());
+$application->add(new GateCommand());
 
 $application->setDefaultCommand('run');
 
