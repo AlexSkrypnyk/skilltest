@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\SkillTest\Process\ProcessTermination;
+
 /**
  * Runs many commands concurrently under a bounded worker pool and a timeout.
  *
@@ -22,15 +24,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
  */
 final readonly class ProcessPool {
 
-  /**
-   * The exit code reported when a command exceeds its timeout.
-   */
-  public const int TIMEOUT_EXIT = 124;
-
-  /**
-   * Seconds to wait for a terminated command to exit before force-killing it.
-   */
-  public const float TERMINATE_GRACE = 1.0;
+  use ProcessTermination;
 
   /**
    * Constructs a ProcessPool.
@@ -194,28 +188,6 @@ final readonly class ProcessPool {
 
     $results[$key] = [$exit_code, $running[$key]['stdout'], $duration_ms];
     unset($running[$key]);
-  }
-
-  /**
-   * Terminates a process, escalating to SIGKILL if it ignores the first signal.
-   *
-   * @param resource $process
-   *   The process handle returned by proc_open().
-   */
-  protected static function terminate($process): void {
-    proc_terminate($process);
-
-    $deadline = microtime(TRUE) + self::TERMINATE_GRACE;
-
-    while (microtime(TRUE) < $deadline) {
-      if (!proc_get_status($process)['running']) {
-        return;
-      }
-
-      usleep(1000);
-    }
-
-    proc_terminate($process, 9);
   }
 
 }
