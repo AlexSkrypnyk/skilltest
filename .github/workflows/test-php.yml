@@ -159,7 +159,7 @@ jobs:
       - name: Test PHAR
         run: |
           ./.build/skilltest.phar --version
-          ./.build/skilltest.phar || exit 1
+          ./.build/skilltest.phar --dir=tests/fixtures/distribution
 
       - name: Setup tmate session
         if: ${{ !cancelled() && github.event.inputs.enable_terminal }}

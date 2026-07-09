@@ -56,7 +56,7 @@ jobs:
       - name: Test PHAR
         run: |
           ./.build/skilltest.phar --version
-          ./.build/skilltest.phar || exit 1
+          ./.build/skilltest.phar --dir=tests/fixtures/distribution
 
       - name: Verify reported version matches the release tag
         env:
