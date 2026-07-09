@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Command;
 
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
+use AlexSkrypnyk\SkillTest\Coverage\Coverage;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
@@ -55,15 +56,46 @@ class ValidateCommand extends Command {
     }
 
     $result = (new ConfigValidator($root))->validate($loaded);
+    $uncovered = $this->warnUncovered($loaded, $result);
 
     if ($is_json) {
       $this->writeJson($output, $loaded, $result, $show_config);
     }
     else {
-      $this->writeHuman($output, $loaded, $result, $show_config);
+      $this->writeHuman($output, $loaded, $result, $show_config, $uncovered);
     }
 
     return $result->hasErrors() ? ExitCode::CONFIG_ERROR : ExitCode::PASS;
+  }
+
+  /**
+   * Warns about every discovered skill that ships without an `eval.yaml`.
+   *
+   * validate loads the whole repo, so it already knows which skill directories
+   * have no `eval.yaml`. Surfacing them keeps validate honest: an unconfigured
+   * repo no longer reports a clean "validated 0 skill(s)." while the coverage
+   * gate would fail that very same repo. The exclusion set is the coverage
+   * gate's own, so validate never disagrees with the gate about which holes are
+   * unexplained. These are warnings, not errors: the coverage gate owns the
+   * hard failure, and validate's config-error exit stays reserved for malformed
+   * or incoherent config.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   *   The loaded configuration.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append warnings to.
+   *
+   * @return int
+   *   The number of uncovered skills warned about.
+   */
+  protected function warnUncovered(LoadedConfig $loaded_config, ValidationResult $validation_result): int {
+    $violations = (new Coverage($loaded_config))->violations();
+
+    foreach ($violations as $violation) {
+      $validation_result->addWarning($violation->path, '', sprintf("skill '%s' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $violation->skill));
+    }
+
+    return count($violations);
   }
 
   /**
@@ -181,8 +213,10 @@ class ValidateCommand extends Command {
    *   The validation result.
    * @param bool $show_config
    *   Whether to print the merged configuration.
+   * @param int $uncovered
+   *   The number of discovered skills that have no `eval.yaml`.
    */
-  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config): void {
+  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
     if ($show_config) {
       foreach ($loaded_config->skills as $skill) {
         $output->writeln('# ' . $skill->effective->skill);
@@ -200,6 +234,12 @@ class ValidateCommand extends Command {
 
     if ($validation_result->hasErrors()) {
       $output->writeln(sprintf('FAILED: %d error(s).', count($validation_result->errors())));
+
+      return;
+    }
+
+    if ($uncovered > 0) {
+      $output->writeln(sprintf('OK: validated %d skill(s); %d discovered skill(s) have no eval.yaml (see warnings).', count($loaded_config->skills), $uncovered));
 
       return;
     }
