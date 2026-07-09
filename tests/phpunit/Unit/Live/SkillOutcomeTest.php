@@ -70,6 +70,16 @@ final class SkillOutcomeTest extends TestCase {
     $this->assertSame(3, $this->path($row, 'llm', 'verdict', 'trials'));
   }
 
+  public function testRubricAndPolicyDefaultThenCarry(): void {
+    $bare = new SkillOutcome('run', 'skills/run', [], 0.8, 3);
+    $this->assertSame([], $bare->rubric);
+    $this->assertSame('fail', $bare->judgeUnknown);
+
+    $carried = new SkillOutcome('run', 'skills/run', [], 0.8, 3, ['names the change', 'lists the files'], 'ignore');
+    $this->assertSame(['names the change', 'lists the files'], $carried->rubric);
+    $this->assertSame('ignore', $carried->judgeUnknown);
+  }
+
   /**
    * Builds a model outcome whose single trial has the given verdict.
    *

@@ -28,6 +28,12 @@ final readonly class SkillOutcome {
    *   The pass-rate threshold the tasks were gated against.
    * @param int $trials
    *   The number of trials each model ran per task.
+   * @param string[] $rubric
+   *   The judge rubric criteria, in id order, empty when the skill declares no
+   *   rubric; carried so a failure-mode report can name a criterion by text.
+   * @param string $judgeUnknown
+   *   The judge abstention policy (`fail` or `ignore`) a criterion is measured
+   *   against when deciding whether it blocked a trial.
    */
   public function __construct(
     public string $skill,
@@ -35,6 +41,8 @@ final readonly class SkillOutcome {
     public array $tasks,
     public float $threshold,
     public int $trials,
+    public array $rubric = [],
+    public string $judgeUnknown = 'fail',
   ) {}
 
   /**

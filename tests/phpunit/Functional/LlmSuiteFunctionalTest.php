@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
+use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
@@ -113,6 +114,52 @@ final class LlmSuiteFunctionalTest extends TestCase {
 
     $this->assertTrue($report->skills[0]->tasks[0]->models[0]->passed());
     $this->assertFalse($report->failed());
+  }
+
+  public function testFullMatrixRunsEveryLadderModelEvenAfterPass(): void {
+    $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, []);
+
+    $models = $report->skills[0]->tasks[0]->models;
+    $this->assertSame(['haiku', 'sonnet', 'opus'], array_map(static fn(ModelOutcome $model): string => $model->alias, $models));
+    $this->assertSame('haiku', $report->skills[0]->minimalModel());
+  }
+
+  public function testStopAtPassHaltsAtFirstSupportingModel(): void {
+    $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+
+    // Weakest first: haiku fails, sonnet passes, so opus is never run.
+    $report = $this->suite($this->pool([self::FAIL_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, [], TRUE);
+
+    $models = $report->skills[0]->tasks[0]->models;
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $models));
+    $this->assertFalse($models[0]->passed());
+    $this->assertTrue($models[1]->passed());
+    $this->assertSame('sonnet', $report->skills[0]->minimalModel());
+  }
+
+  public function testStopAtPassRunsTheWholeLadderWhenNoneSupport(): void {
+    $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+
+    $report = $this->suite($this->pool([self::FAIL_TRANSCRIPT, self::FAIL_TRANSCRIPT, self::FAIL_TRANSCRIPT]))->run($config, [], TRUE);
+
+    $this->assertCount(3, $report->skills[0]->tasks[0]->models);
+    $this->assertNull($report->skills[0]->minimalModel());
+  }
+
+  public function testStopAtPassRequiresEveryTaskToPassOnModel(): void {
+    $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: one\n      prompt: A\n    - name: two\n      prompt: B\n");
+
+    // Model-major order: haiku/one PASS, haiku/two FAIL (haiku unsupported),
+    // then sonnet/one PASS, sonnet/two PASS (sonnet supports both), so opus is
+    // never run despite haiku passing task one.
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT, self::FAIL_TRANSCRIPT, self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, [], TRUE);
+
+    $tasks = $report->skills[0]->tasks;
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $tasks[0]->models));
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $tasks[1]->models));
+    $this->assertSame('sonnet', $report->skills[0]->minimalModel());
   }
 
   public function testAgentFailureFoldsInFailingCheck(): void {
@@ -751,6 +798,24 @@ final class LlmSuiteFunctionalTest extends TestCase {
    */
   protected function loadJudged(string $tail, array $cli = []): LoadedConfig {
     $repo = "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n    sonnet: claude-sonnet-5\n    opus: claude-opus-4-8\n  default: haiku\n  judge: opus\n";
+    $this->root = $this->buildRepo($repo, "version: \"1\"\n" . self::CONTRACT . $tail);
+
+    return (new ConfigLoader($this->root))->load($cli);
+  }
+
+  /**
+   * Loads a config whose skill runs the full weakest-first model ladder.
+   *
+   * @param string $tail
+   *   The `llm` sections appended after the version and contract.
+   * @param array<string, mixed> $cli
+   *   CLI overrides, e.g. a `models` list.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedConfig
+   *   The loaded configuration.
+   */
+  protected function loadLaddered(string $tail, array $cli = []): LoadedConfig {
+    $repo = "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n    sonnet: claude-sonnet-5\n    opus: claude-opus-4-8\n  ladder: [haiku, sonnet, opus]\n  default: sonnet\n  judge: haiku\n";
     $this->root = $this->buildRepo($repo, "version: \"1\"\n" . self::CONTRACT . $tail);
 
     return (new ConfigLoader($this->root))->load($cli);
