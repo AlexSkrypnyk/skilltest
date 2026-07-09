@@ -69,6 +69,14 @@ final readonly class ProcessRunner {
     $deadline = microtime(TRUE) + $this->timeout;
 
     while (TRUE) {
+      // Enforce the deadline at the top so a process that streams output
+      // without pause cannot loop past it by continually satisfying the read.
+      if (microtime(TRUE) >= $deadline) {
+        proc_terminate($process);
+
+        break;
+      }
+
       $chunk = fread($pipes[1], 8192);
 
       if ($chunk !== FALSE && $chunk !== '') {
@@ -81,12 +89,6 @@ final readonly class ProcessRunner {
 
       if (!$status['running']) {
         $exit_code = $status['exitcode'];
-
-        break;
-      }
-
-      if (microtime(TRUE) >= $deadline) {
-        proc_terminate($process);
 
         break;
       }

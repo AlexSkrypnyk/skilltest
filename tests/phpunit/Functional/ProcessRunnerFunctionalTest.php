@@ -73,6 +73,14 @@ final class ProcessRunnerFunctionalTest extends TestCase {
     $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
   }
 
+  public function testTerminatesScriptThatStreamsOutputPastTimeout(): void {
+    file_put_contents($this->workdir . '/script.php', "<?php\n\$end = microtime(true) + 5;\nwhile (microtime(true) < \$end) { fwrite(STDOUT, str_repeat('x', 4096)); }\nexit(0);\n");
+
+    [$exit_code] = (new ProcessRunner(0.5))->run('php script.php', $this->workdir);
+
+    $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
+  }
+
   /**
    * Recursively removes a directory tree.
    *
