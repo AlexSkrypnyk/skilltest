@@ -16,19 +16,13 @@ namespace AlexSkrypnyk\SkillTest\Live;
  */
 enum ResponderAction: string {
 
-  /**
-   * The responder answers the agent's question and the conversation continues.
-   */
+  // The responder answers the agent's question and the conversation continues.
   case Reply = 'reply';
 
-  /**
-   * The agent has finished; the conversation ends and the final state is graded.
-   */
+  // The agent has finished; the conversation ends and the state is graded.
   case Stop = 'stop';
 
-  /**
-   * The persona cannot infer an answer; the run fails with an abstention.
-   */
+  // The persona cannot infer an answer; the run fails with an abstention.
   case Abstain = 'abstain';
 
 }

@@ -123,8 +123,8 @@ final readonly class Judge {
    * final output it produced. Both are pulled from the same stream-json
    * transcript the contract engine grades, so the judge sees exactly what the
    * run did. When the run was an interactive conversation, the responder turns
-   * that drove it are surfaced too, so the judge scores the dialogue rather than
-   * an agent talking to itself.
+   * that drove it are surfaced too, so the judge scores the dialogue rather
+   * than an agent talking to itself.
    *
    * @param string $transcript
    *   The raw stream-json transcript.

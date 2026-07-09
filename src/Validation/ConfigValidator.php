@@ -182,11 +182,11 @@ final readonly class ConfigValidator {
   /**
    * Requires every task's responder block to be coherent when it declares one.
    *
-   * A task is interactive precisely when it declares a `responder`, so the block
-   * that makes it interactive must be well-formed: a mapping with non-empty
-   * instructions and a follow-up cap of at least one. A plain single-prompt task
-   * declares no responder and is left untouched, which is how the two shapes
-   * stay mutually exclusive.
+   * A task is interactive precisely when it declares a `responder`, so the
+   * block that makes it interactive must be well-formed: a mapping with
+   * non-empty instructions and a follow-up cap of at least one. A plain
+   * single-prompt task declares no responder and is left untouched, which is
+   * how the two shapes stay mutually exclusive.
    *
    * @param array<mixed> $data
    *   The parsed `eval.yaml`.
@@ -197,10 +197,12 @@ final readonly class ConfigValidator {
    */
   protected function validateResponders(array $data, string $file, ValidationResult $validation_result): void {
     foreach (Data::toArray(Data::get($data, 'llm', 'tasks')) as $index => $task) {
-      if (!is_array($task) || !array_key_exists('responder', $task)) {
+      if (!is_array($task)) {
         continue;
       }
-
+      if (!array_key_exists('responder', $task)) {
+        continue;
+      }
       $pointer = sprintf('llm.tasks.%s.responder', (string) $index);
       $responder = $task['responder'];
 

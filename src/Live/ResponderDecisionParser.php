@@ -10,13 +10,14 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Turns the raw text a responder returns into a decision, defensively.
  *
- * The responder is told to return one small JSON object naming its move, but a
- * model wraps JSON in prose or fences like any other, so parsing is hardened the
- * same way the judge verdict is: the first balanced object is extracted, the
- * `action` is matched case-insensitively against the three legitimate moves, and
- * a reply must carry a non-empty message to be usable. Anything else - undecodable
- * text, a missing or unknown action, or a reply with no message - yields NULL,
- * which the conversation treats as a responder failure rather than a silent stop.
+ * The responder is told to return one small JSON object naming its move, but
+ * a model wraps JSON in prose or fences like any other, so parsing is hardened
+ * the same way the judge verdict is: the first balanced object is extracted,
+ * the `action` is matched case-insensitively against the three legitimate
+ * moves, and a reply must carry a non-empty message to be usable. Anything
+ * else - undecodable text, a missing or unknown action, or a reply with no
+ * message - yields NULL, which the conversation treats as a responder failure
+ * rather than a silent stop.
  */
 final readonly class ResponderDecisionParser {
 

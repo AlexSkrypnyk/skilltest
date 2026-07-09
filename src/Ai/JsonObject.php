@@ -7,13 +7,14 @@ namespace AlexSkrypnyk\SkillTest\Ai;
 /**
  * Extracts the first balanced JSON object from noisy model output.
  *
- * A model told to "return JSON only" still wraps it in prose or markdown fences,
- * so every place that parses a model's structured answer - the judge verdict,
- * the responder decision - needs the same defensive step before `json_decode`:
- * unwrap a code fence, then locate the first `{` and its matching `}` with brace
- * counting that ignores braces inside strings, discarding leading prose and
- * trailing commentary. When no object is present the trimmed input is returned
- * unchanged so the caller's decode fails cleanly rather than here.
+ * A model told to "return JSON only" still wraps it in prose or markdown
+ * fences, so every place that parses a model's structured answer - the judge
+ * verdict, the responder decision - needs the same defensive step before
+ * `json_decode`: unwrap a code fence, then locate the first `{` and its
+ * matching `}` with brace counting that ignores braces inside strings,
+ * discarding leading prose and trailing commentary. When no object is present
+ * the trimmed input is returned unchanged so the caller's decode fails cleanly
+ * rather than here.
  */
 final readonly class JsonObject {
 

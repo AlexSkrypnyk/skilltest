@@ -12,14 +12,15 @@ use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
  *
  * A trial is a single headless run of a task on one model. It passes only when
  * every contract and custom check it was graded against passed - a non-zero
- * agent exit, a timeout, a judge failure, or a responder failure is folded in as
- * a failing check so a broken run can never be a passing trial. When the skill
- * declares a rubric the judge's per-criterion verdict and the pinned judge model
- * travel with the trial too, and an interactive task records how its conversation
- * ended and how many follow-ups it took. The transcript is carried verbatim (so
- * it can be persisted as an artifact) alongside the relative path the results
- * document references it by, and the token, turn, duration, and cost metrics make
- * the price of the trial a number in the report.
+ * agent exit, a timeout, a judge failure, or a responder failure is folded in
+ * as a failing check so a broken run can never be a passing trial. When the
+ * skill declares a rubric the judge's per-criterion verdict and the pinned
+ * judge model travel with the trial too, and an interactive task records how
+ * its conversation ended and how many follow-ups it took. The transcript is
+ * carried verbatim (so it can be persisted as an artifact) alongside the
+ * relative path the results document references it by, and the token, turn,
+ * duration, and cost metrics make the price of the trial a number in the
+ * report.
  */
 final readonly class TrialResult {
 
@@ -113,7 +114,7 @@ final readonly class TrialResult {
 
     // An interactive task records how its conversation ended and how many
     // follow-ups it took; a single-shot task carries no responder block.
-    if ($this->responderOutcome !== NULL) {
+    if ($this->responderOutcome instanceof ResponderOutcome) {
       $row['responder'] = ['outcome' => $this->responderOutcome->value, 'followups' => $this->followups];
     }
 

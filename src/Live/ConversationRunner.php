@@ -12,15 +12,16 @@ use AlexSkrypnyk\SkillTest\Contract\Transcript;
  * A skill that asks follow-up questions cannot be tested with a single prompt,
  * so this runs the opening prompt and then, after every agent turn, asks the
  * responder what the user does next: reply (resume the same session with the
- * answer and go again), stop (the agent finished), or abstain (the persona could
- * not answer). Sending {@see ResponderConfig::$maxFollowups} replies and still
- * being asked for more caps the run. Each responder reply is recorded into the
- * accumulated transcript as a user turn, so the grader and the judge see the
- * whole dialogue, and per-turn usage is summed because each headless turn reports
- * only its own tally. The result is a {@see Conversation} the suite grades exactly
- * as it grades a single-shot run, plus the terminal {@see ResponderOutcome}. The
- * agent turns run through an injected runner so the loop is tested without an
- * agent, and a non-zero agent exit ends the conversation for the grader to fail.
+ * answer and go again), stop (the agent finished), or abstain (the persona
+ * could not answer). Sending {@see ResponderConfig::$maxFollowups} replies and
+ * still being asked for more caps the run. Each responder reply is recorded
+ * into the accumulated transcript as a user turn, so the grader and the judge
+ * see the whole dialogue, and per-turn usage is summed because each headless
+ * turn reports only its own tally. The result is a {@see Conversation} the
+ * suite grades exactly as it grades a single-shot run, plus the terminal
+ * {@see ResponderOutcome}. The agent turns run through an injected runner so
+ * the loop is tested without an agent, and a non-zero agent exit ends the
+ * conversation for the grader to fail.
  */
 final readonly class ConversationRunner {
 
@@ -76,7 +77,7 @@ final readonly class ConversationRunner {
     while ($exit_code === 0) {
       $decision = $this->responder->respond($config, $dialogue, $this->root);
 
-      if ($decision === NULL) {
+      if (!$decision instanceof ResponderDecision) {
         $outcome = ResponderOutcome::Error;
         break;
       }

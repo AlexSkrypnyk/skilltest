@@ -508,7 +508,7 @@ final readonly class LlmSuite {
 
     $outcome = $conversation->outcome;
 
-    if ($outcome !== NULL && $outcome->isFailure()) {
+    if ($outcome instanceof ResponderOutcome && $outcome->isFailure()) {
       array_unshift($checks, $this->responderFailure($outcome));
     }
 

@@ -106,7 +106,7 @@ final class ConversationRunnerTest extends TestCase {
     $this->assertSame(0, $conversation->followups);
   }
 
-  public function testAFailedOpeningTurnSkipsTheResponder(): void {
+  public function testFailedOpeningTurnSkipsTheResponder(): void {
     $runner = new ConversationRunner('claude', '/repo', $this->responder(['{"action":"stop"}']));
     $turns = $this->turnRunner([[7, '', 5]]);
 
@@ -118,7 +118,7 @@ final class ConversationRunnerTest extends TestCase {
     $this->assertCount(1, $this->turnCommands);
   }
 
-  public function testAFailedResumeTurnEndsTheConversation(): void {
+  public function testFailedResumeTurnEndsTheConversation(): void {
     $runner = new ConversationRunner('claude', '/repo', $this->responder(['{"action":"reply","message":"answer"}', '{"action":"stop"}']));
     $turns = $this->turnRunner([
       [0, $this->agentTurn('Which board?', 'sess-1', 10, 5), 5],

@@ -41,7 +41,7 @@ final class Transcript {
   /**
    * The last `session_id` seen, or NULL when the transcript carries none.
    */
-  protected ?string $sessionId;
+  protected ?string $sessionId = NULL;
 
   /**
    * The injected responder (user) turn texts, in order.

@@ -49,14 +49,14 @@ final class ResponderTest extends TestCase {
     $responder = new Responder('claude', $this->runner([1, '{"action":"stop"}']));
     $config = new ResponderConfig('persona', 3, 'm');
 
-    $this->assertNull($responder->respond($config, [], '/repo'));
+    $this->assertNotInstanceOf(ResponderDecision::class, $responder->respond($config, [], '/repo'));
   }
 
   public function testUnparseableResponseYieldsNoDecision(): void {
     $responder = new Responder('claude', $this->runner([0, 'I cannot tell what to do.']));
     $config = new ResponderConfig('persona', 3, 'm');
 
-    $this->assertNull($responder->respond($config, [], '/repo'));
+    $this->assertNotInstanceOf(ResponderDecision::class, $responder->respond($config, [], '/repo'));
   }
 
   /**

@@ -24,7 +24,7 @@ final class ResponderConfigTest extends TestCase {
   protected const array ALIASES = ['haiku' => 'claude-haiku-4-5', 'opus' => 'claude-opus-4-8'];
 
   public function testPlainTaskHasNoResponder(): void {
-    $this->assertNull(ResponderConfig::fromTask(['name' => 'plain', 'prompt' => 'Go'], 'eval.yaml', 'opus', self::ALIASES));
+    $this->assertNotInstanceOf(ResponderConfig::class, ResponderConfig::fromTask(['name' => 'plain', 'prompt' => 'Go'], 'eval.yaml', 'opus', self::ALIASES));
   }
 
   public function testResolvesAndPinsItsOwnModel(): void {

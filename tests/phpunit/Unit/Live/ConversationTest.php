@@ -31,7 +31,7 @@ final class ConversationTest extends TestCase {
     $this->assertSame(40, $conversation->tokensOut);
     $this->assertSame(3, $conversation->turns);
     $this->assertEqualsWithDelta(0.02, $conversation->cost, PHP_FLOAT_EPSILON);
-    $this->assertNull($conversation->outcome);
+    $this->assertNotInstanceOf(ResponderOutcome::class, $conversation->outcome);
     $this->assertSame(0, $conversation->followups);
     $this->assertFalse($conversation->responderFailed());
   }

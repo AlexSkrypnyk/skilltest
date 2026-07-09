@@ -25,7 +25,7 @@ final class JsonObjectTest extends TestCase {
 
   public static function dataProviderExtract(): \Iterator {
     yield 'plain object' => ['{"a":1}', '{"a":1}'];
-    yield 'surrounding whitespace is trimmed' => ["  {\"a\":1}  ", '{"a":1}'];
+    yield 'surrounding whitespace is trimmed' => ['  {"a":1}  ', '{"a":1}'];
     yield 'json code fence is unwrapped' => ["```json\n{\"a\":1}\n```", '{"a":1}'];
     yield 'bare code fence is unwrapped' => ["```\n{\"a\":1}\n```", '{"a":1}'];
     yield 'leading prose is discarded' => ['note: {"a":1}', '{"a":1}'];

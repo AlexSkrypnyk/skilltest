@@ -14,8 +14,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class ResponderDecisionParserTest.
  *
- * Unit test for the hardened responder-decision parser, proven against the noise
- * a real model wraps its JSON in.
+ * Unit test for the hardened responder-decision parser, proven against the
+ * noise a real model wraps its JSON in.
  */
 #[CoversClass(ResponderDecisionParser::class)]
 final class ResponderDecisionParserTest extends TestCase {
@@ -42,7 +42,7 @@ final class ResponderDecisionParserTest extends TestCase {
 
   #[DataProvider('dataProviderRejects')]
   public function testRejects(string $raw): void {
-    $this->assertNull((new ResponderDecisionParser())->parse($raw));
+    $this->assertNotInstanceOf(ResponderDecision::class, (new ResponderDecisionParser())->parse($raw));
   }
 
   public static function dataProviderRejects(): \Iterator {

@@ -287,7 +287,7 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertFalse($result->hasErrors());
   }
 
-  public function testResponderMustBeAMapping(): void {
+  public function testResponderMustBeMapping(): void {
     $root = $this->root();
 
     $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p', 'responder' => 'nope']]]]]);
@@ -305,7 +305,7 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertContains($root . '/skills/foo/eval.yaml: llm.tasks.0.responder.instructions - responder requires non-empty instructions.', $rendered);
   }
 
-  #[DataProvider('dataProviderBadMaxFollowups')]
+  #[DataProvider('dataProviderResponderRequiresPositiveMaxFollowups')]
   public function testResponderRequiresPositiveMaxFollowups(array $responder): void {
     $root = $this->root();
 
@@ -315,7 +315,7 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertContains($root . '/skills/foo/eval.yaml: llm.tasks.0.responder.max-followups - responder max-followups must be an integer of at least 1.', $rendered);
   }
 
-  public static function dataProviderBadMaxFollowups(): \Iterator {
+  public static function dataProviderResponderRequiresPositiveMaxFollowups(): \Iterator {
     yield 'missing' => [['instructions' => 'persona']];
     yield 'zero' => [['instructions' => 'persona', 'max-followups' => 0]];
     yield 'non-integer' => [['instructions' => 'persona', 'max-followups' => 'lots']];

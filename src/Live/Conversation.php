@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 /**
- * One trial's run reduced to the facts grading needs, single-shot or interactive.
+ * A trial's run reduced to what grading needs, single-shot or interactive.
  *
  * A single-prompt trial and a multi-turn conversation reach the grader through
  * the same shape: the accumulated transcript (agent turns, plus the responder
  * turns of an interactive run), the last turn's exit code, the summed duration
  * and usage metrics, and - for an interactive run only - how the conversation
  * ended and how many follow-ups it took. A single-shot trial carries a NULL
- * outcome so the grader knows to record no responder block, while an interactive
- * run always names its {@see ResponderOutcome}. Metrics are summed across agent
- * turns because each headless turn reports only its own tally.
+ * outcome so the grader knows to record no responder block, while an
+ * interactive run always names its {@see ResponderOutcome}. Metrics are summed
+ * across agent turns because each headless turn reports only its own tally.
  */
 final readonly class Conversation {
 
@@ -22,7 +22,8 @@ final readonly class Conversation {
    * Constructs a Conversation.
    *
    * @param int $exitCode
-   *   The last agent turn's exit code; non-zero folds in the agent-failure check.
+   *   The last agent turn's exit code; non-zero folds in the agent-failure
+   *   check.
    * @param string $transcript
    *   The accumulated stream-json transcript, with responder turns injected.
    * @param int $durationMs
@@ -36,7 +37,8 @@ final readonly class Conversation {
    * @param float $cost
    *   The summed run cost in USD.
    * @param \AlexSkrypnyk\SkillTest\Live\ResponderOutcome|null $outcome
-   *   How the conversation ended, or NULL for a non-interactive single-shot trial.
+   *   How the conversation ended, or NULL for a non-interactive single-shot
+   *   trial.
    * @param int $followups
    *   The number of responder replies sent, zero for a single-shot trial.
    */

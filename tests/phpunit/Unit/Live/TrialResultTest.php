@@ -91,4 +91,3 @@ final class TrialResultTest extends TestCase {
   }
 
 }
-

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 /**
- * One responder move: the action it chose and, for a reply, the message it sent.
+ * One responder move: the action chosen and, for a reply, the message sent.
  *
  * The message is meaningful only for a {@see ResponderAction::Reply} - the text
  * handed back to the agent as the user's next turn. A stop or an abstention

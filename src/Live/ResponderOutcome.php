@@ -17,24 +17,16 @@ namespace AlexSkrypnyk\SkillTest\Live;
  */
 enum ResponderOutcome: string {
 
-  /**
-   * The responder stopped because the agent had finished.
-   */
+  // The responder stopped because the agent had finished.
   case Completed = 'completed';
 
-  /**
-   * The persona could not infer an answer; the brief was too vague.
-   */
+  // The persona could not infer an answer; the brief was too vague.
   case Abstained = 'abstained';
 
-  /**
-   * The follow-up cap was reached while the agent was still asking.
-   */
+  // The follow-up cap was reached while the agent was still asking.
   case CapExhausted = 'cap-exhausted';
 
-  /**
-   * The responder process failed or returned an unusable decision.
-   */
+  // The responder process failed or returned an unusable decision.
   case Error = 'error';
 
   /**

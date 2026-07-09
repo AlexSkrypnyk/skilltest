@@ -303,7 +303,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
     $this->assertFalse($trial->pass);
     $this->assertSame(ResponderOutcome::Abstained, $trial->responderOutcome);
-    $this->assertSame('abstained', $trial->toArray()['responder']['outcome']);
+    $this->assertSame(['outcome' => 'abstained', 'followups' => 0], $trial->toArray()['responder']);
     $this->assertContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
   }
 
@@ -317,7 +317,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
     $this->assertSame(ResponderOutcome::CapExhausted, $trial->responderOutcome);
     $this->assertSame(1, $trial->followups);
-    $this->assertSame('cap-exhausted', $trial->toArray()['responder']['outcome']);
+    $this->assertSame(['outcome' => 'cap-exhausted', 'followups' => 1], $trial->toArray()['responder']);
     $this->assertNotContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
     // Cap-exhaustion grades the final state, which here satisfies the contract.
     $this->assertTrue($trial->pass);
@@ -332,7 +332,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
     $this->assertFalse($trial->pass);
     $this->assertSame(ResponderOutcome::Error, $trial->responderOutcome);
-    $this->assertSame('error', $trial->toArray()['responder']['outcome']);
+    $this->assertSame(['outcome' => 'error', 'followups' => 0], $trial->toArray()['responder']);
     $this->assertContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
   }
 
@@ -604,6 +604,8 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   An optional injected judge runner.
    * @param \AlexSkrypnyk\SkillTest\Live\Lifecycle|null $lifecycle
    *   An optional lifecycle; defaults to one with no hooks.
+   * @param \Closure|null $responder
+   *   An optional injected responder runner.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.
