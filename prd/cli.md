@@ -36,10 +36,15 @@ Runs the deterministic suite (`structure`, `security`, `hooks`, `transcript`) fo
 | `--group <name>` | Run one group only (`structure`, `security`, `hooks`, `transcript`) |
 | `--check <id>` | Run one check id only (debugging) |
 | `--list` | List selected skills and the checks that would run, without running |
+| `--json` | Emit the machine-readable results document on stdout and nothing else |
+| `--format github-comment` | Render stdout as a GitHub PR comment block instead of the human report |
+| `--reporter junit:<path>` | Also write JUnit XML to a file (repeatable) |
+| `--session-log` | Write an ordered NDJSON event stream for the run (requires `--session-dir`) |
+| `--session-dir <dir>` | Directory the `--session-log` stream is written to |
 | `--output <file>` | Persist the results document to this file |
 | `--output-dir <dir>` | Persist the results document to a timestamped subdirectory of this directory |
 
-No network, no model, no tokens. This is the command CI runs on every push; it touches disk only when a persistence flag (`--output`/`--output-dir`) is given.
+No network, no model, no tokens. This is the command CI runs on every push; it touches disk only when a persistence flag (`--output`/`--output-dir`), a file reporter (`--reporter`), or the session log (`--session-log`) is given.
 
 ### `skilltest llm` (P1)
 

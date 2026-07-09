@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>
+      The JUnit XML result format skilltest emits, in the shape CI test-summary
+      renderers consume: a testsuites root holding one testsuite per skill (and
+      for repo hooks and coverage), each testsuite holding one testcase per
+      check or trial, with a failure element on any case that did not pass.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:element name="testsuites" type="testsuitesType"/>
+  <xs:element name="testsuite" type="testsuiteType"/>
+
+  <xs:complexType name="testsuitesType">
+    <xs:sequence>
+      <xs:element name="testsuite" type="testsuiteType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string"/>
+    <xs:attribute name="tests" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="failures" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="errors" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="disabled" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="time" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="testsuiteType">
+    <xs:sequence>
+      <xs:element name="properties" type="propertiesType" minOccurs="0"/>
+      <xs:element name="testcase" type="testcaseType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="system-out" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="system-err" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="tests" type="xs:nonNegativeInteger" use="required"/>
+    <xs:attribute name="failures" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="errors" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="skipped" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="time" type="xs:string"/>
+    <xs:attribute name="timestamp" type="xs:string"/>
+    <xs:attribute name="hostname" type="xs:string"/>
+    <xs:attribute name="id" type="xs:string"/>
+    <xs:attribute name="package" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="propertiesType">
+    <xs:sequence>
+      <xs:element name="property" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="propertyType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="testcaseType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="skipped" type="skippedType"/>
+      <xs:element name="failure" type="detailType"/>
+      <xs:element name="error" type="detailType"/>
+      <xs:element name="system-out" type="xs:string"/>
+      <xs:element name="system-err" type="xs:string"/>
+    </xs:choice>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="classname" type="xs:string"/>
+    <xs:attribute name="time" type="xs:string"/>
+    <xs:attribute name="assertions" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="status" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="skippedType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="message" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="detailType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="message" type="xs:string"/>
+        <xs:attribute name="type" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+</xs:schema>
