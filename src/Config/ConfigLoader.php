@@ -48,7 +48,8 @@ final readonly class ConfigLoader {
    * Loads the whole configuration.
    *
    * @param array<string, mixed> $cli
-   *   CLI overrides keyed by name (models, threshold, trials, env).
+   *   CLI overrides keyed by name (models, threshold, trials, env,
+   *   judge-model).
    *
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedConfig
    *   The loaded configuration.

@@ -58,7 +58,7 @@ final readonly class ConfigValidator {
       'trials' => TRUE,
       'threshold' => TRUE,
       'models' => TRUE,
-      'judge' => ['rubric' => TRUE],
+      'judge' => ['rubric' => TRUE, 'unknown' => TRUE],
       'checks' => TRUE,
     ],
     'inputs' => TRUE,
@@ -175,6 +175,7 @@ final readonly class ConfigValidator {
     $this->validateSecurityPacks($data, $file, $validation_result);
     $this->validateFixture($loaded_skill, $validation_result);
     $this->validateRubric($data, $loaded_skill, $validation_result);
+    $this->validateJudgeUnknown($data, $loaded_skill, $validation_result);
   }
 
   /**
@@ -329,6 +330,28 @@ final readonly class ConfigValidator {
 
     if ($loaded_skill->effective->rubric === []) {
       $validation_result->addError($loaded_skill->file, 'llm.judge.rubric', 'rubric must not be empty when a judge is declared.');
+    }
+  }
+
+  /**
+   * Requires the judge abstention policy to be a known value.
+   *
+   * @param array<mixed> $data
+   *   The parsed `eval.yaml`.
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
+   *   The loaded skill.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateJudgeUnknown(array $data, LoadedSkill $loaded_skill, ValidationResult $validation_result): void {
+    $value = Data::get($data, 'llm', 'judge', 'unknown');
+
+    if ($value === NULL) {
+      return;
+    }
+
+    if (!in_array($value, ['fail', 'ignore'], TRUE)) {
+      $validation_result->addError($loaded_skill->file, 'llm.judge.unknown', "must be 'fail' or 'ignore'.");
     }
   }
 

@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
+use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
 
 /**
  * One live trial's outcome: its verdict, graded checks, and run metrics.
  *
  * A trial is a single headless run of a task on one model. It passes only when
  * every contract and custom check it was graded against passed - a non-zero
- * agent exit or a timeout is folded in as a failing check so a broken run can
- * never be a passing trial. The transcript is carried verbatim (so it can be
- * persisted as an artifact) alongside the relative path the results document
- * references it by, and the token, turn, duration, and cost metrics make the
- * price of the trial a number in the report.
+ * agent exit, a timeout, or a judge failure is folded in as a failing check so
+ * a broken run can never be a passing trial. When the skill declares a rubric
+ * the judge's per-criterion verdict and the pinned judge model travel with the
+ * trial too. The transcript is carried verbatim (so it can be persisted as an
+ * artifact) alongside the relative path the results document references it by,
+ * and the token, turn, duration, and cost metrics make the price of the trial a
+ * number in the report.
  */
 final readonly class TrialResult {
 
@@ -43,6 +46,11 @@ final readonly class TrialResult {
    * @param string $transcriptPath
    *   The path the results document references the transcript by, relative to
    *   the run directory.
+   * @param \AlexSkrypnyk\SkillTest\Judge\JudgeCriterion[] $criteria
+   *   The judge's per-criterion verdict, empty when the skill declares no
+   *   rubric.
+   * @param string|null $judgeModel
+   *   The pinned judge model id, or NULL when the skill declares no rubric.
    */
   public function __construct(
     public int $number,
@@ -55,6 +63,8 @@ final readonly class TrialResult {
     public int $durationMs,
     public string $transcript,
     public string $transcriptPath,
+    public array $criteria = [],
+    public ?string $judgeModel = NULL,
   ) {}
 
   /**
@@ -78,8 +88,9 @@ final readonly class TrialResult {
       'trial' => $this->number,
       'pass' => $this->pass,
       'contract' => array_map(static fn(CheckResult $result): array => $result->toCheckRow(), $this->checks),
-      'judge' => [],
-      'unknowns' => 0,
+      'judge' => array_map(static fn(JudgeCriterion $criterion): array => $criterion->toArray(), $this->criteria),
+      'unknowns' => count(array_filter($this->criteria, static fn(JudgeCriterion $criterion): bool => $criterion->unknown)),
+      'judge_model' => $this->judgeModel,
       'duration_ms' => $this->durationMs,
       'turns' => $this->turns,
       'tokens' => ['in' => $this->tokensIn, 'out' => $this->tokensOut],

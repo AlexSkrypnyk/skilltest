@@ -60,7 +60,7 @@ class LlmCommand extends Command {
       ->addOption(name: 'threshold', mode: InputOption::VALUE_REQUIRED, description: 'Override the pass-rate threshold (0..1)')
       ->addOption(name: 'env', mode: InputOption::VALUE_REQUIRED, description: 'Execution environment: host (docker not yet supported)')
       ->addOption(name: 'parallel', mode: InputOption::VALUE_REQUIRED, description: 'Number of concurrent trials (default 1)')
-      ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (reserved; the judge is not yet wired)')
+      ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows --models')
       ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory');
@@ -191,12 +191,13 @@ class LlmCommand extends Command {
    *   The command input.
    *
    * @return array<string, string>
-   *   The overrides keyed by name (models, threshold, trials, env).
+   *   The overrides keyed by name (models, threshold, trials, env,
+   *   judge-model).
    */
   protected function overrides(InputInterface $input): array {
     $overrides = [];
 
-    foreach (['models', 'threshold', 'trials', 'env'] as $name) {
+    foreach (['models', 'threshold', 'trials', 'env', 'judge-model'] as $name) {
       $value = $this->stringOption($input, $name);
 
       if ($value !== NULL) {

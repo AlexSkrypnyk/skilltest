@@ -112,6 +112,7 @@
                 "contract": {"type": "array", "items": {"$ref": "#/definitions/check"}},
                 "judge": {"type": "array", "items": {"$ref": "#/definitions/criterion"}},
                 "unknowns": {"type": "integer", "minimum": 0},
+                "judge_model": {"type": ["string", "null"], "description": "The pinned judge model that scored the trial, or null when the skill declares no rubric. Fixed regardless of the execution model."},
                 "duration_ms": {"type": "integer", "minimum": 0},
                 "turns": {"type": "integer", "minimum": 0},
                 "tokens": {"$ref": "#/definitions/tokens"},
@@ -121,10 +122,12 @@
         },
         "criterion": {
             "type": "object",
+            "description": "One binary rubric criterion's outcome as the judge reported it. 'pass' and 'unknown' are the judge's literal verdict; whether the criterion blocks the trial is a separate, policy-dependent question.",
             "required": ["criterion", "pass"],
             "properties": {
                 "criterion": {"type": "integer", "minimum": 1},
-                "pass": {"type": "boolean"}
+                "pass": {"type": "boolean"},
+                "unknown": {"type": "boolean", "description": "True when the judge abstained because the evidence did not show the answer."}
             }
         },
         "verdict": {

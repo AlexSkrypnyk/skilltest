@@ -130,6 +130,127 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertContains('check.board', $ids);
   }
 
+  /**
+   * A rubric-declaring llm tail with two binary criteria and one task.
+   */
+  protected const string RUBRIC_TAIL = "llm:\n  trials: 1\n  judge:\n    rubric:\n      - names the change\n      - lists the files\n  tasks:\n    - name: invoked\n      prompt: Build it\n";
+
+  public function testJudgePassingVerdictKeepsTrialGreen(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+    $verdict = '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":true}],"reasoning":"ok"}';
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([$verdict]))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertTrue($trial->pass);
+    $this->assertSame('claude-opus-4-8', $trial->judgeModel);
+    $this->assertCount(2, $trial->criteria);
+    $this->assertNotContains('judge.verdict', $this->checkIds($trial));
+    $this->assertNotContains('judge.criteria', $this->checkIds($trial));
+  }
+
+  public function testJudgeFailingCriteriaFailTheTrial(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+    $verdict = '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":false}],"reasoning":"second missing"}';
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([$verdict]))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertContains('judge.criteria', $this->checkIds($trial));
+    $this->assertCount(2, $trial->criteria);
+  }
+
+  public function testMalformedVerdictFailsTrialAsAJudgeFailure(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts(['I cannot tell from the transcript.']))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertContains('judge.verdict', $this->checkIds($trial));
+    $this->assertSame([], $trial->criteria);
+    $this->assertSame('claude-opus-4-8', $trial->judgeModel);
+  }
+
+  public function testJudgeProcessFailureFailsTrialAsAJudgeFailure(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([[1, '']]))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertContains('judge.verdict', $this->checkIds($trial));
+  }
+
+  public function testAbstentionBlocksUnderTheDefaultPolicy(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+    $verdict = '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":false,"unknown":true}],"reasoning":"cannot tell"}';
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([$verdict]))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertContains('judge.criteria', $this->checkIds($trial));
+    $this->assertSame(1, $trial->toArray()['unknowns']);
+  }
+
+  public function testAbstentionPassesUnderIgnorePolicybutIsStillReported(): void {
+    $tail = "llm:\n  trials: 1\n  judge:\n    unknown: ignore\n    rubric:\n      - names the change\n      - lists the files\n  tasks:\n    - name: invoked\n      prompt: Build it\n";
+    $config = $this->loadJudged($tail);
+    $verdict = '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":false,"unknown":true}],"reasoning":"cannot tell"}';
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([$verdict]))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertTrue($trial->pass);
+    $this->assertSame(1, $trial->toArray()['unknowns']);
+    $this->assertNotContains('judge.criteria', $this->checkIds($trial));
+  }
+
+  public function testJudgeModelStaysFixedWhenModelsVary(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL, ['models' => 'haiku,sonnet']);
+    $verdict = '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":true}],"reasoning":"ok"}';
+
+    $report = $this->suite($this->pool([self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT]), NULL, 1, $this->verdicts([$verdict, $verdict]))->run($config, []);
+
+    $models = $report->skills[0]->tasks[0]->models;
+    $this->assertSame('claude-haiku-4-5', $models[0]->model);
+    $this->assertSame('claude-sonnet-5', $models[1]->model);
+    $this->assertSame('claude-opus-4-8', $models[0]->trials[0]->judgeModel);
+    $this->assertSame('claude-opus-4-8', $models[1]->trials[0]->judgeModel);
+  }
+
+  public function testJudgeIsNotSpentOnAFailedAgentRun(): void {
+    $config = $this->loadJudged(self::RUBRIC_TAIL);
+    $called = FALSE;
+    $judge = function () use (&$called): array {
+      $called = TRUE;
+
+      return [0, '{"criteria":[{"id":1,"pass":true},{"id":2,"pass":true}]}'];
+    };
+
+    $report = $this->suite($this->pool([[1, self::PASS_TRANSCRIPT]]), NULL, 1, $judge)->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($called);
+    $this->assertFalse($trial->pass);
+    $this->assertSame([], $trial->criteria);
+    $this->assertSame('claude-opus-4-8', $trial->judgeModel);
+    $this->assertContains(LlmSuite::CHECK_AGENT, $this->checkIds($trial));
+    $this->assertNotContains('judge.verdict', $this->checkIds($trial));
+  }
+
+  public function testRubricWithoutAJudgeModelThrows(): void {
+    $this->root = $this->buildRepo("version: \"1\"\n", "version: \"1\"\n" . self::CONTRACT . self::RUBRIC_TAIL);
+    $config = (new ConfigLoader($this->root))->load(['models' => 'claude-haiku-4-5']);
+
+    $this->expectException(ConfigException::class);
+    $this->expectExceptionMessage('no judge model');
+
+    $this->suite($this->pool([]))->run($config, []);
+  }
+
   public function testArtifactsCarryTranscripts(): void {
     $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
 
@@ -227,8 +348,61 @@ final class LlmSuiteFunctionalTest extends TestCase {
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.
    */
-  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1): LlmSuite {
-    return new LlmSuite($this->root, 'stub', $parallel, 300.0, $pool, NULL, $check_runner, $this->root . '/.artifacts/tmp/ws');
+  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL): LlmSuite {
+    return new LlmSuite($this->root, 'stub', $parallel, 300.0, $pool, NULL, $check_runner, $this->root . '/.artifacts/tmp/ws', $judge);
+  }
+
+  /**
+   * The check ids of a trial, in order.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Live\TrialResult $trial
+   *   The trial.
+   *
+   * @return string[]
+   *   The check ids.
+   */
+  protected function checkIds(TrialResult $trial): array {
+    return array_map(static fn(CheckResult $check): string => $check->id, $trial->checks);
+  }
+
+  /**
+   * Builds a stateful fake judge that returns queued verdicts in call order.
+   *
+   * @param array<int, string|array{int, string}> $outcomes
+   *   The per-call judge outcomes: a verdict string (exit 0) or an
+   *   `[exit, verdict]` pair.
+   *
+   * @return \Closure
+   *   The judge runner closure.
+   */
+  protected function verdicts(array $outcomes): \Closure {
+    $queue = array_map(static fn(array|string $outcome): array => is_array($outcome) ? $outcome : [0, $outcome], $outcomes);
+    $index = 0;
+
+    return function (string $command, string $cwd) use ($queue, &$index): array {
+      $outcome = $queue[$index];
+      $index++;
+
+      return $outcome;
+    };
+  }
+
+  /**
+   * Loads a config whose skill declares a rubric and a distinct judge model.
+   *
+   * @param string $tail
+   *   The `llm` sections appended after the version and contract.
+   * @param array<string, mixed> $cli
+   *   CLI overrides, e.g. a `models` list.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedConfig
+   *   The loaded configuration.
+   */
+  protected function loadJudged(string $tail, array $cli = []): LoadedConfig {
+    $repo = "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n    sonnet: claude-sonnet-5\n    opus: claude-opus-4-8\n  default: haiku\n  judge: opus\n";
+    $this->root = $this->buildRepo($repo, "version: \"1\"\n" . self::CONTRACT . $tail);
+
+    return (new ConfigLoader($this->root))->load($cli);
   }
 
   /**

@@ -13,6 +13,9 @@ use AlexSkrypnyk\SkillTest\Contract\ContractChecker;
 use AlexSkrypnyk\SkillTest\Contract\CustomCheck;
 use AlexSkrypnyk\SkillTest\Contract\Transcript;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Judge\Judge;
+use AlexSkrypnyk\SkillTest\Judge\JudgeException;
+use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
 
 /**
  * Runs the live llm suite: workspaces, headless trials, and the same contract.
@@ -38,6 +41,16 @@ final readonly class LlmSuite {
   public const string CHECK_AGENT = 'live.agent';
 
   /**
+   * The check id an unparseable or failed judge verdict renders under.
+   */
+  public const string CHECK_JUDGE = 'judge.verdict';
+
+  /**
+   * The check id a blocking judge rubric verdict renders under.
+   */
+  public const string CHECK_JUDGE_RUBRIC = 'judge.criteria';
+
+  /**
    * The default per-trial wall-clock budget, in seconds.
    */
   public const float DEFAULT_TIMEOUT = 300.0;
@@ -60,6 +73,11 @@ final readonly class LlmSuite {
   protected string $workspaceBase;
 
   /**
+   * The judge that scores a trial when its skill declares a rubric.
+   */
+  protected Judge $judge;
+
+  /**
    * Constructs an LlmSuite.
    *
    * @param string $root
@@ -78,6 +96,8 @@ final readonly class LlmSuite {
    *   An override for the custom-check process runner, for tests.
    * @param string|null $workspace_base
    *   An override for the workspace base directory, for tests.
+   * @param \Closure|null $judge_runner
+   *   An override for the judge process runner, for tests.
    */
   public function __construct(
     protected string $root,
@@ -88,9 +108,11 @@ final readonly class LlmSuite {
     protected ?\Closure $git = NULL,
     protected ?\Closure $checkRunner = NULL,
     ?string $workspace_base = NULL,
+    ?\Closure $judge_runner = NULL,
   ) {
     $this->pool = $pool ?? (new ProcessPool($parallel, $timeout))->run(...);
     $this->workspaceBase = $workspace_base ?? rtrim($root, '/') . '/.artifacts/tmp/skilltest-llm';
+    $this->judge = new Judge($binary, $judge_runner, $timeout);
   }
 
   /**
@@ -121,6 +143,10 @@ final readonly class LlmSuite {
 
       if ($effective->models === []) {
         throw new ConfigException(sprintf("skill '%s' has llm tasks but no model configured; set models.default, a ladder, or pass --models.", $effective->skill), $skill->file, 'models');
+      }
+
+      if ($effective->rubric !== [] && $effective->judgeModel === NULL) {
+        throw new ConfigException(sprintf("skill '%s' declares a judge rubric but no judge model; set models.judge, a ladder, or models.default.", $effective->skill), $skill->file, 'models.judge');
       }
 
       $skills[] = new SkillOutcome($effective->skill, $effective->path, $this->taskOutcomes($config, $skill, $entries), $effective->threshold, $effective->trials);
@@ -285,6 +311,9 @@ final readonly class LlmSuite {
       $checks = array_merge($checks, $this->customChecks($effective, $stdout, $workspace));
     }
 
+    [$criteria, $judge_model, $judge_checks] = $this->judgeTrial($effective, $entry, $stdout, $exit_code);
+    $checks = array_merge($checks, $judge_checks);
+
     if ($exit_code !== 0) {
       array_unshift($checks, $this->agentFailure($exit_code));
     }
@@ -303,7 +332,62 @@ final readonly class LlmSuite {
       $duration_ms,
       $stdout,
       $this->transcriptPath($effective->skill, $entry['name'], $token, $number),
+      $criteria,
+      $judge_model,
     );
+  }
+
+  /**
+   * Scores a trial against its skill's rubric, when one is declared.
+   *
+   * Runs only when the skill declares a rubric; a failed agent run is already a
+   * failing trial with a partial transcript, so the judge is not spent on it,
+   * though the pinned model is still reported so a judged skill records the same
+   * judge model on every trial. A judge failure (an unparseable verdict or a
+   * broken judge process) folds in a distinct failing check rather than a
+   * silent pass; a verdict that blocks under the abstention policy folds in a
+   * rubric check naming the tally.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
+   *   The skill's effective configuration.
+   * @param array{name: string, prompt: string, task: array<mixed>} $entry
+   *   The validated task entry.
+   * @param string $stdout
+   *   The trial's captured transcript.
+   * @param int $exit_code
+   *   The agent process exit code.
+   *
+   * @return array{0: \AlexSkrypnyk\SkillTest\Judge\JudgeCriterion[], 1: string|null, 2: \AlexSkrypnyk\SkillTest\Contract\CheckResult[]}
+   *   The per-criterion verdict, the pinned judge model id, and any failing
+   *   judge checks to fold into the trial.
+   */
+  protected function judgeTrial(EffectiveConfig $effective, array $entry, string $stdout, int $exit_code): array {
+    $token = $effective->judgeModel;
+
+    if ($effective->rubric === [] || $token === NULL) {
+      return [[], NULL, []];
+    }
+
+    $judge_model = $this->resolveModelId($token, $effective->modelAliases);
+
+    if ($exit_code !== 0) {
+      return [[], $judge_model, []];
+    }
+
+    try {
+      $verdict = $this->judge->evaluate($effective->rubric, $entry['prompt'], $stdout, $judge_model, $this->root);
+    }
+    catch (JudgeException $judge_exception) {
+      return [[], $judge_model, [CheckResult::fail(self::CHECK_JUDGE, 'judge verdict', '', $judge_exception->getMessage())]];
+    }
+
+    if (!$verdict->blocks(UnknownPolicy::fromConfig($effective->judgeUnknown))) {
+      return [$verdict->criteria, $judge_model, []];
+    }
+
+    $message = sprintf('the judge passed %d of %d criteria (%d unknown).', $verdict->passedCount(), $verdict->total(), $verdict->unknowns());
+
+    return [$verdict->criteria, $judge_model, [CheckResult::fail(self::CHECK_JUDGE_RUBRIC, 'judge rubric', '', $message)]];
   }
 
   /**

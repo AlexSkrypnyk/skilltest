@@ -36,6 +36,37 @@ final class EffectiveConfigTest extends TestCase {
     yield 'cli trims spaces and empties' => [[], [], ['models' => 'opus, , sonnet'], ['opus', 'sonnet']];
   }
 
+  #[DataProvider('dataProviderJudgeModelPrecedence')]
+  public function testJudgeModelPrecedence(array $repo, array $cli, ?string $expected): void {
+    $config = EffectiveConfig::resolve(RepoConfig::fromArray($repo), [], $cli, 'name', 'skills/name');
+
+    $this->assertSame($expected, $config->judgeModel);
+  }
+
+  public static function dataProviderJudgeModelPrecedence(): \Iterator {
+    yield 'nothing configured' => [[], [], NULL];
+    yield 'explicit models.judge' => [['models' => ['judge' => 'haiku']], [], 'haiku'];
+    yield 'defaults to ladder weakest' => [['models' => ['ladder' => ['haiku', 'sonnet']]], [], 'haiku'];
+    yield 'defaults to repo default' => [['models' => ['default' => 'sonnet']], [], 'sonnet'];
+    yield 'judge beats the ladder' => [['models' => ['judge' => 'haiku', 'ladder' => ['sonnet', 'opus']]], [], 'haiku'];
+    yield 'cli beats everything' => [['models' => ['judge' => 'haiku', 'ladder' => ['sonnet']]], ['judge-model' => 'opus'], 'opus'];
+    yield 'cli over a bare ladder' => [['models' => ['ladder' => ['haiku']]], ['judge-model' => 'opus'], 'opus'];
+  }
+
+  #[DataProvider('dataProviderUnknownPolicy')]
+  public function testUnknownPolicy(array $eval, string $expected): void {
+    $config = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], 'name', 'skills/name');
+
+    $this->assertSame($expected, $config->judgeUnknown);
+  }
+
+  public static function dataProviderUnknownPolicy(): \Iterator {
+    yield 'unset defaults to fail' => [[], 'fail'];
+    yield 'explicit fail' => [['llm' => ['judge' => ['unknown' => 'fail']]], 'fail'];
+    yield 'explicit ignore' => [['llm' => ['judge' => ['unknown' => 'ignore']]], 'ignore'];
+    yield 'unrecognised falls back to fail' => [['llm' => ['judge' => ['unknown' => 'maybe']]], 'fail'];
+  }
+
   public function testDefaults(): void {
     $config = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], 'foo', 'skills/foo');
 
@@ -47,6 +78,7 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertNull($config->maxTurns);
     $this->assertSame('host', $config->environment);
     $this->assertNull($config->judgeModel);
+    $this->assertSame('fail', $config->judgeUnknown);
     $this->assertSame([], $config->rubric);
     $this->assertSame([], $config->tasks);
     $this->assertSame([], $config->checks);
@@ -151,7 +183,7 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertIsArray($llm);
     $this->assertSame(['haiku'], $llm['models']);
     $this->assertEqualsWithDelta(0.8, $llm['threshold'], PHP_FLOAT_EPSILON);
-    $this->assertSame(['model' => NULL, 'rubric' => []], $llm['judge']);
+    $this->assertSame(['model' => 'haiku', 'rubric' => [], 'unknown' => 'fail'], $llm['judge']);
 
     $models = $array['models'];
     $this->assertIsArray($models);

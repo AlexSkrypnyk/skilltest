@@ -253,6 +253,23 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertFalse($result->hasErrors());
   }
 
+  public function testValidUnknownPolicyPasses(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['judge' => ['rubric' => ['crit'], 'unknown' => 'ignore']]]]);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
+  public function testInvalidUnknownPolicyFails(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['judge' => ['rubric' => ['crit'], 'unknown' => 'maybe']]]]);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . "/skills/foo/eval.yaml: llm.judge.unknown - must be 'fail' or 'ignore'.", $rendered);
+  }
+
   /**
    * Sets up a virtual filesystem and returns its root URL.
    *
