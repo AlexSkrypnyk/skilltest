@@ -44,7 +44,7 @@ final class RunSuiteTest extends TestCase {
 
     $alpha = $report->skills[0];
     $this->assertSame('alpha', $alpha->skill);
-    $this->assertCount(8, $alpha->structure);
+    $this->assertCount(10, $alpha->structure);
     $this->assertSame([], $alpha->security);
     $this->assertSame('', $alpha->transcriptNote);
 
