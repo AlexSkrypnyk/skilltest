@@ -42,7 +42,7 @@ final class MatrixModelRowTest extends TestCase {
     $this->assertTrue($row->hasRubric);
   }
 
-  public function testNoRubricShowsADashForJudge(): void {
+  public function testNoRubricShowsDashForJudge(): void {
     $row = MatrixModelRow::fromModels([new ModelOutcome('m', 'm', [self::trial(TRUE, [self::ok()])], 0.8)]);
 
     $this->assertFalse($row->hasRubric);
@@ -77,7 +77,7 @@ final class MatrixModelRowTest extends TestCase {
   public function testPerRunCostIsZeroWithoutTrials(): void {
     $row = MatrixModelRow::fromModels([new ModelOutcome('m', 'm', [], 0.0)]);
 
-    $this->assertSame(0.0, $row->perRunCost());
+    $this->assertEqualsWithDelta(0.0, $row->perRunCost(), PHP_FLOAT_EPSILON);
     $this->assertSame('0.00', $row->rate());
   }
 

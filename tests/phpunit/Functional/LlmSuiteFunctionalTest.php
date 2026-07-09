@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
+use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
@@ -115,13 +116,13 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertFalse($report->failed());
   }
 
-  public function testFullMatrixRunsEveryLadderModelEvenAfterAPass(): void {
+  public function testFullMatrixRunsEveryLadderModelEvenAfterPass(): void {
     $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
 
     $report = $this->suite($this->pool([self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, []);
 
     $models = $report->skills[0]->tasks[0]->models;
-    $this->assertSame(['haiku', 'sonnet', 'opus'], array_map(static fn($model): string => $model->alias, $models));
+    $this->assertSame(['haiku', 'sonnet', 'opus'], array_map(static fn(ModelOutcome $model): string => $model->alias, $models));
     $this->assertSame('haiku', $report->skills[0]->minimalModel());
   }
 
@@ -132,7 +133,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $report = $this->suite($this->pool([self::FAIL_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, [], TRUE);
 
     $models = $report->skills[0]->tasks[0]->models;
-    $this->assertSame(['haiku', 'sonnet'], array_map(static fn($model): string => $model->alias, $models));
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $models));
     $this->assertFalse($models[0]->passed());
     $this->assertTrue($models[1]->passed());
     $this->assertSame('sonnet', $report->skills[0]->minimalModel());
@@ -147,7 +148,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertNull($report->skills[0]->minimalModel());
   }
 
-  public function testStopAtPassRequiresEveryTaskToPassOnAModel(): void {
+  public function testStopAtPassRequiresEveryTaskToPassOnModel(): void {
     $config = $this->loadLaddered("llm:\n  trials: 1\n  tasks:\n    - name: one\n      prompt: A\n    - name: two\n      prompt: B\n");
 
     // Model-major order: haiku/one PASS, haiku/two FAIL (haiku unsupported),
@@ -156,8 +157,8 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $report = $this->suite($this->pool([self::PASS_TRANSCRIPT, self::FAIL_TRANSCRIPT, self::PASS_TRANSCRIPT, self::PASS_TRANSCRIPT]))->run($config, [], TRUE);
 
     $tasks = $report->skills[0]->tasks;
-    $this->assertSame(['haiku', 'sonnet'], array_map(static fn($model): string => $model->alias, $tasks[0]->models));
-    $this->assertSame(['haiku', 'sonnet'], array_map(static fn($model): string => $model->alias, $tasks[1]->models));
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $tasks[0]->models));
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(ModelOutcome $model): string => $model->alias, $tasks[1]->models));
     $this->assertSame('sonnet', $report->skills[0]->minimalModel());
   }
 

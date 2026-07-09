@@ -161,7 +161,7 @@ final class MatrixCommandTest extends TestCase {
     $this->assertStringContainsString('total trials: 9', $output);
   }
 
-  public function testEstimateJsonEmitsAPlanDocument(): void {
+  public function testEstimateJsonEmitsPlanDocument(): void {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
@@ -209,11 +209,12 @@ final class MatrixCommandTest extends TestCase {
     $this->assertCount(3, $models);
 
     foreach ($models as $model) {
+      $this->assertIsArray($model);
       $this->assertSame('claude-haiku-4-5', $this->path($model, 'trials', 0, 'judge_model'), 'The judge model is pinned across every ladder row.');
     }
   }
 
-  public function testJsonEmitsASchemaValidMatrixDocument(): void {
+  public function testJsonEmitsSchemaValidMatrixDocument(): void {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 

@@ -59,7 +59,7 @@ final class MatrixFailureModesTest extends TestCase {
     $this->assertTrue($lenient->isEmpty());
   }
 
-  public function testTiesBreakByNameForADeterministicRanking(): void {
+  public function testTiesBreakByNameDeterministically(): void {
     $trials = [self::trial([CheckResult::fail('contract.zeta', 'z', '', ''), CheckResult::fail('contract.alpha', 'a', '', '')])];
 
     $modes = MatrixFailureModes::fromModels([self::model($trials)], [], UnknownPolicy::Fail);

@@ -7,7 +7,6 @@ namespace AlexSkrypnyk\SkillTest\Live\Matrix;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
-use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 
 /**
  * Why a model failed a skill: the failed check ids and judge criteria, counted.
@@ -57,10 +56,12 @@ final readonly class MatrixFailureModes {
     foreach ($models as $model) {
       foreach ($model->trials as $trial) {
         foreach ($trial->checks as $check) {
-          if ($check->pass || self::isJudge($check)) {
+          if ($check->pass) {
             continue;
           }
-
+          if (self::isJudge($check)) {
+            continue;
+          }
           $contract[$check->id] = ($contract[$check->id] ?? 0) + 1;
         }
 

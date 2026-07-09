@@ -119,8 +119,13 @@ final readonly class MatrixRenderer {
 
     foreach ($skill->rows as $row) {
       $modes = $skill->failureModes[$row->alias] ?? NULL;
-
-      if ($row->passed || !$modes instanceof MatrixFailureModes || $modes->isEmpty()) {
+      if ($row->passed) {
+        continue;
+      }
+      if (!$modes instanceof MatrixFailureModes) {
+        continue;
+      }
+      if ($modes->isEmpty()) {
         continue;
       }
 

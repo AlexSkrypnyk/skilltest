@@ -103,8 +103,10 @@ final readonly class MatrixPlan {
 
     foreach ($tasks as $task) {
       $name = Data::toStringOrNull(Data::get($task, 'name'));
-
-      if ($name === NULL || $name === '') {
+      if ($name === NULL) {
+        continue;
+      }
+      if ($name === '') {
         continue;
       }
 

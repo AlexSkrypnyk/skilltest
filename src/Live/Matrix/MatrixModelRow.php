@@ -6,7 +6,6 @@ namespace AlexSkrypnyk\SkillTest\Live\Matrix;
 
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
-use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 
 /**
@@ -127,8 +126,7 @@ final readonly class MatrixModelRow {
   }
 
   /**
-   * The judge column: trials whose rubric was affirmed, or a dash when
-   * unjudged.
+   * The judge column: affirmed-rubric trials, or a dash when unjudged.
    *
    * @return string
    *   The `N/M` cell, or `-` when the skill declares no rubric.

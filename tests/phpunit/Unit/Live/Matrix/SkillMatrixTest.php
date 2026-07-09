@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live\Matrix;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
+use AlexSkrypnyk\SkillTest\Live\Matrix\MatrixModelRow;
 use AlexSkrypnyk\SkillTest\Live\Matrix\SkillMatrix;
 use AlexSkrypnyk\SkillTest\Live\ModelOutcome;
 use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
@@ -29,12 +30,12 @@ final class SkillMatrixTest extends TestCase {
 
     $matrix = SkillMatrix::fromOutcome($skill);
 
-    $this->assertSame(['haiku', 'sonnet'], array_map(static fn($row): string => $row->alias, $matrix->rows));
+    $this->assertSame(['haiku', 'sonnet'], array_map(static fn(MatrixModelRow $row): string => $row->alias, $matrix->rows));
     $this->assertSame('sonnet', $matrix->minimal);
     $this->assertArrayHasKey('haiku', $matrix->failureModes);
     $this->assertArrayNotHasKey('sonnet', $matrix->failureModes);
     $this->assertSame('contract: contract.commands.forbidden (1x)', $matrix->failureModes['haiku']->describe());
-    $this->assertNull($matrix->row('opus'));
+    $this->assertNotInstanceOf(MatrixModelRow::class, $matrix->row('opus'));
     $this->assertSame('sonnet', $matrix->row('sonnet')?->alias);
   }
 
@@ -47,10 +48,14 @@ final class SkillMatrixTest extends TestCase {
 
     $matrix = SkillMatrix::fromOutcome($skill);
 
+    $haiku = $matrix->row('haiku');
+    $sonnet = $matrix->row('sonnet');
+    $this->assertInstanceOf(MatrixModelRow::class, $haiku);
+    $this->assertInstanceOf(MatrixModelRow::class, $sonnet);
     // Haiku holds on task one but not task two, so it does not support run.
-    $this->assertSame('0.50', $matrix->row('haiku')?->rate());
-    $this->assertFalse($matrix->row('haiku')?->passed);
-    $this->assertSame('1.00', $matrix->row('sonnet')?->rate());
+    $this->assertSame('0.50', $haiku->rate());
+    $this->assertFalse($haiku->passed);
+    $this->assertSame('1.00', $sonnet->rate());
     $this->assertSame('sonnet', $matrix->minimal);
   }
 

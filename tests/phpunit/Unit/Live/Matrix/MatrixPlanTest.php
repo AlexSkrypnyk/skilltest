@@ -58,14 +58,14 @@ final class MatrixPlanTest extends TestCase {
     $this->assertSame(1, $plan->skills[0]['tasks']);
   }
 
-  public function testAGlobMatchingNothingYieldsAnEmptyPlan(): void {
+  public function testGlobMatchingNothingYieldsEmptyPlan(): void {
     $config = self::config([self::skill('run', ['invoked'], 3)]);
 
     $plan = MatrixPlan::fromConfig($config, ['nope-*']);
 
     $this->assertSame([], $plan->skills);
     $this->assertSame(0, $plan->totalTrials);
-    $this->assertSame(0.0, $plan->roughCost());
+    $this->assertEqualsWithDelta(0.0, $plan->roughCost(), PHP_FLOAT_EPSILON);
   }
 
   /**
