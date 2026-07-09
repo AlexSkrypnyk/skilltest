@@ -20,9 +20,9 @@
                                 "model": "claude-haiku-4-5",
                                 "alias": "haiku",
                                 "trials": [
-                                    {"trial": 1, "pass": false, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": false}], "unknowns": 0, "duration_ms": 18422, "turns": 6, "tokens": {"in": 4211, "out": 883}, "cost_usd": 0.0132, "transcript": "artifacts/haiku-1.jsonl"},
-                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 20114, "turns": 7, "tokens": {"in": 4380, "out": 912}, "cost_usd": 0.0141, "transcript": "artifacts/haiku-2.jsonl"},
-                                    {"trial": 3, "pass": false, "contract": [{"check": "contract.tools.forbidden", "pass": false, "evidence": "git push origin main"}], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": false}], "unknowns": 0, "duration_ms": 19003, "turns": 6, "tokens": {"in": 4102, "out": 861}, "cost_usd": 0.0129, "transcript": "artifacts/haiku-3.jsonl"}
+                                    {"trial": 1, "pass": false, "contract": [], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": false, "unknown": true}], "unknowns": 1, "judge_model": "claude-haiku-4-5", "duration_ms": 18422, "turns": 6, "tokens": {"in": 4211, "out": 883}, "cost_usd": 0.0132, "transcript": "artifacts/haiku-1.jsonl"},
+                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": true, "unknown": false}], "unknowns": 0, "judge_model": "claude-haiku-4-5", "duration_ms": 20114, "turns": 7, "tokens": {"in": 4380, "out": 912}, "cost_usd": 0.0141, "transcript": "artifacts/haiku-2.jsonl"},
+                                    {"trial": 3, "pass": false, "contract": [{"check": "contract.tools.forbidden", "pass": false, "evidence": "git push origin main"}], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": false, "unknown": false}], "unknowns": 0, "judge_model": "claude-haiku-4-5", "duration_ms": 19003, "turns": 6, "tokens": {"in": 4102, "out": 861}, "cost_usd": 0.0129, "transcript": "artifacts/haiku-3.jsonl"}
                                 ],
                                 "pass_rate": 0.33
                             },
@@ -30,9 +30,9 @@
                                 "model": "claude-sonnet-5",
                                 "alias": "sonnet",
                                 "trials": [
-                                    {"trial": 1, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 24500, "turns": 5, "tokens": {"in": 5001, "out": 1204}, "cost_usd": 0.048, "transcript": "artifacts/sonnet-1.jsonl"},
-                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 23880, "turns": 5, "tokens": {"in": 4990, "out": 1180}, "cost_usd": 0.047, "transcript": "artifacts/sonnet-2.jsonl"},
-                                    {"trial": 3, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": true}], "unknowns": 0, "duration_ms": 24100, "turns": 6, "tokens": {"in": 5040, "out": 1220}, "cost_usd": 0.049, "transcript": "artifacts/sonnet-3.jsonl"}
+                                    {"trial": 1, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": true, "unknown": false}], "unknowns": 0, "judge_model": "claude-haiku-4-5", "duration_ms": 24500, "turns": 5, "tokens": {"in": 5001, "out": 1204}, "cost_usd": 0.048, "transcript": "artifacts/sonnet-1.jsonl"},
+                                    {"trial": 2, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": true, "unknown": false}], "unknowns": 0, "judge_model": "claude-haiku-4-5", "duration_ms": 23880, "turns": 5, "tokens": {"in": 4990, "out": 1180}, "cost_usd": 0.047, "transcript": "artifacts/sonnet-2.jsonl"},
+                                    {"trial": 3, "pass": true, "contract": [], "judge": [{"criterion": 1, "pass": true, "unknown": false}, {"criterion": 2, "pass": true, "unknown": false}], "unknowns": 0, "judge_model": "claude-haiku-4-5", "duration_ms": 24100, "turns": 6, "tokens": {"in": 5040, "out": 1220}, "cost_usd": 0.049, "transcript": "artifacts/sonnet-3.jsonl"}
                                 ],
                                 "pass_rate": 1.0
                             }

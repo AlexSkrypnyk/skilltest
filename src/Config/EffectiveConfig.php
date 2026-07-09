@@ -59,9 +59,11 @@ final readonly class EffectiveConfig {
    * @param string $environment
    *   The execution environment (host or docker).
    * @param string|null $judgeModel
-   *   The judge model alias, when set.
+   *   The resolved judge model alias, or NULL when none is configured.
    * @param string[] $rubric
    *   The judge rubric criteria.
+   * @param string $judgeUnknown
+   *   The abstention policy for judge criteria: `fail` or `ignore`.
    * @param array<int, array<mixed>> $tasks
    *   The declared llm tasks.
    * @param array<int, array<mixed>> $checks
@@ -83,6 +85,7 @@ final readonly class EffectiveConfig {
     public string $environment,
     public ?string $judgeModel,
     public array $rubric,
+    public string $judgeUnknown,
     public array $tasks,
     public array $checks,
     public array $modelAliases,
@@ -96,7 +99,8 @@ final readonly class EffectiveConfig {
    * @param array<mixed> $eval
    *   The parsed `eval.yaml` for this skill.
    * @param array<string, mixed> $cli
-   *   CLI overrides keyed by name (models, threshold, trials, env).
+   *   CLI overrides keyed by name (models, threshold, trials, env,
+   *   judge-model).
    * @param string $name
    *   The skill name derived from the directory.
    * @param string $path
@@ -120,12 +124,58 @@ final readonly class EffectiveConfig {
       Data::toIntOrNull($cli['trials'] ?? NULL) ?? Data::toIntOrNull(Data::get($llm, 'trials')) ?? self::DEFAULT_TRIALS,
       Data::toIntOrNull(Data::get($llm, 'max-turns')),
       Data::toStringOrNull($cli['env'] ?? NULL) ?? $repo_config->environment,
-      $repo_config->judgeModel,
+      self::resolveJudgeModel($repo_config, $cli),
       Data::toStringList(Data::get($llm, 'judge', 'rubric')),
+      self::resolveUnknownPolicy($llm),
       Data::toArrayList(Data::get($llm, 'tasks')),
       Data::toArrayList(Data::get($llm, 'checks')),
       $repo_config->modelAliases,
     );
+  }
+
+  /**
+   * Resolves the judge model from the CLI, `models.judge`, or a fallback.
+   *
+   * The default is the ladder's weakest model (or the repo default), never the
+   * execution model, so the judge stays a cheap, pinned model that does not
+   * follow `--models` upward.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
+   *   The repo configuration.
+   * @param array<string, mixed> $cli
+   *   CLI overrides.
+   *
+   * @return string|null
+   *   The resolved judge model alias, or NULL when nothing is configured.
+   */
+  protected static function resolveJudgeModel(RepoConfig $repo_config, array $cli): ?string {
+    $override = Data::toStringOrNull($cli['judge-model'] ?? NULL);
+    if ($override !== NULL && $override !== '') {
+      return $override;
+    }
+
+    if ($repo_config->judgeModel !== NULL) {
+      return $repo_config->judgeModel;
+    }
+
+    if ($repo_config->ladder !== []) {
+      return $repo_config->ladder[0];
+    }
+
+    return $repo_config->defaultModel;
+  }
+
+  /**
+   * Resolves the judge abstention policy, defaulting to the strict policy.
+   *
+   * @param array<mixed> $llm
+   *   The eval `llm` block.
+   *
+   * @return string
+   *   `ignore` when configured so, otherwise `fail`.
+   */
+  protected static function resolveUnknownPolicy(array $llm): string {
+    return Data::toStringOrNull(Data::get($llm, 'judge', 'unknown')) === 'ignore' ? 'ignore' : 'fail';
   }
 
   /**
@@ -286,7 +336,7 @@ final readonly class EffectiveConfig {
         'trials' => $this->trials,
         'max-turns' => $this->maxTurns,
         'environment' => $this->environment,
-        'judge' => ['model' => $this->judgeModel, 'rubric' => $this->rubric],
+        'judge' => ['model' => $this->judgeModel, 'rubric' => $this->rubric, 'unknown' => $this->judgeUnknown],
         'tasks' => $this->tasks,
         'checks' => $this->checks,
       ],

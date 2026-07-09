@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
+use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -48,8 +49,24 @@ final class TrialResultTest extends TestCase {
     $this->assertSame(['in' => 4211, 'out' => 883], $row['tokens']);
     $this->assertEqualsWithDelta(0.0132, $row['cost_usd'], PHP_FLOAT_EPSILON);
     $this->assertSame('artifacts/haiku-2.jsonl', $row['transcript']);
+    $this->assertSame([], $row['judge']);
+    $this->assertNull($row['judge_model']);
     $this->assertSame('contract.tools.required', $this->path($row, 'contract', 0, 'check'));
     $this->assertTrue($this->path($row, 'contract', 0, 'pass'));
+  }
+
+  public function testToArrayRendersJudgeCriteriaAndModel(): void {
+    $criteria = [new JudgeCriterion(1, TRUE, FALSE), new JudgeCriterion(2, FALSE, TRUE)];
+    $trial = new TrialResult(1, FALSE, [], 10, 5, 3, 0.01, 1200, 'jsonl', 'artifacts/t.jsonl', $criteria, 'claude-haiku-4-5');
+
+    $row = $trial->toArray();
+
+    $this->assertSame([
+      ['criterion' => 1, 'pass' => TRUE, 'unknown' => FALSE],
+      ['criterion' => 2, 'pass' => FALSE, 'unknown' => TRUE],
+    ], $row['judge']);
+    $this->assertSame(1, $row['unknowns']);
+    $this->assertSame('claude-haiku-4-5', $row['judge_model']);
   }
 
 }
