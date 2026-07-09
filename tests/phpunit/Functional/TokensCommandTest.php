@@ -278,7 +278,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertFalse($decoded['ok']);
     $this->assertSame('main', $decoded['ref']);
     $this->assertSame('estimate', $decoded['method']);
-    $this->assertSame(10.0, $decoded['threshold']);
+    $this->assertEqualsWithDelta(10.0, $decoded['threshold'], PHP_FLOAT_EPSILON);
     $this->assertFalse($decoded['strict']);
     $this->assertIsArray($decoded['files']);
     $this->assertSame(['path' => 'skills/foo/SKILL.md', 'tokens' => 120, 'ref_tokens' => 100, 'delta' => 20, 'growth_pct' => 20.0, 'new' => FALSE], $decoded['files'][0]);

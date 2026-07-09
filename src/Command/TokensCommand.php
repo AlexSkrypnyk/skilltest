@@ -51,22 +51,15 @@ class TokensCommand extends Command {
   public const array SORTS = ['path', 'tokens'];
 
   /**
-   * Runs a git command; injected so compare is testable without real git.
-   *
-   * @var \Closure|null
-   */
-  protected ?\Closure $gitRunner;
-
-  /**
    * Constructs a TokensCommand.
    *
-   * @param \Closure|null $git_runner
+   * @param \Closure|null $gitRunner
    *   A runner taking the assembled git command and working directory and
-   *   returning `[exitCode, stdout]`, or NULL to run git for real.
+   *   returning `[exitCode, stdout]`, or NULL to run git for real; injected
+   *   so compare is testable without real git.
    */
-  public function __construct(?\Closure $git_runner = NULL) {
+  public function __construct(protected ?\Closure $gitRunner = NULL) {
     parent::__construct();
-    $this->gitRunner = $git_runner;
   }
 
   /**
