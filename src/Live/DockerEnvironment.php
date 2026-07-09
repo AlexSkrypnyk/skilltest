@@ -260,7 +260,19 @@ final class DockerEnvironment implements EnvironmentInterface {
    *   `[exitCode, stdout]`.
    */
   public function hookRunner(): \Closure {
-    return fn(string $command, string $cwd): array => ($this->docker)($this->hookCommand($command, $cwd), $this->root);
+    return function (string $command, string $cwd): array {
+      $name = $this->containerName();
+      $result = ($this->docker)($this->hookCommand($name, $command, $cwd), $this->root);
+
+      // A timed-out hook, like a timed-out trial, can outlive its killed
+      // client, so force-remove its container by name; the teardown label sweep
+      // is the backstop for anything this misses.
+      if ($result[0] === ProcessPool::TIMEOUT_EXIT) {
+        ($this->docker)($this->binary . ' rm -f ' . escapeshellarg($name), $this->root);
+      }
+
+      return $result;
+    };
   }
 
   /**
@@ -402,6 +414,12 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * Builds the `docker run` command that runs a lifecycle hook in a container.
    *
+   * The hook container carries the same name and run label as a trial's, so a
+   * timed-out hook is removable by name and the teardown sweep never leaves one
+   * behind to block the run image's removal.
+   *
+   * @param string $name
+   *   The container name, so a timed-out hook container can be removed by it.
    * @param string $command
    *   The hook command to run inside the container.
    * @param string $cwd
@@ -410,8 +428,16 @@ final class DockerEnvironment implements EnvironmentInterface {
    * @return string
    *   The full docker run command.
    */
-  protected function hookCommand(string $command, string $cwd): string {
-    $parts = [$this->binary, 'run', '--rm'];
+  protected function hookCommand(string $name, string $command, string $cwd): string {
+    $parts = [
+      $this->binary,
+      'run',
+      '--rm',
+      '--name',
+      escapeshellarg($name),
+      '--label',
+      escapeshellarg(self::RUN_LABEL . '=' . $this->runId),
+    ];
 
     foreach ($this->credentialFlags() as $flag) {
       $parts[] = $flag;

@@ -311,10 +311,24 @@ final class DockerEnvironmentTest extends TestCase {
     $this->assertSame(0, $exit_code);
     $hook = array_values(array_filter($this->dockerCommands, static fn(string $c): bool => str_contains($c, 'reset.php')));
     $this->assertCount(1, $hook);
-    $this->assertStringContainsString('docker run --rm', $hook[0]);
+    $this->assertStringContainsString('docker run --rm --name ', $hook[0]);
+    $this->assertStringContainsString('skilltest-testrun-', $hook[0]);
+    $this->assertStringContainsString('--label ' . escapeshellarg('skilltest.run=testrun'), $hook[0]);
     $this->assertStringContainsString('-e CLAUDE_CODE_OAUTH_TOKEN', $hook[0]);
     $this->assertStringContainsString('-v ' . escapeshellarg($this->root . ':/work') . ' -w /work', $hook[0]);
     $this->assertStringContainsString('sh -c ' . escapeshellarg('php reset.php'), $hook[0]);
+  }
+
+  public function testHookRunnerRemovesContainerOnTimeout(): void {
+    $this->dockerHandler = static fn(string $command): array => str_contains($command, 'run --rm') ? [ProcessPool::TIMEOUT_EXIT, ''] : [0, ''];
+    $environment = $this->environment();
+    $environment->prepare();
+
+    [$exit_code] = ($environment->hookRunner())('sleep 999', $this->root);
+
+    $this->assertSame(ProcessPool::TIMEOUT_EXIT, $exit_code);
+    $killed = array_values(array_filter($this->dockerCommands, static fn(string $c): bool => str_contains($c, 'rm -f') && str_contains($c, 'skilltest-testrun-')));
+    $this->assertCount(1, $killed);
   }
 
   /**
