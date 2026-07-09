@@ -12,6 +12,11 @@ use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Run\Redactor;
+use AlexSkrypnyk\SkillTest\Run\Report\ArtifactWriter;
+use AlexSkrypnyk\SkillTest\Run\Report\GithubCommentReporter;
+use AlexSkrypnyk\SkillTest\Run\Report\JUnitReporter;
+use AlexSkrypnyk\SkillTest\Run\Report\ReportOptions;
+use AlexSkrypnyk\SkillTest\Run\Report\SessionLog;
 use AlexSkrypnyk\SkillTest\Run\ResultsWriter;
 use AlexSkrypnyk\SkillTest\Run\RunPlan;
 use AlexSkrypnyk\SkillTest\Run\RunReport;
@@ -57,6 +62,10 @@ class RunCommand extends Command {
       ->addOption(name: 'check', mode: InputOption::VALUE_REQUIRED, description: 'Run one check id only')
       ->addOption(name: 'list', mode: InputOption::VALUE_NONE, description: 'List selected skills and the checks that would run, without running')
       ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Render stdout as a reporter format: github-comment')
+      ->addOption(name: 'reporter', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, description: 'Write an additional reporter file (repeatable): junit:<path>')
+      ->addOption(name: 'session-log', mode: InputOption::VALUE_NONE, description: 'Write an ordered NDJSON event stream for the run (requires --session-dir)')
+      ->addOption(name: 'session-dir', mode: InputOption::VALUE_REQUIRED, description: 'Directory the --session-log NDJSON stream is written to')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts');
   }
@@ -68,8 +77,14 @@ class RunCommand extends Command {
     $started = microtime(TRUE);
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
-    $json = (bool) $input->getOption('json');
     $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+
+    $report_options = $this->reportOptions($input);
+    $json = $report_options->json;
+
+    if (!$report_options->valid()) {
+      return $this->reportErrors($output, $stderr, $json, $report_options->errors);
+    }
 
     try {
       $selection = $this->selection($input);
@@ -114,32 +129,119 @@ class RunCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf("check '%s' matched nothing in this run; verify the id with --list.", $selection->check))]);
     }
 
-    $output_file = $this->stringOption($input, 'output');
-    $output_dir = $this->stringOption($input, 'output-dir');
-
-    if ($json || $output_file !== NULL || $output_dir !== NULL) {
-      $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
-        'id' => 'st-' . date('Ymd-His'),
-        'started' => $started_at,
-        'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
-        'command' => 'run',
-        'environment' => $filtered->repo->environment,
-      ]);
-
-      if ($output_file !== NULL || $output_dir !== NULL) {
-        $this->persist($filtered, $stderr, $document, $output_file, $output_dir);
-      }
-
-      if ($json) {
-        $output->writeln($this->encode($document), OutputInterface::VERBOSITY_QUIET);
-      }
+    if ($report_options->wantsDocument()) {
+      $this->emitReports($output, $stderr, $filtered, $report_options, $this->document($report, $filtered, $started, $started_at));
     }
 
-    if (!$json) {
+    if ($report_options->stdoutFormat() === 'human') {
       $this->renderReport($output, $filtered, $selection, $report);
     }
 
     return $report->failed() ? ExitCode::FAIL : ExitCode::PASS;
+  }
+
+  /**
+   * Parses and validates the reporting options into one value object.
+   *
+   * @param \Symfony\Component\Console\Input\InputInterface $input
+   *   The command input.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Run\Report\ReportOptions
+   *   The parsed reporting options, carrying any validation errors.
+   */
+  protected function reportOptions(InputInterface $input): ReportOptions {
+    $raw_reporters = $input->getOption('reporter');
+    $reporters = array_values(array_filter(is_array($raw_reporters) ? $raw_reporters : [], static fn(mixed $reporter): bool => is_string($reporter) && $reporter !== ''));
+
+    return ReportOptions::parse(
+      (bool) $input->getOption('json'),
+      $this->stringOption($input, 'format'),
+      $reporters,
+      (bool) $input->getOption('session-log'),
+      $this->stringOption($input, 'session-dir'),
+      $this->stringOption($input, 'output'),
+      $this->stringOption($input, 'output-dir'),
+    );
+  }
+
+  /**
+   * Builds the machine-readable results document for the completed run.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Run\RunReport $report
+   *   The run outcome.
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $filtered
+   *   The selected configuration.
+   * @param float $started
+   *   The monotonic start time, for the run duration.
+   * @param string $started_at
+   *   The wall-clock start timestamp.
+   *
+   * @return array<string, mixed>
+   *   The results document.
+   */
+  protected function document(RunReport $report, LoadedConfig $filtered, float $started, string $started_at): array {
+    return $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
+      'id' => 'st-' . date('Ymd-His'),
+      'started' => $started_at,
+      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
+      'command' => 'run',
+      'environment' => $filtered->repo->environment,
+    ]);
+  }
+
+  /**
+   * Emits every requested reporter: results, JUnit, session log, and stdout.
+   *
+   * One redactor scrubs every external artifact, and a single loud warning is
+   * forced to stderr when redaction is disabled and any such artifact is
+   * written, because a secret may then reach disk or a PR comment. The plain
+   * `--json` stdout is exempt: it is a local convenience, not a persisted or
+   * published artifact.
+   *
+   * @param \Symfony\Component\Console\Output\OutputInterface $output
+   *   The standard output, for the stdout format.
+   * @param \Symfony\Component\Console\Output\OutputInterface $stderr
+   *   The error output, for write notices and the disabled-redaction warning.
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $filtered
+   *   The selected configuration, carrying the repo `report` block.
+   * @param \AlexSkrypnyk\SkillTest\Run\Report\ReportOptions $options
+   *   The parsed reporting options.
+   * @param array<string, mixed> $document
+   *   The results document to render and persist.
+   */
+  protected function emitReports(OutputInterface $output, OutputInterface $stderr, LoadedConfig $filtered, ReportOptions $options, array $document): void {
+    $redact = Data::toBoolOrNull(Data::get($filtered->repo->report, 'redact')) ?? TRUE;
+
+    if (!$redact && $options->writesArtifacts()) {
+      $stderr->writeln('WARNING redaction disabled (report.redact: false); environment secrets may be written to persisted artifacts.', OutputInterface::VERBOSITY_QUIET);
+    }
+
+    $redactor = Redactor::fromEnvironment(getenv(), $redact);
+
+    if ($options->outputFile !== NULL || $options->outputDir !== NULL) {
+      $this->persist($stderr, $redactor, $document, $options->outputFile, $options->outputDir);
+    }
+
+    $redacted = $redactor->redactDocument($document);
+    $writer = new ArtifactWriter();
+
+    foreach ($options->junitTargets as $path) {
+      $stderr->writeln(sprintf('junit written to %s', $writer->write($path, (new JUnitReporter())->render($redacted))));
+    }
+
+    if ($options->sessionDir !== NULL) {
+      $file = rtrim($options->sessionDir, '/') . '/' . (Data::toStringOrNull(Data::get($document, 'run', 'id')) ?? 'session') . '.ndjson';
+      $stderr->writeln(sprintf('session log written to %s', $writer->write($file, (new SessionLog())->ndjson($redacted))));
+    }
+
+    $format = $options->stdoutFormat();
+
+    if ($format === 'github-comment') {
+      $output->writeln((new GithubCommentReporter())->render($redacted), OutputInterface::VERBOSITY_QUIET);
+    }
+    elseif ($format === 'json') {
+      $output->writeln($this->encode($document), OutputInterface::VERBOSITY_QUIET);
+    }
   }
 
   /**
@@ -208,17 +310,16 @@ class RunCommand extends Command {
   }
 
   /**
-   * Persists the results document, redacted, to the requested destinations.
+   * Persists the results document to the requested destinations.
    *
-   * Redaction is on unless `report.redact` is explicitly false, in which case a
-   * loud warning is forced to stderr because secrets may then reach disk. The
-   * redactor reads the process environment so a credential exported for the run
-   * never lands in a persisted artifact.
+   * The redactor is built once by the caller and shared with the other
+   * reporters, so a credential exported for the run never lands in a persisted
+   * artifact.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $filtered
-   *   The selected configuration, carrying the repo `report` block.
    * @param \Symfony\Component\Console\Output\OutputInterface $stderr
-   *   The error output for the disabled-redaction warning and write notices.
+   *   The error output for the write notices.
+   * @param \AlexSkrypnyk\SkillTest\Run\Redactor $redactor
+   *   The redactor applied to the document before it is written.
    * @param array<string, mixed> $document
    *   The results document to persist.
    * @param string|null $file
@@ -226,14 +327,8 @@ class RunCommand extends Command {
    * @param string|null $dir
    *   The `--output-dir` parent directory, when set.
    */
-  protected function persist(LoadedConfig $filtered, OutputInterface $stderr, array $document, ?string $file, ?string $dir): void {
-    $redact = Data::toBoolOrNull(Data::get($filtered->repo->report, 'redact')) ?? TRUE;
-
-    if (!$redact) {
-      $stderr->writeln('WARNING redaction disabled (report.redact: false); environment secrets may be written to persisted artifacts.', OutputInterface::VERBOSITY_QUIET);
-    }
-
-    $writer = new ResultsWriter(Redactor::fromEnvironment(getenv(), $redact));
+  protected function persist(OutputInterface $stderr, Redactor $redactor, array $document, ?string $file, ?string $dir): void {
+    $writer = new ResultsWriter($redactor);
 
     if ($dir !== NULL) {
       $stderr->writeln(sprintf('results written to %s', $writer->writeDir($document, $dir, gmdate('Ymd-His'))));

@@ -16,6 +16,8 @@ namespace AlexSkrypnyk\SkillTest\Run;
  */
 final readonly class ResultsWriter {
 
+  use WritesFilesTrait;
+
   /**
    * The results filename inside a run directory.
    */
@@ -90,46 +92,6 @@ final readonly class ResultsWriter {
    */
   protected function encode(array $document): string {
     return json_encode($this->redactor->redactDocument($document), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
-  }
-
-  /**
-   * Creates a directory and its parents when it does not already exist.
-   *
-   * @param string $dir
-   *   The directory to create.
-   *
-   * @throws \RuntimeException
-   *   When the directory cannot be created.
-   */
-  protected function ensureDir(string $dir): void {
-    if (is_dir($dir)) {
-      return;
-    }
-
-    if (!mkdir($dir, 0777, TRUE) && !is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      throw new \RuntimeException(sprintf('Could not create directory "%s".', $dir));
-      // @codeCoverageIgnoreEnd
-    }
-  }
-
-  /**
-   * Writes content to a file, failing loudly when the write does not land.
-   *
-   * @param string $file
-   *   The destination file.
-   * @param string $content
-   *   The content to write.
-   *
-   * @throws \RuntimeException
-   *   When the file cannot be written.
-   */
-  protected function put(string $file, string $content): void {
-    if (file_put_contents($file, $content) === FALSE) {
-      // @codeCoverageIgnoreStart
-      throw new \RuntimeException(sprintf('Could not write "%s".', $file));
-      // @codeCoverageIgnoreEnd
-    }
   }
 
 }

@@ -8,6 +8,7 @@ use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\JunitSchemaValidationTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -24,6 +25,7 @@ final class RunCommandTest extends TestCase {
 
   use ApplicationTrait;
   use ArrayPathTrait;
+  use JunitSchemaValidationTrait;
   use SchemaValidationTrait;
 
   /**
@@ -432,6 +434,117 @@ final class RunCommandTest extends TestCase {
     $output = $this->runCommand(['--dir' => $root], 0);
 
     $this->assertStringContainsString('alpha transcript PASS', $output);
+  }
+
+  public function testReporterJunitWritesSchemaValidFileWithFailures(): void {
+    $root = $this->realRepo();
+    file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', self::BROKEN_TRANSCRIPT);
+    $file = $root . '/build/junit.xml';
+
+    $this->runCommand(['--dir' => $root, '--reporter' => ['junit:' . $file]], 1);
+
+    $this->assertFileExists($file);
+    $xml = (string) file_get_contents($file);
+    $this->assertMatchesJunitSchema($xml);
+    $this->assertStringContainsString('contract.commands.forbidden', $xml);
+    $this->assertStringContainsString('git push origin main', $xml);
+    $this->assertStringContainsString('junit written to ' . $file, $this->applicationGetTester()->getErrorOutput());
+  }
+
+  public function testFormatGithubCommentGoesToStdoutAndSuppressesTheHumanReport(): void {
+    $root = $this->realRepo();
+
+    $this->runCommand(['--dir' => $root, '--format' => 'github-comment'], 0);
+
+    $stdout = $this->applicationGetTester()->getDisplay();
+    $this->assertStringContainsString('### skilltest results', $stdout);
+    $this->assertStringContainsString('| Metric | Value |', $stdout);
+    $this->assertStringContainsString('✅ All', $stdout);
+    $this->assertStringNotContainsString('alpha structure PASS', $stdout);
+    $this->assertStringNotContainsString('check(s) across', $stdout);
+  }
+
+  public function testJsonAndGithubCommentTogetherIsConfigError(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runCommand(['--dir' => $root, '--json' => TRUE, '--format' => 'github-comment'], 2);
+
+    $this->assertStringContainsString('single stdout format', $output);
+  }
+
+  public function testUnknownFormatIsConfigError(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runCommand(['--dir' => $root, '--format' => 'tap'], 2);
+
+    $this->assertStringContainsString("unknown format 'tap'", $output);
+  }
+
+  public function testUnknownReporterIsConfigError(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runCommand(['--dir' => $root, '--reporter' => ['tap:out.tap']], 2);
+
+    $this->assertStringContainsString("unknown reporter 'tap:out.tap'", $output);
+  }
+
+  public function testSessionLogWithoutSessionDirIsConfigError(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runCommand(['--dir' => $root, '--session-log' => TRUE], 2);
+
+    $this->assertStringContainsString('--session-log requires --session-dir', $output);
+  }
+
+  public function testSessionLogWritesOrderedNdjson(): void {
+    $root = $this->realRepo();
+
+    $this->runCommand(['--dir' => $root, '--session-log' => TRUE, '--session-dir' => $root . '/sessions'], 0);
+
+    $matches = glob($root . '/sessions/*.ndjson') ?: [];
+    $this->assertCount(1, $matches, 'Expected exactly one session log file.');
+
+    $lines = array_values(array_filter(explode("\n", (string) file_get_contents($matches[0])), static fn(string $line): bool => $line !== ''));
+    $first = json_decode($lines[0], TRUE, 512, JSON_THROW_ON_ERROR);
+    $last = json_decode($lines[count($lines) - 1], TRUE, 512, JSON_THROW_ON_ERROR);
+
+    if (!is_array($first) || !is_array($last)) {
+      $this->fail('Session log lines did not decode to arrays.');
+    }
+
+    $this->assertSame('run.started', $first['event']);
+    $this->assertSame(1, $first['seq']);
+    $this->assertSame('run.finished', $last['event']);
+    $this->assertStringContainsString('session log written to ' . $root . '/sessions/', $this->applicationGetTester()->getErrorOutput());
+  }
+
+  public function testSecretIsRedactedFromJunitAndSessionLog(): void {
+    $root = $this->realRepo();
+    $secret = 'sk-fake-secret-abcdef';
+    putenv(self::SECRET_ENV . '=' . $secret);
+    file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', '{"type":"tool_use","name":"Bash","input":{"command":"git push origin ' . $secret . '"}}' . "\n");
+    $junit = $root . '/build/junit.xml';
+
+    $this->runCommand(['--dir' => $root, '--reporter' => ['junit:' . $junit], '--session-log' => TRUE, '--session-dir' => $root . '/sessions'], 1);
+
+    $junit_content = (string) file_get_contents($junit);
+    $this->assertStringNotContainsString($secret, $junit_content);
+    $this->assertStringContainsString('[REDACTED]', $junit_content);
+
+    $session = glob($root . '/sessions/*.ndjson') ?: [];
+    $session_content = (string) file_get_contents($session[0]);
+    $this->assertStringNotContainsString($secret, $session_content);
+    $this->assertStringContainsString('[REDACTED]', $session_content);
+  }
+
+  public function testDisabledRedactionWarnsWhenReporterWrites(): void {
+    $root = $this->realRepo(hooks: FALSE);
+    file_put_contents($root . '/skilltest.yml', "version: \"1\"\nreport:\n  redact: false\n");
+    $junit = $root . '/build/junit.xml';
+
+    $output = $this->runCommand(['--dir' => $root, '--reporter' => ['junit:' . $junit]], 0);
+
+    $this->assertStringContainsString('WARNING redaction disabled', $output);
   }
 
   /**
