@@ -61,7 +61,7 @@ final class MatrixRendererTest extends TestCase {
   public function testSingleSkillOmitsTheRepoGrid(): void {
     $report = new LlmReport([$this->skill('solo', [$this->model('haiku', TRUE, 0.01)], 3)]);
 
-    $lines = (new MatrixRenderer(MatrixReport::fromReport($report, 'haiku'))->render('text'));
+    $lines = (new MatrixRenderer(MatrixReport::fromReport($report, 'haiku')))->render('text');
 
     $this->assertNotContains('all skills', $lines);
     $this->assertContains('  minimal model: haiku (threshold 0.80, 3 trials)', $lines);
