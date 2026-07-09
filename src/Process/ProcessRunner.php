@@ -7,10 +7,13 @@ namespace AlexSkrypnyk\SkillTest\Process;
 /**
  * Runs a command as a child process under a wall-clock timeout.
  *
- * The single seam every part of the tool uses to shell out: contract checks,
- * the llm runner, `init --ai` drafting, and the structure group's command-
- * reference resolution all need the same guarantees, so the mechanics live
- * once here. Stdout is the one pipe read; stderr is discarded to `/dev/null`
+ * The single seam a part of the tool uses to shell out to one command: custom
+ * checks, hook scripts, `init --ai` drafting, workspace git operations, and the
+ * structure group's command-reference resolution all need the same guarantees,
+ * so the mechanics live once here. Concurrent live trials run through
+ * {@see \AlexSkrypnyk\SkillTest\Live\ProcessPool} instead, which drives many
+ * commands at once. Stdout is the one pipe read; stderr is discarded to
+ * `/dev/null`
  * so a chatty process cannot fill an unread pipe buffer and deadlock. The
  * single pipe is drained without blocking while the process runs, and a
  * process that outlives its timeout is terminated - escalating to an
@@ -19,20 +22,12 @@ namespace AlexSkrypnyk\SkillTest\Process;
  */
 final readonly class ProcessRunner {
 
+  use ProcessTerminationTrait;
+
   /**
    * The default wall-clock budget, in seconds, for one command.
    */
   public const float DEFAULT_TIMEOUT = 60.0;
-
-  /**
-   * The exit code reported when a command exceeds its timeout.
-   */
-  public const int TIMEOUT_EXIT = 124;
-
-  /**
-   * Seconds to wait for a terminated command to exit before force-killing it.
-   */
-  public const float TERMINATE_GRACE = 1.0;
 
   /**
    * Constructs a ProcessRunner.
@@ -108,32 +103,6 @@ final readonly class ProcessRunner {
     proc_close($process);
 
     return [$exit_code, $stdout];
-  }
-
-  /**
-   * Terminates a process, escalating to SIGKILL if it ignores the first signal.
-   *
-   * A command that traps or ignores the termination signal would make
-   * proc_close() block forever, so a brief grace period followed by an
-   * untrappable SIGKILL guarantees the wait cannot hang.
-   *
-   * @param resource $process
-   *   The process handle returned by proc_open().
-   */
-  protected static function terminate($process): void {
-    proc_terminate($process);
-
-    $deadline = microtime(TRUE) + self::TERMINATE_GRACE;
-
-    while (microtime(TRUE) < $deadline) {
-      if (!proc_get_status($process)['running']) {
-        return;
-      }
-
-      usleep(1000);
-    }
-
-    proc_terminate($process, 9);
   }
 
 }
