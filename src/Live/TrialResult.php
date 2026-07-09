@@ -12,13 +12,14 @@ use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
  *
  * A trial is a single headless run of a task on one model. It passes only when
  * every contract and custom check it was graded against passed - a non-zero
- * agent exit, a timeout, or a judge failure is folded in as a failing check so
- * a broken run can never be a passing trial. When the skill declares a rubric
- * the judge's per-criterion verdict and the pinned judge model travel with the
- * trial too. The transcript is carried verbatim (so it can be persisted as an
- * artifact) alongside the relative path the results document references it by,
- * and the token, turn, duration, and cost metrics make the price of the trial a
- * number in the report.
+ * agent exit, a timeout, a judge failure, or a responder failure is folded in as
+ * a failing check so a broken run can never be a passing trial. When the skill
+ * declares a rubric the judge's per-criterion verdict and the pinned judge model
+ * travel with the trial too, and an interactive task records how its conversation
+ * ended and how many follow-ups it took. The transcript is carried verbatim (so
+ * it can be persisted as an artifact) alongside the relative path the results
+ * document references it by, and the token, turn, duration, and cost metrics make
+ * the price of the trial a number in the report.
  */
 final readonly class TrialResult {
 
@@ -55,6 +56,10 @@ final readonly class TrialResult {
    *   Each mocked server's call log, keyed by the document-relative artifact
    *   path it is persisted under; empty when the task declared no mocks or made
    *   no mocked calls.
+   * @param \AlexSkrypnyk\SkillTest\Live\ResponderOutcome|null $responderOutcome
+   *   How the interactive conversation ended, or NULL for a single-shot task.
+   * @param int $followups
+   *   The number of responder replies sent, zero for a single-shot task.
    */
   public function __construct(
     public int $number,
@@ -70,6 +75,8 @@ final readonly class TrialResult {
     public array $criteria = [],
     public ?string $judgeModel = NULL,
     public array $mockLogs = [],
+    public ?ResponderOutcome $responderOutcome = NULL,
+    public int $followups = 0,
   ) {}
 
   /**
@@ -89,7 +96,7 @@ final readonly class TrialResult {
    *   The trial row matching the results schema.
    */
   public function toArray(): array {
-    return [
+    $row = [
       'trial' => $this->number,
       'pass' => $this->pass,
       'contract' => array_map(static fn(CheckResult $result): array => $result->toCheckRow(), $this->checks),
@@ -103,6 +110,14 @@ final readonly class TrialResult {
       'transcript' => $this->transcriptPath,
       'mocks' => array_keys($this->mockLogs),
     ];
+
+    // An interactive task records how its conversation ended and how many
+    // follow-ups it took; a single-shot task carries no responder block.
+    if ($this->responderOutcome !== NULL) {
+      $row['responder'] = ['outcome' => $this->responderOutcome->value, 'followups' => $this->followups];
+    }
+
+    return $row;
   }
 
 }

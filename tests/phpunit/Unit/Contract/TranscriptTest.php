@@ -79,4 +79,41 @@ final class TranscriptTest extends TestCase {
     yield 'non-skill tool ignored' => ['{"type":"tool_use","name":"Bash","input":{"skill":"x"}}', []];
   }
 
+  #[DataProvider('dataProviderResultText')]
+  public function testResultText(string $jsonl, string $expected): void {
+    $this->assertSame($expected, (new Transcript($jsonl))->resultText());
+  }
+
+  public static function dataProviderResultText(): \Iterator {
+    yield 'no result event' => ['{"type":"system","subtype":"init"}', ''];
+    yield 'the last result wins' => ['{"type":"result","result":"first"}' . "\n" . '{"type":"result","result":"second"}', 'second'];
+    yield 'a non-string result is ignored' => ['{"type":"result","result":42}', ''];
+    yield 'blank and malformed lines are skipped' => ["\noops\n42\n" . '{"type":"result","result":"ok"}', 'ok'];
+  }
+
+  #[DataProvider('dataProviderSessionId')]
+  public function testSessionId(string $jsonl, ?string $expected): void {
+    $this->assertSame($expected, (new Transcript($jsonl))->sessionId());
+  }
+
+  public static function dataProviderSessionId(): \Iterator {
+    yield 'no session id' => ['{"type":"result"}', NULL];
+    yield 'the last session id wins' => ['{"type":"system","session_id":"sess-1"}' . "\n" . '{"type":"result","session_id":"sess-2"}', 'sess-2'];
+    yield 'a non-string session id is ignored' => ['{"session_id":123}', NULL];
+  }
+
+  #[DataProvider('dataProviderResponderTurns')]
+  public function testResponderTurns(string $jsonl, array $expected): void {
+    $this->assertSame($expected, (new Transcript($jsonl))->responderTurns());
+  }
+
+  public static function dataProviderResponderTurns(): \Iterator {
+    yield 'turns are captured in order' => ['{"type":"user","responder":true,"text":"a"}' . "\n" . '{"type":"user","responder":true,"text":"b"}', ['a', 'b']];
+    yield 'a user turn without the responder marker is ignored' => ['{"type":"user","text":"x"}', []];
+    yield 'a false responder marker is ignored' => ['{"type":"user","responder":false,"text":"x"}', []];
+    yield 'a responder turn without text is ignored' => ['{"type":"user","responder":true}', []];
+    yield 'a non-string responder text is ignored' => ['{"type":"user","responder":true,"text":5}', []];
+    yield 'a non-user responder event is ignored' => ['{"type":"assistant","responder":true,"text":"x"}', []];
+  }
+
 }

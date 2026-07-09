@@ -78,4 +78,23 @@ final class AgentCommandTest extends TestCase {
     ];
   }
 
+  #[DataProvider('dataProviderResume')]
+  public function testResume(?string $resume, string $expected): void {
+    $this->assertSame($expected, AgentCommand::build('claude', 'reply', 'claude-haiku-4-5', 6, ['Bash'], resume: $resume));
+  }
+
+  /**
+   * Data provider for the resume flag.
+   *
+   * @return \Iterator<string, array{(string | null), string}>
+   *   The cases.
+   */
+  public static function dataProviderResume(): \Iterator {
+    $base = "claude -p 'reply' --output-format stream-json --verbose --model 'claude-haiku-4-5' --max-turns 6 --allowedTools 'Bash'";
+
+    yield 'session id is appended' => ['sess-123', $base . " --resume 'sess-123'"];
+    yield 'null session adds nothing' => [NULL, $base];
+    yield 'empty session adds nothing' => ['', $base];
+  }
+
 }

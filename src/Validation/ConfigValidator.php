@@ -176,6 +176,52 @@ final readonly class ConfigValidator {
     $this->validateFixture($loaded_skill, $validation_result);
     $this->validateRubric($data, $loaded_skill, $validation_result);
     $this->validateJudgeUnknown($data, $loaded_skill, $validation_result);
+    $this->validateResponders($data, $file, $validation_result);
+  }
+
+  /**
+   * Requires every task's responder block to be coherent when it declares one.
+   *
+   * A task is interactive precisely when it declares a `responder`, so the block
+   * that makes it interactive must be well-formed: a mapping with non-empty
+   * instructions and a follow-up cap of at least one. A plain single-prompt task
+   * declares no responder and is left untouched, which is how the two shapes
+   * stay mutually exclusive.
+   *
+   * @param array<mixed> $data
+   *   The parsed `eval.yaml`.
+   * @param string $file
+   *   The file the data came from.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateResponders(array $data, string $file, ValidationResult $validation_result): void {
+    foreach (Data::toArray(Data::get($data, 'llm', 'tasks')) as $index => $task) {
+      if (!is_array($task) || !array_key_exists('responder', $task)) {
+        continue;
+      }
+
+      $pointer = sprintf('llm.tasks.%s.responder', (string) $index);
+      $responder = $task['responder'];
+
+      if (!is_array($responder)) {
+        $validation_result->addError($file, $pointer, 'responder must be a mapping.');
+
+        continue;
+      }
+
+      $instructions = Data::toStringOrNull(Data::get($responder, 'instructions'));
+
+      if ($instructions === NULL || trim($instructions) === '') {
+        $validation_result->addError($file, $pointer . '.instructions', 'responder requires non-empty instructions.');
+      }
+
+      $max_followups = Data::toIntOrNull(Data::get($responder, 'max-followups'));
+
+      if ($max_followups === NULL || $max_followups < 1) {
+        $validation_result->addError($file, $pointer . '.max-followups', 'responder max-followups must be an integer of at least 1.');
+      }
+    }
   }
 
   /**

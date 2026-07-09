@@ -122,7 +122,17 @@
                     "type": "array",
                     "description": "Relative paths of the per-server MCP mock call logs captured for this trial, empty when the task declared no mocks.",
                     "items": {"type": "string"}
-                }
+                },
+                "responder": {"$ref": "#/definitions/responder"}
+            }
+        },
+        "responder": {
+            "type": "object",
+            "description": "Present only for an interactive task driven by a responder. Records how the conversation ended and how many follow-up replies it took, so an abstention and a follow-up cap are distinct from a clean completion.",
+            "required": ["outcome", "followups"],
+            "properties": {
+                "outcome": {"type": "string", "enum": ["completed", "abstained", "cap-exhausted", "error"], "description": "How the conversation ended. 'completed' and 'cap-exhausted' grade the final state; 'abstained' and 'error' fail the trial on a responder check."},
+                "followups": {"type": "integer", "minimum": 0, "description": "The number of responder replies sent to the agent."}
             }
         },
         "criterion": {

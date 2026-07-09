@@ -13,6 +13,7 @@ use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
 use AlexSkrypnyk\SkillTest\Validation\ValidationResult;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -268,6 +269,56 @@ final class ConfigValidatorTest extends TestCase {
 
     $rendered = $this->rendered($result->errors());
     $this->assertContains($root . "/skills/foo/eval.yaml: llm.judge.unknown - must be 'fail' or 'ignore'.", $rendered);
+  }
+
+  public function testResponderCleanPasses(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p', 'responder' => ['instructions' => 'You are the owner.', 'max-followups' => 6]]]]]]);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
+  public function testPlainTaskDeclaresNoResponder(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p'], 'not-a-mapping']]]]);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
+  public function testResponderMustBeAMapping(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p', 'responder' => 'nope']]]]]);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . '/skills/foo/eval.yaml: llm.tasks.0.responder - responder must be a mapping.', $rendered);
+  }
+
+  public function testResponderRequiresInstructions(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p', 'responder' => ['instructions' => '  ', 'max-followups' => 6]]]]]]);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . '/skills/foo/eval.yaml: llm.tasks.0.responder.instructions - responder requires non-empty instructions.', $rendered);
+  }
+
+  #[DataProvider('dataProviderBadMaxFollowups')]
+  public function testResponderRequiresPositiveMaxFollowups(array $responder): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['llm' => ['tasks' => [['name' => 't', 'prompt' => 'p', 'responder' => $responder]]]]]);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . '/skills/foo/eval.yaml: llm.tasks.0.responder.max-followups - responder max-followups must be an integer of at least 1.', $rendered);
+  }
+
+  public static function dataProviderBadMaxFollowups(): \Iterator {
+    yield 'missing' => [['instructions' => 'persona']];
+    yield 'zero' => [['instructions' => 'persona', 'max-followups' => 0]];
+    yield 'non-integer' => [['instructions' => 'persona', 'max-followups' => 'lots']];
   }
 
   /**
