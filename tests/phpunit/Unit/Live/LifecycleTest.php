@@ -55,6 +55,22 @@ final class LifecycleTest extends TestCase {
     $this->assertSame('teardown', $captured[3][0]);
   }
 
+  public function testContainerRunnerHandlesHooksExceptOnHost(): void {
+    $host = [];
+    $container = [];
+    $config = [Lifecycle::BEFORE_TASK => [
+      ['command' => 'seed'],
+      ['command' => 'reset', 'on-host' => TRUE],
+    ]];
+    $lifecycle = new Lifecycle('/repo', $config, $this->runner([0], $host), containerRunner: $this->runner([0], $container));
+
+    $lifecycle->beforeTask([]);
+
+    // The plain hook runs in the container; only `on-host` stays on the host.
+    $this->assertSame([['reset', '/repo']], $host);
+    $this->assertSame([['seed', '/repo']], $container);
+  }
+
   public function testBeforeHookAbortsWhenErrorOnFail(): void {
     $captured = [];
     $config = [Lifecycle::BEFORE_TASK => [['command' => 'reset', 'error-on-fail' => TRUE]]];

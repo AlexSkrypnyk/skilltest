@@ -56,6 +56,9 @@ final readonly class RepoConfig {
    *   The judge model alias, when set.
    * @param string $environment
    *   The execution environment (host or docker).
+   * @param \AlexSkrypnyk\SkillTest\Config\DockerConfig $docker
+   *   The `llm.docker` block: the image and per-container limits for the docker
+   *   environment.
    * @param array<mixed> $lifecycle
    *   The `llm.lifecycle` block: the four hook phases bracketing llm work.
    * @param array<mixed> $report
@@ -74,6 +77,7 @@ final readonly class RepoConfig {
     public ?string $defaultModel,
     public ?string $judgeModel,
     public string $environment,
+    public DockerConfig $docker,
     public array $lifecycle,
     public array $report,
   ) {}
@@ -117,6 +121,7 @@ final readonly class RepoConfig {
       Data::toStringOrNull(Data::get($models, 'default')),
       Data::toStringOrNull(Data::get($models, 'judge')),
       Data::toStringOrNull(Data::get($data, 'llm', 'environment')) ?? self::DEFAULT_ENVIRONMENT,
+      DockerConfig::fromArray(Data::toArray(Data::get($data, 'llm', 'docker'))),
       Data::toArray(Data::get($data, 'llm', 'lifecycle')),
       Data::toArray(Data::get($data, 'report')),
     );

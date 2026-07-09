@@ -116,6 +116,42 @@ final class ConfigValidatorTest extends TestCase {
     $this->assertCount(2, $result->errors());
   }
 
+  public function testInvalidEnvironmentFails(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['llm' => ['environment' => 'kubernetes']], []);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . "/skilltest.yml: llm.environment - unknown environment 'kubernetes'; must be 'host' or 'docker'.", $rendered);
+  }
+
+  public function testDockerLimitsMustBePositive(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['llm' => ['environment' => 'docker', 'docker' => ['cpus' => 0, 'memory-mb' => -5]]], []);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . '/skilltest.yml: llm.docker.cpus - must be a positive number.', $rendered);
+    $this->assertContains($root . '/skilltest.yml: llm.docker.memory-mb - must be a positive integer.', $rendered);
+  }
+
+  public function testDockerEnvironmentWithValidLimitsPasses(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['llm' => ['environment' => 'docker', 'docker' => ['image' => 'x', 'cpus' => 2, 'memory-mb' => 512]]], []);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
+  public function testUnknownDockerKeyWarns(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, ['llm' => ['docker' => ['image' => 'x', 'bogus' => 1]]], []);
+
+    $this->assertFalse($result->hasErrors());
+    $this->assertContains($root . '/skilltest.yml: llm.docker.bogus - unknown key (ignored).', $this->rendered($result->warnings()));
+  }
+
   public function testExcludeWithoutReasonFails(): void {
     $root = $this->root();
 

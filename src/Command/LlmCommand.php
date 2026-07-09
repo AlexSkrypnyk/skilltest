@@ -9,6 +9,8 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Live\DockerEnvironment;
+use AlexSkrypnyk\SkillTest\Live\DockerPreflight;
 use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\Lifecycle;
 use AlexSkrypnyk\SkillTest\Live\LlmReport;
@@ -36,8 +38,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * `trials` times per model, asserts the same contract the deterministic suite
  * asserts against every live transcript, and fails when any model's pass rate
  * drops below the task threshold. It never runs implicitly - it needs an
- * authenticated agent and spends tokens - so a missing binary or credential, or
- * the not-yet-supported docker environment, is a configuration error (exit 2)
+ * authenticated agent and spends tokens - so a missing binary or credential,
+ * or for docker an unreachable daemon, is a configuration error (exit 2)
  * before any trial runs. Results go to stdout; diagnostics to stderr; `--json`
  * emits the machine-readable document and `--output`/`--output-dir` persist it
  * with per-trial transcripts, redacted.
@@ -70,7 +72,7 @@ class LlmCommand extends Command {
       ->addOption(name: 'models', mode: InputOption::VALUE_REQUIRED, description: 'Override models (aliases or ids, comma-separated)')
       ->addOption(name: 'trials', mode: InputOption::VALUE_REQUIRED, description: 'Override the trial count per model')
       ->addOption(name: 'threshold', mode: InputOption::VALUE_REQUIRED, description: 'Override the pass-rate threshold (0..1)')
-      ->addOption(name: 'env', mode: InputOption::VALUE_REQUIRED, description: 'Execution environment: host (docker not yet supported)')
+      ->addOption(name: 'env', mode: InputOption::VALUE_REQUIRED, description: 'Execution environment: host or docker')
       ->addOption(name: 'parallel', mode: InputOption::VALUE_REQUIRED, description: 'Number of concurrent trials (default 1)')
       ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows --models')
       ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
@@ -121,14 +123,12 @@ class LlmCommand extends Command {
     }
 
     $environment = $this->stringOption($input, 'env') ?? $loaded->repo->environment;
+    $env_map = $this->environmentMap();
 
-    if ($environment === 'docker') {
-      return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', 'the docker environment is not yet implemented; run with --env host.')]);
-    }
-
-    // The host agent is only a precondition once the run is known to target the
-    // host environment, so its preflight runs after docker has been ruled out.
-    $preflight = new AgentPreflight($this->environmentMap());
+    // The preflight is environment-specific: host needs an agent binary on the
+    // machine, docker needs the CLI and a reachable daemon; both need
+    // credentials. Either problem is a configuration error before any trial.
+    $preflight = $environment === 'docker' ? new DockerPreflight($env_map, $root) : new AgentPreflight($env_map);
     $problem = $preflight->problem();
 
     if ($problem !== NULL) {
@@ -143,14 +143,27 @@ class LlmCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', $message)]);
     }
 
-    $binary = (string) $preflight->binary();
+    $keep = (bool) $input->getOption('keep-workspace');
 
     try {
-      $host = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: (bool) $input->getOption('keep-workspace'));
-      $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
-      $report = (new LlmSuite($root, $binary, $host, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
+      if ($environment === 'docker') {
+        $docker = new DockerEnvironment($root, $parallel, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map, keepWorkspaces: $keep);
+        $environment_impl = $docker;
+        // The agent runs inside the container, so the suite drives the image's
+        // own `claude`; lifecycle hooks share the trial's isolation unless a
+        // hook opts back onto the host with `on-host`.
+        $binary = AgentPreflight::DEFAULT_BINARY;
+        $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr), containerRunner: $docker->hookRunner());
+      }
+      else {
+        $environment_impl = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: $keep);
+        $binary = (string) $preflight->binary();
+        $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
+      }
 
-      foreach ($host->keptWorkspaces() as $path) {
+      $report = (new LlmSuite($root, $binary, $environment_impl, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
+
+      foreach ($environment_impl->keptWorkspaces() as $path) {
         $stderr->writeln(sprintf('workspace preserved: %s', $path));
       }
     }

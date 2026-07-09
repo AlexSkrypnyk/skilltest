@@ -8,6 +8,7 @@ use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\LlmCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Live\DockerPreflight;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
@@ -71,6 +72,7 @@ final class LlmCommandTest extends TestCase {
 
     putenv(ConfigLoader::ENV_CONFIG);
     putenv(AgentPreflight::ENV_AGENT);
+    putenv(DockerPreflight::ENV_DOCKER);
     putenv(LlmSuite::ENV_TIMEOUT);
     putenv('CLAUDE_CODE_OAUTH_TOKEN');
     putenv(self::SECRET_ENV . '=sk-fake-credential-value');
@@ -82,6 +84,7 @@ final class LlmCommandTest extends TestCase {
   protected function tearDown(): void {
     putenv(ConfigLoader::ENV_CONFIG);
     putenv(AgentPreflight::ENV_AGENT);
+    putenv(DockerPreflight::ENV_DOCKER);
     putenv(LlmSuite::ENV_TIMEOUT);
     putenv(self::SECRET_ENV);
     putenv('CLAUDE_CODE_OAUTH_TOKEN');
@@ -244,13 +247,23 @@ final class LlmCommandTest extends TestCase {
     $this->assertStringContainsString('--parallel must be an integer', $output);
   }
 
-  public function testDockerEnvironmentIsRejected(): void {
+  public function testDockerEnvironmentRunsTrialThroughContainer(): void {
     $root = $this->realRepo();
-    $this->useAgent($this->passStub($root));
+    $this->useDocker($this->dockerStub($root, 'ok', self::PASS_STREAM));
+
+    $output = $this->runCommand(['--dir' => $root, '--env' => 'docker'], 0);
+
+    $this->assertStringContainsString('alpha invoked haiku PASS', $output);
+    $this->assertSame([], glob($root . '/.skilltest/tmp/ws-*') ?: [], 'Trial workspaces should be cleaned up.');
+  }
+
+  public function testDockerDaemonUnreachableIsConfigError(): void {
+    $root = $this->realRepo();
+    $this->useDocker($this->dockerStub($root, 'down', NULL, 1));
 
     $output = $this->runCommand(['--dir' => $root, '--env' => 'docker'], 2);
 
-    $this->assertStringContainsString('docker environment is not yet implemented', $output);
+    $this->assertStringContainsString('Docker daemon is not reachable', $output);
   }
 
   public function testNoTasksIsConfigError(): void {
@@ -368,7 +381,7 @@ final class LlmCommandTest extends TestCase {
 
   public function testJsonConfigErrorEmitsErrorDocument(): void {
     $root = $this->realRepo();
-    $this->useAgent($this->passStub($root));
+    $this->useDocker($this->dockerStub($root, 'down', NULL, 1));
 
     $decoded = $this->decode($this->runCommand(['--dir' => $root, '--env' => 'docker', '--json' => TRUE], 2));
 
@@ -495,6 +508,50 @@ final class LlmCommandTest extends TestCase {
    */
   protected function useAgent(string $command): void {
     putenv(AgentPreflight::ENV_AGENT . '=' . $command);
+  }
+
+  /**
+   * Writes a stub docker binary and returns its command prefix.
+   *
+   * The stub answers the daemon probe with the given exit and, for `run`,
+   * emits the canned transcript to stdout, so the whole docker path is
+   * exercised without a real daemon.
+   *
+   * @param string $root
+   *   The repository root the stub lives under.
+   * @param string $name
+   *   The stub filename stem.
+   * @param string|null $stream
+   *   The stream-json a `run` emits, or NULL to emit nothing.
+   * @param int $version_exit
+   *   The `version` probe's exit code; non-zero marks the daemon down.
+   *
+   * @return string
+   *   The `php <path>` command prefix.
+   */
+  protected function dockerStub(string $root, string $name, ?string $stream, int $version_exit = 0): string {
+    $path = $root . '/' . $name . '-docker.php';
+    $stream_file = $root . '/' . $name . '-docker-stream.txt';
+    file_put_contents($stream_file, $stream ?? '');
+
+    $body = "<?php\n";
+    $body .= '$sub = $argv[1] ?? "";' . "\n";
+    $body .= 'if ($sub === "version") { exit(' . $version_exit . "); }\n";
+    $body .= 'if ($sub === "run") { readfile(' . var_export($stream_file, TRUE) . "); exit(0); }\n";
+    $body .= "exit(0);\n";
+    file_put_contents($path, $body);
+
+    return 'php ' . escapeshellarg($path);
+  }
+
+  /**
+   * Points the docker seam at a stub command.
+   *
+   * @param string $command
+   *   The stub command prefix.
+   */
+  protected function useDocker(string $command): void {
+    putenv(DockerPreflight::ENV_DOCKER . '=' . $command);
   }
 
   /**
