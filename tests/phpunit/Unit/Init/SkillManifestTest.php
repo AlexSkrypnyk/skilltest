@@ -17,9 +17,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(SkillManifest::class)]
 final class SkillManifestTest extends TestCase {
 
-  /**
-   * @param string[] $tools
-   */
   #[DataProvider('dataProviderFromString')]
   public function testFromString(string $contents, ?string $name, ?string $description, array $tools, string $body): void {
     $manifest = SkillManifest::fromString($contents);

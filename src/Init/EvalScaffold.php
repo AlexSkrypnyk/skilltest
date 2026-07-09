@@ -45,7 +45,7 @@ final readonly class EvalScaffold {
    *   The `eval.yaml` contents, ending in a newline.
    */
   public static function render(string $skill, SkillManifest $manifest, ?AiDraft $draft): string {
-    $commands = $draft === NULL ? [] : self::validCommands($draft);
+    $commands = $draft instanceof AiDraft ? self::validCommands($draft) : [];
 
     $lines = [
       'version: "1"',
@@ -60,7 +60,7 @@ final readonly class EvalScaffold {
     $lines = [...$lines, ...self::security(), ''];
     $lines = [...$lines, ...self::deterministic($skill), ''];
 
-    if ($draft !== NULL && $draft->tasks !== [] && $draft->rubric !== []) {
+    if ($draft instanceof AiDraft && $draft->tasks !== [] && $draft->rubric !== []) {
       $lines = [...$lines, ...self::activeLlm($draft)];
     }
     else {
@@ -239,8 +239,10 @@ final readonly class EvalScaffold {
 
     foreach ($draft->commands as $command) {
       $label = $command['label'];
-
-      if (isset(self::FORBIDDEN_GUARDS[$label]) || isset($seen[$label])) {
+      if (isset(self::FORBIDDEN_GUARDS[$label])) {
+        continue;
+      }
+      if (isset($seen[$label])) {
         continue;
       }
 

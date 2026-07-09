@@ -178,7 +178,7 @@ class InitCommand extends Command {
     $response = $this->promptRunner->run($this->prompt($manifest));
     $draft = $response === NULL ? NULL : AiDraft::fromResponse($response);
 
-    if ($draft === NULL) {
+    if (!$draft instanceof AiDraft) {
       $output->writeln('AI drafting unavailable; wrote the deterministic template instead.');
     }
 

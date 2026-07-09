@@ -35,11 +35,12 @@ final class EvalScaffoldTest extends TestCase {
     $this->assertStringContainsString('# llm:', $yaml);
     $this->assertStringContainsString('skilltest record --skill foo', $yaml);
 
+    $this->assertStringContainsString('packs: [baseline]', $yaml);
+
     $parsed = Yaml::parse($yaml);
     $this->assertIsArray($parsed);
     $this->assertArrayNotHasKey('llm', $parsed);
     $this->assertArrayNotHasKey('deterministic', $parsed);
-    $this->assertSame(['baseline'], $parsed['security']['packs']);
   }
 
   public function testEmptyAllowedToolsRendersEmptyFlowList(): void {
@@ -68,23 +69,30 @@ final class EvalScaffoldTest extends TestCase {
 
     $yaml = EvalScaffold::render('foo', $this->manifest(), $draft);
 
+    $this->assertStringContainsString('name: invoked', $yaml);
     $this->assertStringContainsString('name: discovery  # review: low confidence', $yaml);
+    $this->assertStringContainsString("- 'Does the thing'", $yaml);
     $this->assertStringContainsString("- 'Handles errors'  # review: low confidence", $yaml);
     $this->assertStringContainsString('init --ai', $yaml);
 
+    // The rendered document is a valid mapping with an active llm block.
     $parsed = Yaml::parse($yaml);
     $this->assertIsArray($parsed);
+    $this->assertArrayHasKey('llm', $parsed);
 
-    // The active llm block carries both drafted tasks and the rubric.
-    $this->assertCount(2, $parsed['llm']['tasks']);
-    $this->assertSame(['Does the thing', 'Handles errors'], $parsed['llm']['judge']['rubric']);
+    // Only the compiling command survives, exactly once (the dead regex and
+    // the duplicate label are dropped).
+    $this->assertStringContainsString("'runs foo': \\bfoo\\b", $yaml);
+    $this->assertSame(1, substr_count($yaml, "'runs foo':"));
+    $this->assertStringNotContainsString('bad regex', $yaml);
 
-    // Only the compiling, non-colliding, deduplicated command survives.
-    $this->assertSame(['runs foo' => '\bfoo\b'], $parsed['contract']['commands']['required']);
-    $this->assertArrayHasKey('raw git mutations', $parsed['contract']['commands']['forbidden']);
+    // The drafted command colliding with a guard label is dropped; the guard
+    // stays the sole 'raw git mutations' entry.
+    $this->assertStringContainsString("'raw git mutations': pack:git-mutations", $yaml);
+    $this->assertSame(1, substr_count($yaml, "'raw git mutations':"));
   }
 
-  #[DataProvider('dataProviderInsufficientDraft')]
+  #[DataProvider('dataProviderInsufficientDraftFallsBackToCommentedTemplate')]
   public function testInsufficientDraftFallsBackToCommentedTemplate(AiDraft $draft): void {
     $yaml = EvalScaffold::render('foo', $this->manifest(), $draft);
 
@@ -95,7 +103,7 @@ final class EvalScaffoldTest extends TestCase {
     $this->assertArrayNotHasKey('llm', $parsed);
   }
 
-  public static function dataProviderInsufficientDraft(): \Iterator {
+  public static function dataProviderInsufficientDraftFallsBackToCommentedTemplate(): \Iterator {
     yield 'tasks but no rubric' => [new AiDraft([['name' => 't', 'prompt' => 'p', 'low' => FALSE]], [], [])];
     yield 'rubric but no tasks' => [new AiDraft([], [], [['text' => 'c', 'low' => FALSE]])];
     yield 'entirely empty' => [new AiDraft([], [], [])];

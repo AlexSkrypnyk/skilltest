@@ -63,7 +63,8 @@ final readonly class PromptRunner {
    *
    * @return string|null
    *   The captured stdout on success, or NULL when the agent exits non-zero
-   *   (including a timeout) so the caller can fall back to a deterministic path.
+   *   (including a timeout) so the caller can fall back to a deterministic
+   *   path.
    */
   public function run(string $prompt): ?string {
     $command = sprintf('%s -p %s', $this->binary, escapeshellarg($prompt));

@@ -120,8 +120,10 @@ final readonly class AiDraft {
     foreach (Data::toArrayList(Data::get($data, 'tasks')) as $entry) {
       $name = self::clean(Data::toStringOrNull(Data::get($entry, 'name')));
       $prompt = self::clean(Data::toStringOrNull(Data::get($entry, 'prompt')));
-
-      if ($name === '' || $prompt === '') {
+      if ($name === '') {
+        continue;
+      }
+      if ($prompt === '') {
         continue;
       }
 
@@ -146,8 +148,10 @@ final readonly class AiDraft {
     foreach (Data::toArrayList(Data::get($data, 'commands')) as $entry) {
       $label = self::clean(Data::toStringOrNull(Data::get($entry, 'label')));
       $pattern = self::clean(Data::toStringOrNull(Data::get($entry, 'pattern')));
-
-      if ($label === '' || $pattern === '') {
+      if ($label === '') {
+        continue;
+      }
+      if ($pattern === '') {
         continue;
       }
 

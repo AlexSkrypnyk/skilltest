@@ -91,10 +91,12 @@ final class PromptRunnerFunctionalTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path)) {

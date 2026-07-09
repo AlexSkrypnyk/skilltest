@@ -66,12 +66,12 @@ final class AiDraftTest extends TestCase {
     $this->assertSame([['text' => 'c', 'low' => FALSE]], $draft->rubric);
   }
 
-  #[DataProvider('dataProviderUnparseable')]
+  #[DataProvider('dataProviderNonObjectResponseYieldsNull')]
   public function testNonObjectResponseYieldsNull(string $response): void {
-    $this->assertNull(AiDraft::fromResponse($response));
+    $this->assertNotInstanceOf(AiDraft::class, AiDraft::fromResponse($response));
   }
 
-  public static function dataProviderUnparseable(): \Iterator {
+  public static function dataProviderNonObjectResponseYieldsNull(): \Iterator {
     yield 'empty string' => [''];
     yield 'whitespace only' => ["  \n\t "];
     yield 'prose without any brace' => ['there is no json here'];
