@@ -16,6 +16,9 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Judge\Judge;
 use AlexSkrypnyk\SkillTest\Judge\JudgeException;
 use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
+use AlexSkrypnyk\SkillTest\Live\Mcp\McpMock;
+use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
+use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
 
 /**
  * Runs the live llm suite: workspaces, headless trials, and the same contract.
@@ -52,6 +55,11 @@ final readonly class LlmSuite {
    * The check id a blocking judge rubric verdict renders under.
    */
   public const string CHECK_JUDGE_RUBRIC = 'judge.criteria';
+
+  /**
+   * The check id an unmatched or unknown mock tool call renders under.
+   */
+  public const string CHECK_MCP = 'live.mcp';
 
   /**
    * The default per-trial wall-clock budget, in seconds.
@@ -216,9 +224,9 @@ final readonly class LlmSuite {
    */
   protected function runTrials(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token): array {
     $effective = $skill->effective;
-    $allowed = Data::toStringList(Data::get($effective->contract, 'tools', 'allowed'));
+    $mock = McpMock::fromTask($entry['task'], $skill->file, dirname($skill->file));
+    $allowed = $this->allowedTools($effective, $mock);
     $model_id = $this->resolveModelId($token, $effective->modelAliases);
-    $command = AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed);
 
     $total = max(1, $effective->trials);
     $limit = max(1, $this->parallel);
@@ -226,12 +234,37 @@ final readonly class LlmSuite {
 
     for ($start = 0; $start < $total; $start += $limit) {
       $numbers = range($start + 1, min($start + $limit, $total));
-      $results += $this->runBatch($config, $skill, $entry, $inputs, $token, $model_id, $command, $numbers);
+      $results += $this->runBatch($config, $skill, $entry, $inputs, $token, $model_id, $mock, $allowed, $numbers);
     }
 
     ksort($results);
 
     return array_values($results);
+  }
+
+  /**
+   * The allowed-tools list, extended with mocked tools when tools are gated.
+   *
+   * A restricted contract must permit the tools it mocks or the agent cannot
+   * call them; an unrestricted contract already permits everything, so nothing
+   * is added and the run stays unrestricted.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
+   *   The skill's effective configuration.
+   * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
+   *   The task's parsed mocks.
+   *
+   * @return string[]
+   *   The allowed-tools list.
+   */
+  protected function allowedTools(EffectiveConfig $effective, McpMock $mock): array {
+    $allowed = Data::toStringList(Data::get($effective->contract, 'tools', 'allowed'));
+
+    if ($allowed === [] || $mock->isEmpty()) {
+      return $allowed;
+    }
+
+    return array_values(array_unique(array_merge($allowed, $mock->toolNames())));
   }
 
   /**
@@ -249,8 +282,10 @@ final readonly class LlmSuite {
    *   The model alias or id from configuration.
    * @param string $model_id
    *   The resolved model id, for the hook template variables.
-   * @param string $command
-   *   The assembled agent command.
+   * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
+   *   The task's parsed mocks, written into each trial workspace.
+   * @param string[] $allowed
+   *   The allowed-tools list, already extended with the mocked tools.
    * @param int[] $numbers
    *   The 1-based trial numbers in this batch.
    *
@@ -260,7 +295,7 @@ final readonly class LlmSuite {
    * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
    *   When a workspace cannot be assembled or a `before-task` hook aborts.
    */
-  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token, string $model_id, string $command, array $numbers): array {
+  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token, string $model_id, McpMock $mock, array $allowed, array $numbers): array {
     $effective = $skill->effective;
     $workspaces = [];
     $batch = [];
@@ -271,7 +306,11 @@ final readonly class LlmSuite {
         $workspace = $this->environment->setup($effective->skill, $effective->path, $inputs);
         $workspaces[$number] = $workspace;
         $this->lifecycle->beforeTask($this->taskVars($effective, $entry, $model_id, $number, $workspace));
-        $batch[$number] = [$workspace, $command];
+
+        // The MCP config path differs per workspace, so the command is finished
+        // here from the workspace the environment assembled the mocks into.
+        $mcp_config = $mock->isEmpty() ? NULL : McpMockWiring::write($workspace->path(), $mock->servers(), SelfInvocation::resolve());
+        $batch[$number] = [$workspace, AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed, $mcp_config)];
       }
 
       $outcomes = $this->environment->exec($batch);
@@ -279,7 +318,7 @@ final readonly class LlmSuite {
       foreach ($numbers as $number) {
         [$exit_code, $stdout, $duration_ms] = $outcomes[$number];
         $this->lifecycle->afterTask($this->taskVars($effective, $entry, $model_id, $number, $workspaces[$number]));
-        $graded[$number] = $this->grade($config, $skill, $entry, $token, $number, $exit_code, $stdout, $duration_ms, $workspaces[$number]);
+        $graded[$number] = $this->grade($config, $skill, $entry, $token, $number, $exit_code, $stdout, $duration_ms, $workspaces[$number], $mock);
       }
     }
     finally {
@@ -356,11 +395,13 @@ final readonly class LlmSuite {
    *   The measured wall-clock duration.
    * @param \AlexSkrypnyk\SkillTest\Live\TrialWorkspace $workspace
    *   The trial workspace, where the transcript is staged for custom checks.
+   * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
+   *   The task's parsed mocks, whose call logs are read from the workspace.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\TrialResult
    *   The graded trial.
    */
-  protected function grade(LoadedConfig $config, LoadedSkill $skill, array $entry, string $token, int $number, int $exit_code, string $stdout, int $duration_ms, TrialWorkspace $workspace): TrialResult {
+  protected function grade(LoadedConfig $config, LoadedSkill $skill, array $entry, string $token, int $number, int $exit_code, string $stdout, int $duration_ms, TrialWorkspace $workspace, McpMock $mock): TrialResult {
     $effective = $skill->effective;
     $transcript = new Transcript($stdout);
     $checks = (new ContractChecker($config->repo->aliases))->check($transcript, $effective->contract);
@@ -371,6 +412,9 @@ final readonly class LlmSuite {
 
     [$criteria, $judge_model, $judge_checks] = $this->judgeTrial($effective, $entry, $stdout, $exit_code);
     $checks = array_merge($checks, $judge_checks);
+
+    [$mock_logs, $mock_checks] = $this->mockOutcome($effective, $entry, $token, $number, $workspace, $mock);
+    $checks = array_merge($checks, $mock_checks);
 
     if ($exit_code !== 0) {
       array_unshift($checks, $this->agentFailure($exit_code));
@@ -392,7 +436,96 @@ final readonly class LlmSuite {
       $this->transcriptPath($effective->skill, $entry['name'], $token, $number),
       $criteria,
       $judge_model,
+      $mock_logs,
     );
+  }
+
+  /**
+   * Collects a trial's mock call logs and the failures they name.
+   *
+   * Each mocked server's log becomes an artifact keyed by its document-relative
+   * path, and every unmatched or unknown call recorded in it folds in a failing
+   * check - so an agent that drifts onto an unmocked path fails the trial
+   * deterministically, naming the tool and the closest fixture, regardless of
+   * how the agent itself reacted to the mock's error.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
+   *   The skill's effective configuration.
+   * @param array{name: string, prompt: string, task: array<mixed>} $entry
+   *   The validated task entry.
+   * @param string $token
+   *   The model alias or id from configuration.
+   * @param int $number
+   *   The 1-based trial number.
+   * @param \AlexSkrypnyk\SkillTest\Live\TrialWorkspace $workspace
+   *   The trial workspace holding the mock logs, read before teardown.
+   * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
+   *   The task's parsed mocks.
+   *
+   * @return array{0: array<string, string>, 1: \AlexSkrypnyk\SkillTest\Contract\CheckResult[]}
+   *   The artifact map keyed by relative path, and the failing mock checks.
+   */
+  protected function mockOutcome(EffectiveConfig $effective, array $entry, string $token, int $number, TrialWorkspace $workspace, McpMock $mock): array {
+    $artifacts = [];
+    $checks = [];
+
+    foreach (McpMockWiring::logs($workspace->path(), $mock->servers()) as $server => $content) {
+      $artifacts[$this->mockLogPath($effective->skill, $entry['name'], $token, $number, $server)] = $content;
+
+      foreach ($this->unmatchedCalls($content) as $message) {
+        $checks[] = CheckResult::fail(self::CHECK_MCP, 'mcp mock', '', $message);
+      }
+    }
+
+    return [$artifacts, $checks];
+  }
+
+  /**
+   * Extracts the failure message of every unmatched call in a mock log.
+   *
+   * @param string $content
+   *   The server's JSONL call log.
+   *
+   * @return string[]
+   *   One message per `matched:false` record, in call order.
+   */
+  protected function unmatchedCalls(string $content): array {
+    $messages = [];
+
+    foreach (explode("\n", trim($content)) as $line) {
+      if ($line === '') {
+        continue;
+      }
+
+      $record = json_decode($line, TRUE);
+
+      if (is_array($record) && ($record['matched'] ?? NULL) === FALSE) {
+        $messages[] = Data::toStringOrNull($record['error'] ?? NULL) ?? 'a mocked tool call did not match any fixture.';
+      }
+    }
+
+    return $messages;
+  }
+
+  /**
+   * Builds the document-relative path one server's mock log is referenced by.
+   *
+   * @param string $skill
+   *   The skill name.
+   * @param string $task
+   *   The task name.
+   * @param string $alias
+   *   The model alias.
+   * @param int $number
+   *   The 1-based trial number.
+   * @param string $server
+   *   The mock server name.
+   *
+   * @return string
+   *   The relative mock-log path.
+   */
+  protected function mockLogPath(string $skill, string $task, string $alias, int $number, string $server): string {
+    return sprintf('artifacts/%s__%s__%s__t%d__mock-%s.jsonl', self::slug($skill), self::slug($task), self::slug($alias), $number, self::slug($server));
   }
 
   /**

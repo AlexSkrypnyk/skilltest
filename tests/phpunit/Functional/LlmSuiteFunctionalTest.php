@@ -11,8 +11,10 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\Lifecycle;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
+use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 #[Group('live')]
 final class LlmSuiteFunctionalTest extends TestCase {
 
+  use ArrayPathTrait;
+
   /**
    * A transcript that satisfies the alpha contract.
    */
@@ -42,6 +46,11 @@ final class LlmSuiteFunctionalTest extends TestCase {
    * The base contract every helper eval declares.
    */
   protected const string CONTRACT = "contract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bharness\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
+
+  /**
+   * An llm tail whose one task mocks a single MCP tool.
+   */
+  protected const string MOCK_TAIL = "llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n      mcp-mocks:\n        - server: github\n          tools:\n            - name: create_issue\n              responses:\n                - match: {title: Bug}\n                  response: done\n";
 
   /**
    * The temporary repository root.
@@ -378,6 +387,105 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->expectExceptionMessage('no model configured');
 
     $this->suite($this->pool([]))->run($config, []);
+  }
+
+  public function testMcpMocksWireIntoTheAgentCommand(): void {
+    $config = $this->load(self::MOCK_TAIL);
+    $captured = [];
+
+    $report = $this->suite($this->capturingPool([self::PASS_TRANSCRIPT], $captured))->run($config, []);
+
+    $command = $captured[0][0];
+    $this->assertStringContainsString('--mcp-config', $command);
+    $this->assertStringContainsString('--strict-mcp-config', $command);
+    $this->assertStringContainsString('mcp__github__create_issue', $command);
+    $this->assertTrue($report->skills[0]->tasks[0]->models[0]->trials[0]->pass);
+  }
+
+  public function testUnmatchedMockCallFailsTheTrialAndLandsAnArtifact(): void {
+    $config = $this->load(self::MOCK_TAIL);
+    $record = '{"tool":"create_issue","arguments":{"title":"Other"},"matched":false,"error":"skilltest mock: no fixture matched tool \'create_issue\'; closest: match {title}."}';
+    // Two records around a blank line, as a defensive log the parser must skip.
+    $log_line = $record . "\n\n" . $record;
+
+    $report = $this->suite($this->mockLoggingPool(self::PASS_TRANSCRIPT, 'github', $log_line))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertContains(LlmSuite::CHECK_MCP, $this->checkIds($trial));
+
+    $key = 'artifacts/alpha__invoked__haiku__t1__mock-github.jsonl';
+    $artifacts = $report->artifacts();
+    $this->assertArrayHasKey($key, $artifacts);
+    $this->assertStringContainsString('no fixture matched', $artifacts[$key]);
+    $this->assertContains($key, $this->pathArray($trial->toArray(), 'mocks'));
+  }
+
+  public function testMatchedMockCallLandsAnArtifactWithoutFailing(): void {
+    $config = $this->load(self::MOCK_TAIL);
+    $log_line = '{"tool":"create_issue","arguments":{"title":"Bug"},"matched":true,"fixture":"match {title}"}';
+
+    $report = $this->suite($this->mockLoggingPool(self::PASS_TRANSCRIPT, 'github', $log_line))->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertTrue($trial->pass);
+    $this->assertNotContains(LlmSuite::CHECK_MCP, $this->checkIds($trial));
+    $this->assertArrayHasKey('artifacts/alpha__invoked__haiku__t1__mock-github.jsonl', $report->artifacts());
+  }
+
+  /**
+   * A pool that captures each command it is handed, then returns queued output.
+   *
+   * @param array<int, string|array{int, string}> $outcomes
+   *   The per-trial outcomes.
+   * @param array<int, array{0: string, 1: string}> $captured
+   *   The captured `[command, cwd]` pairs, appended to in place.
+   *
+   * @return \Closure
+   *   The pool closure.
+   */
+  protected function capturingPool(array $outcomes, array &$captured): \Closure {
+    $queue = array_map(static fn(array|string $outcome): array => is_array($outcome) ? $outcome : [0, $outcome], $outcomes);
+    $index = 0;
+
+    return function (array $commands) use ($queue, &$index, &$captured): array {
+      $results = [];
+
+      foreach ($commands as $key => $command) {
+        $captured[] = $command;
+        [$exit, $stdout] = $queue[$index];
+        $index++;
+        $results[$key] = [$exit, $stdout, 5];
+      }
+
+      return $results;
+    };
+  }
+
+  /**
+   * A pool that writes a mock log into each trial workspace, like the server.
+   *
+   * @param string $transcript
+   *   The transcript each trial returns.
+   * @param string $server
+   *   The mock server whose log is written.
+   * @param string $log_line
+   *   The single JSONL record to write to that server's log.
+   *
+   * @return \Closure
+   *   The pool closure.
+   */
+  protected function mockLoggingPool(string $transcript, string $server, string $log_line): \Closure {
+    return function (array $commands) use ($transcript, $server, $log_line): array {
+      $results = [];
+
+      foreach ($commands as $key => $command) {
+        file_put_contents($command[1] . '/' . McpMockWiring::MOCKS_DIR . '/' . $server . '.log.jsonl', $log_line . "\n");
+        $results[$key] = [0, $transcript, 5];
+      }
+
+      return $results;
+    };
   }
 
   /**

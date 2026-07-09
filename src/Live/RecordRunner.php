@@ -6,6 +6,9 @@ namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
+use AlexSkrypnyk\SkillTest\Live\Mcp\McpMock;
+use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
+use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
 
 /**
  * Runs the single live trial `skilltest record` captures into a fixture.
@@ -59,8 +62,12 @@ final readonly class RecordRunner {
   public function record(LoadedSkill $skill, array $entry, string $model_id): RecordResult {
     $effective = $skill->effective;
     $inputs = TrialWorkspace::parseInputs($entry['task'], $skill->file);
+    $mock = McpMock::fromTask($entry['task'], $skill->file, dirname($skill->file));
     $allowed = Data::toStringList(Data::get($effective->contract, 'tools', 'allowed'));
-    $command = AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed);
+
+    if ($allowed !== [] && !$mock->isEmpty()) {
+      $allowed = array_values(array_unique(array_merge($allowed, $mock->toolNames())));
+    }
 
     $this->environment->prepare();
 
@@ -68,6 +75,8 @@ final readonly class RecordRunner {
       $workspace = $this->environment->setup($effective->skill, $effective->path, $inputs);
 
       try {
+        $mcp_config = $mock->isEmpty() ? NULL : McpMockWiring::write($workspace->path(), $mock->servers(), SelfInvocation::resolve());
+        $command = AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed, $mcp_config);
         [$exit_code, $stdout, $duration_ms] = $this->environment->exec([[$workspace, $command]])[0];
 
         return new RecordResult($stdout, $exit_code, $duration_ms);

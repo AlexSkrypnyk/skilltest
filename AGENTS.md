@@ -51,9 +51,19 @@ composer lint-fix
 
 ### Testing
 
+**STRICT RULE - never invoke a tool binary directly.** Always go through the Composer script, never the underlying binary. This means `composer test`, `composer test-coverage`, `composer lint`, and `composer lint-fix` - NEVER `vendor/bin/phpunit`, `vendor/bin/phpcs`, `vendor/bin/phpstan`, `vendor/bin/rector`, or `phpunit` directly, and never a hand-built `php vendor/bin/...` invocation. The Composer script sets the correct configuration, working directory, and flags, so a direct call silently diverges from CI. There are no exceptions - not for "just one test", not for "a quick check".
+
+To run a single test file, class, or method, forward the argument to the Composer script with `--` (Composer passes everything after `--` to the wrapped command); do NOT reach for the binary:
+
 ```bash
 # Run all PHPUnit tests (fast, no coverage)
 composer test
+
+# Run a single test class or file (arguments after -- are forwarded to phpunit)
+composer test -- --filter=McpServeCommandTest
+
+# Run a single test method
+composer test -- --filter='McpServeCommandTest::testMissingDefinitionFileFails'
 
 # Run with coverage reports
 composer test-coverage

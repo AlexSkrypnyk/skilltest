@@ -10,6 +10,7 @@ declare(strict_types=1);
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
 use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\LlmCommand;
+use AlexSkrypnyk\SkillTest\Command\McpServeCommand;
 use AlexSkrypnyk\SkillTest\Command\RecordCommand;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
@@ -33,6 +34,7 @@ $application->add(new TokensCommand());
 $application->add(new RunCommand());
 $application->add(new LlmCommand());
 $application->add(new RecordCommand());
+$application->add(new McpServeCommand());
 
 $application->setDefaultCommand('run');
 

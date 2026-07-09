@@ -117,7 +117,12 @@
                 "turns": {"type": "integer", "minimum": 0},
                 "tokens": {"$ref": "#/definitions/tokens"},
                 "cost_usd": {"type": "number", "minimum": 0},
-                "transcript": {"type": "string"}
+                "transcript": {"type": "string"},
+                "mocks": {
+                    "type": "array",
+                    "description": "Relative paths of the per-server MCP mock call logs captured for this trial, empty when the task declared no mocks.",
+                    "items": {"type": "string"}
+                }
             }
         },
         "criterion": {

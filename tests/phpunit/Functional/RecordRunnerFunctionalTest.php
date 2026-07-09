@@ -122,6 +122,19 @@ final class RecordRunnerFunctionalTest extends TestCase {
     $this->assertSame([], glob($this->root . self::WS_BASE . '/ws-*') ?: [], 'The workspace should be cleaned up even when assembly throws.');
   }
 
+  public function testMcpMocksWireIntoTheRecordedCommand(): void {
+    $skill = $this->skill("llm:\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
+    $captured = [];
+    $runner = $this->runner($this->pool([[0, self::TRANSCRIPT]], $captured));
+    $task = ['name' => 'invoked', 'prompt' => 'Build it', 'mcp-mocks' => [['server' => 'github', 'tools' => [['name' => 'create_issue', 'responses' => [['match' => ['title' => 'Bug'], 'response' => 'done']]]]]]];
+
+    $runner->record($skill, ['name' => 'invoked', 'prompt' => 'Build it', 'task' => $task], 'claude-haiku-4-5');
+
+    $this->assertStringContainsString('--mcp-config', $captured[0][0]);
+    $this->assertStringContainsString('--strict-mcp-config', $captured[0][0]);
+    $this->assertStringContainsString('mcp__github__create_issue', $captured[0][0]);
+  }
+
   /**
    * Builds a RecordRunner over the temp repo with an injected pool.
    *

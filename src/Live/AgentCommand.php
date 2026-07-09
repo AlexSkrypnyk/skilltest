@@ -10,11 +10,13 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * The command is the one place the tool's contract shape is turned into an
  * agent invocation: the prompt drives the run, `stream-json` with `--verbose`
  * emits the JSONL transcript the contract engine parses, `--allowedTools`
- * restricts the agent to the contract's allowed tools, and `--max-turns` caps
- * the turn budget. Only flags that apply are appended, so a task with no turn
- * cap or no allowed-tools list yields a shorter, valid command. The binary is a
- * command prefix (`claude`, or `php /path/to/stub` in tests) used verbatim;
- * every value derived from configuration is shell-escaped.
+ * restricts the agent to the contract's allowed tools, `--max-turns` caps the
+ * turn budget, and `--mcp-config` with `--strict-mcp-config` points the agent
+ * at the trial's mock servers and only those. Only flags that apply are
+ * appended, so a task with no turn cap, no allowed-tools list, or no mocks
+ * yields a shorter, valid command. The binary is a command prefix (`claude`, or
+ * `php /path/to/stub` in tests) used verbatim; every value derived from
+ * configuration is shell-escaped.
  */
 final readonly class AgentCommand {
 
@@ -31,11 +33,15 @@ final readonly class AgentCommand {
    *   The turn cap, or NULL for none.
    * @param string[] $allowed_tools
    *   The contract's allowed tools; empty appends no restriction.
+   * @param string|null $mcp_config
+   *   The trial's MCP config file, or NULL when the task declares no mocks.
+   *   When set, `--strict-mcp-config` is paired with it so only the trial's
+   *   mock servers load and no host MCP configuration leaks in.
    *
    * @return string
    *   The assembled command.
    */
-  public static function build(string $binary, string $prompt, ?string $model, ?int $max_turns, array $allowed_tools): string {
+  public static function build(string $binary, string $prompt, ?string $model, ?int $max_turns, array $allowed_tools, ?string $mcp_config = NULL): string {
     $command = sprintf('%s -p %s --output-format stream-json --verbose', $binary, escapeshellarg($prompt));
 
     if ($model !== NULL && $model !== '') {
@@ -48,6 +54,10 @@ final readonly class AgentCommand {
 
     if ($allowed_tools !== []) {
       $command .= ' --allowedTools ' . escapeshellarg(implode(',', $allowed_tools));
+    }
+
+    if ($mcp_config !== NULL && $mcp_config !== '') {
+      $command .= ' --mcp-config ' . escapeshellarg($mcp_config) . ' --strict-mcp-config';
     }
 
     return $command;

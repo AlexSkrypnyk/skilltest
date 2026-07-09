@@ -51,6 +51,10 @@ final readonly class TrialResult {
    *   rubric.
    * @param string|null $judgeModel
    *   The pinned judge model id, or NULL when the skill declares no rubric.
+   * @param array<string, string> $mockLogs
+   *   Each mocked server's call log, keyed by the document-relative artifact
+   *   path it is persisted under; empty when the task declared no mocks or made
+   *   no mocked calls.
    */
   public function __construct(
     public int $number,
@@ -65,6 +69,7 @@ final readonly class TrialResult {
     public string $transcriptPath,
     public array $criteria = [],
     public ?string $judgeModel = NULL,
+    public array $mockLogs = [],
   ) {}
 
   /**
@@ -96,6 +101,7 @@ final readonly class TrialResult {
       'tokens' => ['in' => $this->tokensIn, 'out' => $this->tokensOut],
       'cost_usd' => $this->cost,
       'transcript' => $this->transcriptPath,
+      'mocks' => array_keys($this->mockLogs),
     ];
   }
 
