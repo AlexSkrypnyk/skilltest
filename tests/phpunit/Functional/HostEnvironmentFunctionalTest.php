@@ -55,6 +55,18 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
     $environment->teardown();
   }
 
+  public function testPrepareThrowsWhenTheBaseCannotBeCreated(): void {
+    // A regular file where a directory parent is needed makes mkdir fail.
+    $blocker = $this->base . '/blocker';
+    file_put_contents($blocker, 'x');
+    $environment = $this->createEnvironment($blocker . '/tmp');
+
+    $this->expectException(ConfigException::class);
+    $this->expectExceptionMessage('could not create the workspace base directory');
+
+    $environment->prepare();
+  }
+
   public function testTeardownRemovesTheEmptyBase(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();

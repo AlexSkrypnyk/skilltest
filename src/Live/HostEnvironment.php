@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+
 /**
  * Runs trials on the machine itself: the fastest loop, the weakest isolation.
  *
@@ -67,10 +69,17 @@ final class HostEnvironment implements Environment {
 
   /**
    * {@inheritdoc}
+   *
+   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   *   When the workspace base directory cannot be created.
    */
   public function prepare(): void {
-    if (!is_dir($this->workspaceBase)) {
-      mkdir($this->workspaceBase, 0777, TRUE);
+    // A concurrent run may create the base between the check and the mkdir, so
+    // a failed mkdir is only an error when the directory still does not exist;
+    // that leaves an unwritable scratch area an explicit failure here rather
+    // than a confusing one later in setup().
+    if (!is_dir($this->workspaceBase) && !@mkdir($this->workspaceBase, 0777, TRUE) && !is_dir($this->workspaceBase)) {
+      throw new ConfigException(sprintf("could not create the workspace base directory '%s'.", $this->workspaceBase));
     }
   }
 
