@@ -17,6 +17,8 @@ use AlexSkrypnyk\SkillTest\Contract\Transcript;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Live\DockerEnvironment;
+use AlexSkrypnyk\SkillTest\Live\DockerPreflight;
 use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
@@ -43,9 +45,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  * clobbered without `--force`. A recording whose contract fails is still
  * written for inspection but exits 1, so a fixture that would poison the gate
  * is caught here rather than on the next push. Like the llm suite it spends
- * tokens and needs an authenticated agent, so a missing binary, credential,
- * or the not-yet-supported docker environment is a configuration error
- * (exit 2) before any trial runs.
+ * tokens and needs an authenticated agent, so a missing binary or credential,
+ * or for docker an unreachable daemon, is a configuration error (exit 2)
+ * before any trial runs.
  */
 class RecordCommand extends Command {
 
@@ -139,11 +141,10 @@ class RecordCommand extends Command {
       return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relative($root, $path))));
     }
 
-    if ($skill->effective->environment === 'docker') {
-      return $this->reportError($stderr, ValidationMessage::error('', '', 'the docker environment is not yet implemented; run with --env host.'));
-    }
+    $environment = $skill->effective->environment;
+    $env_map = $this->environmentMap();
 
-    $preflight = new AgentPreflight($this->environmentMap());
+    $preflight = $environment === 'docker' ? new DockerPreflight($env_map, $root) : new AgentPreflight($env_map);
     $problem = $preflight->problem();
 
     if ($problem !== NULL) {
@@ -151,8 +152,18 @@ class RecordCommand extends Command {
     }
 
     try {
-      $host = new HostEnvironment($root, 1, $this->timeout());
-      $result = (new RecordRunner($root, (string) $preflight->binary(), $host))->record($skill, $entry, $model_id);
+      if ($environment === 'docker') {
+        $runtime = new DockerEnvironment($root, 1, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map);
+        // The agent runs inside the container, so record drives the image's
+        // own `claude` rather than the host binary.
+        $binary = AgentPreflight::DEFAULT_BINARY;
+      }
+      else {
+        $runtime = new HostEnvironment($root, 1, $this->timeout());
+        $binary = (string) $preflight->binary();
+      }
+
+      $result = (new RecordRunner($root, $binary, $runtime))->record($skill, $entry, $model_id);
     }
     catch (ConfigException $config_exception) {
       return $this->reportError($stderr, $this->toMessage($config_exception));

@@ -70,7 +70,7 @@ final class Lifecycle {
   /**
    * The validated hooks keyed by phase, each with its resolved run settings.
    *
-   * @var array<string, array<int, array{command: string, cwd: string, exitCodes: int[], errorOnFail: bool}>>
+   * @var array<string, array<int, array{command: string, cwd: string, exitCodes: int[], errorOnFail: bool, onHost: bool}>>
    */
   protected array $phases;
 
@@ -89,6 +89,10 @@ final class Lifecycle {
    *   A sink for non-aborting failure messages. Defaults to a no-op.
    * @param float $timeout
    *   The per-hook wall-clock budget, in seconds.
+   * @param \Closure|null $containerRunner
+   *   A runner that executes a hook in the environment's context (a container).
+   *   When set, every hook not marked `on-host` runs through it instead of the
+   *   host runner, so a docker run's hooks share the trial's isolation.
    *
    * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
    *   When a declared hook is missing its command.
@@ -99,6 +103,10 @@ final class Lifecycle {
     ?\Closure $runner = NULL,
     ?\Closure $warn = NULL,
     float $timeout = ProcessRunner::DEFAULT_TIMEOUT,
+    /**
+     * Runs a hook in the environment's context (a container), when set.
+     */
+    protected ?\Closure $containerRunner = NULL,
   ) {
     $this->runner = $runner ?? (new ProcessRunner($timeout))->run(...);
     $this->warn = $warn ?? static function (string $message): void {};
@@ -168,7 +176,11 @@ final class Lifecycle {
   protected function runPhase(string $phase, array $vars, bool $abortable): void {
     foreach ($this->phases[$phase] as $hook) {
       $command = $this->substitute($hook['command'], $vars);
-      [$exit_code] = ($this->runner)($command, $hook['cwd']);
+      // A hook runs in the environment's context by default; `on-host` (and the
+      // absence of a container runner) keeps it on the host, where a hook that
+      // resets host-side state must run.
+      $runner = $hook['onHost'] || !$this->containerRunner instanceof \Closure ? $this->runner : $this->containerRunner;
+      [$exit_code] = $runner($command, $hook['cwd']);
 
       if (in_array($exit_code, $hook['exitCodes'], TRUE)) {
         continue;
@@ -187,7 +199,7 @@ final class Lifecycle {
   /**
    * Parses and validates every phase's hooks into resolved run settings.
    *
-   * @return array<string, array<int, array{command: string, cwd: string, exitCodes: int[], errorOnFail: bool}>>
+   * @return array<string, array<int, array{command: string, cwd: string, exitCodes: int[], errorOnFail: bool, onHost: bool}>>
    *   The hooks keyed by phase.
    *
    * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
@@ -211,6 +223,7 @@ final class Lifecycle {
           'cwd' => $this->workingDirectory(Data::toStringOrNull(Data::get($raw, 'working-directory'))),
           'exitCodes' => $this->exitCodes(Data::get($raw, 'exit-codes')),
           'errorOnFail' => Data::toBoolOrNull(Data::get($raw, 'error-on-fail')) ?? FALSE,
+          'onHost' => Data::toBoolOrNull(Data::get($raw, 'on-host')) ?? FALSE,
         ];
       }
 

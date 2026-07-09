@@ -33,7 +33,7 @@ final readonly class ConfigValidator {
     'guards' => TRUE,
     'hooks' => TRUE,
     'models' => ['aliases' => TRUE, 'ladder' => TRUE, 'default' => TRUE, 'judge' => TRUE],
-    'llm' => ['environment' => TRUE, 'docker' => TRUE, 'lifecycle' => TRUE],
+    'llm' => ['environment' => TRUE, 'docker' => ['image' => TRUE, 'setup' => TRUE, 'cpus' => TRUE, 'memory-mb' => TRUE], 'lifecycle' => TRUE],
     'report' => ['redact' => TRUE],
     'inputs' => TRUE,
   ];
@@ -97,6 +97,8 @@ final readonly class ConfigValidator {
       $this->validateHooks($loaded_config->repo, $loaded_config->repoFile, $result);
       $this->validateModelAliases($loaded_config->repo, $loaded_config->repoFile, $result);
       $this->validateExcludes($loaded_config->repo, $loaded_config->repoFile, $result);
+      $this->validateEnvironment($loaded_config->repo, $loaded_config->repoFile, $result);
+      $this->validateDocker($loaded_config->repo, $loaded_config->repoFile, $result);
     }
 
     foreach ($loaded_config->skills as $skill) {
@@ -516,6 +518,46 @@ final readonly class ConfigValidator {
       if ($entry->reason === NULL) {
         $validation_result->addError($file, $pointer, sprintf("excluded skill '%s' is missing a reason.", $entry->skill));
       }
+    }
+  }
+
+  /**
+   * Requires the execution environment to be one the tool can run.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
+   *   The repo configuration.
+   * @param string $file
+   *   The repo config file path.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateEnvironment(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    if (!in_array($repo_config->environment, ['host', 'docker'], TRUE)) {
+      $validation_result->addError($file, 'llm.environment', sprintf("unknown environment '%s'; must be 'host' or 'docker'.", $repo_config->environment));
+    }
+  }
+
+  /**
+   * Requires the docker limits to be positive when they are set.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
+   *   The repo configuration.
+   * @param string $file
+   *   The repo config file path.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateDocker(RepoConfig $repo_config, string $file, ValidationResult $validation_result): void {
+    $cpus = $repo_config->docker->cpus;
+
+    if ($cpus !== NULL && $cpus <= 0) {
+      $validation_result->addError($file, 'llm.docker.cpus', 'must be a positive number.');
+    }
+
+    $memory_mb = $repo_config->docker->memoryMb;
+
+    if ($memory_mb !== NULL && $memory_mb <= 0) {
+      $validation_result->addError($file, 'llm.docker.memory-mb', 'must be a positive integer.');
     }
   }
 

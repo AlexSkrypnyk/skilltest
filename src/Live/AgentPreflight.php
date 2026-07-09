@@ -19,6 +19,8 @@ namespace AlexSkrypnyk\SkillTest\Live;
  */
 final readonly class AgentPreflight {
 
+  use BinaryOnPathTrait;
+
   /**
    * The environment variable naming the agent binary or command prefix.
    */
@@ -87,7 +89,7 @@ final readonly class AgentPreflight {
       return $override;
     }
 
-    return $this->onPath(self::DEFAULT_BINARY);
+    return self::onPath((string) ($this->env['PATH'] ?? ''), self::DEFAULT_BINARY);
   }
 
   /**
@@ -107,29 +109,6 @@ final readonly class AgentPreflight {
     $home = trim((string) ($this->env['HOME'] ?? ''));
 
     return $home !== '' && is_dir($home . '/.claude');
-  }
-
-  /**
-   * Finds an executable of the given name on the PATH.
-   *
-   * @param string $name
-   *   The binary name.
-   *
-   * @return string|null
-   *   The absolute path to the first executable match, or NULL when none.
-   */
-  protected function onPath(string $name): ?string {
-    $path = (string) ($this->env['PATH'] ?? '');
-
-    foreach (array_filter(explode(PATH_SEPARATOR, $path), static fn(string $dir): bool => $dir !== '') as $dir) {
-      $candidate = rtrim($dir, '/') . '/' . $name;
-
-      if (is_file($candidate) && is_executable($candidate)) {
-        return $candidate;
-      }
-    }
-
-    return NULL;
   }
 
 }
