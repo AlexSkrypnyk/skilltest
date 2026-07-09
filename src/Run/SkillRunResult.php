@@ -15,6 +15,11 @@ namespace AlexSkrypnyk\SkillTest\Run;
 final readonly class SkillRunResult {
 
   /**
+   * The note recorded when a skill declares no transcript fixture.
+   */
+  public const string NOTE_NO_TRANSCRIPT = 'no transcript fixture declared';
+
+  /**
    * Constructs a SkillRunResult.
    *
    * @param string $skill

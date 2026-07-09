@@ -28,11 +28,6 @@ use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 final readonly class RunSuite {
 
   /**
-   * The note recorded when a skill declares no transcript fixture.
-   */
-  public const string NOTE_NO_TRANSCRIPT = 'no transcript fixture declared';
-
-  /**
    * Constructs a RunSuite.
    *
    * @param string $root
@@ -149,7 +144,7 @@ final readonly class RunSuite {
     $fixture = $skill->effective->transcript;
 
     if ($fixture === NULL) {
-      return [[], self::NOTE_NO_TRANSCRIPT];
+      return [[], SkillRunResult::NOTE_NO_TRANSCRIPT];
     }
 
     $path = str_starts_with($fixture, '/') ? $fixture : dirname($skill->file) . '/' . $fixture;

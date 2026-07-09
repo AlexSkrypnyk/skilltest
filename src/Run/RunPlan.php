@@ -147,7 +147,7 @@ final readonly class RunPlan {
    */
   protected function transcriptLines(LoadedSkill $skill): array {
     if ($skill->effective->transcript === NULL) {
-      return [sprintf('(%s)', RunSuite::NOTE_NO_TRANSCRIPT)];
+      return [sprintf('(%s)', SkillRunResult::NOTE_NO_TRANSCRIPT)];
     }
 
     $contract = $skill->effective->contract;

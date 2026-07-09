@@ -11,6 +11,7 @@ use AlexSkrypnyk\SkillTest\Config\RepoConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
 use AlexSkrypnyk\SkillTest\Run\RunSuite;
+use AlexSkrypnyk\SkillTest\Run\SkillRunResult;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -57,7 +58,7 @@ final class RunSuiteTest extends TestCase {
     $this->assertSame('beta', $beta->skill);
     $this->assertCount(1, $beta->security);
     $this->assertSame('security.curl-pipe-shell', $beta->security[0]->check);
-    $this->assertSame(RunSuite::NOTE_NO_TRANSCRIPT, $beta->transcriptNote);
+    $this->assertSame(SkillRunResult::NOTE_NO_TRANSCRIPT, $beta->transcriptNote);
     $this->assertSame([], $beta->transcript);
 
     $this->assertCount(1, $report->hooks);
