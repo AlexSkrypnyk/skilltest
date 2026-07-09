@@ -40,6 +40,23 @@ final class StructureResultTest extends TestCase {
     $this->assertTrue($result->failed());
   }
 
+  public function testWarnCarriesLocationAndNeverFails(): void {
+    $result = StructureResult::warn('structure.advisory', 'foo', 'too long.', 'skills/foo/SKILL.md', 3, '25 numbered steps');
+
+    $this->assertSame(StructureResult::WARN, $result->status);
+    $this->assertSame('skills/foo/SKILL.md', $result->file);
+    $this->assertSame(3, $result->line);
+    $this->assertSame('25 numbered steps', $result->evidence);
+    $this->assertNull($result->reason);
+    $this->assertFalse($result->failed());
+  }
+
+  public function testRenderWarn(): void {
+    $result = StructureResult::warn('structure.token-budget', 'foo', 'nearly there.', 'skills/foo/SKILL.md', 1);
+
+    $this->assertSame('structure.token-budget WARN skills/foo/SKILL.md:1 - nearly there.', $result->render());
+  }
+
   public function testSuppressedCarriesReason(): void {
     $result = StructureResult::suppressed('structure.name-matches-dir', 'foo', 'legacy directory.');
 

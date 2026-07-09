@@ -85,7 +85,18 @@ final class StructureCommandTest extends TestCase {
 
     $output = $this->runStructure(['--dir' => $root->url()], 0);
 
-    $this->assertStringContainsString('8 check(s) across 1 skill(s): 8 passed, 0 failed, 0 suppressed.', $output);
+    $this->assertStringContainsString('10 check(s) across 1 skill(s): 10 passed, 0 failed, 0 warned, 0 suppressed.', $output);
+  }
+
+  public function testWarningsAreListedButDoNotFailTheGate(): void {
+    $eval = "version: \"1\"\nstructure:\n  params:\n    structure.token-budget:\n      warn-at: 5\n";
+    $root = vfsStream::setup('root', NULL, ['skills' => ['foo' => ['SKILL.md' => self::CLEAN_FOO, 'eval.yaml' => $eval]]]);
+
+    $output = $this->runStructure(['--dir' => $root->url()], 0);
+
+    $this->assertStringContainsString('structure.token-budget WARN', $output);
+    $this->assertStringContainsString('at or above the warn threshold of 5', $output);
+    $this->assertStringContainsString('9 passed, 0 failed, 1 warned, 0 suppressed.', $output);
   }
 
   public function testSuppressedCheckIsRenderedWithReason(): void {
@@ -97,7 +108,7 @@ final class StructureCommandTest extends TestCase {
 
     $this->assertStringContainsString('structure.name-matches-dir SUPPRESSED', $output);
     $this->assertStringContainsString('ships under a shared directory name', $output);
-    $this->assertStringContainsString('7 passed, 0 failed, 1 suppressed.', $output);
+    $this->assertStringContainsString('9 passed, 0 failed, 0 warned, 1 suppressed.', $output);
   }
 
   public function testCoherenceSurfacesAsCheckFailureNotConfigError(): void {
@@ -117,7 +128,7 @@ final class StructureCommandTest extends TestCase {
     $decoded = $this->decode($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 1));
 
     $this->assertFalse($decoded['ok']);
-    $this->assertSame(['checks' => 8, 'skills' => 1, 'passed' => 7, 'failed' => 1, 'suppressed' => 0], $decoded['summary']);
+    $this->assertSame(['checks' => 10, 'skills' => 1, 'passed' => 9, 'failed' => 1, 'warned' => 0, 'suppressed' => 0], $decoded['summary']);
     $this->assertSame('fail', $this->findResult($decoded, 'structure.name-matches-dir')['status']);
     $this->assertSame('pass', $this->findResult($decoded, 'structure.frontmatter')['status']);
   }
@@ -181,7 +192,7 @@ final class StructureCommandTest extends TestCase {
 
     $output = $this->runStructure(['--dir' => $root], 0);
 
-    $this->assertStringContainsString('9 check(s) across 1 skill(s): 9 passed, 0 failed, 0 suppressed.', $output);
+    $this->assertStringContainsString('11 check(s) across 1 skill(s): 11 passed, 0 failed, 0 warned, 0 suppressed.', $output);
   }
 
   public function testCommandRefsResolveBinaryFailureIsConfigError(): void {

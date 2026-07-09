@@ -9,11 +9,14 @@ namespace AlexSkrypnyk\SkillTest\Structure;
  *
  * Unlike a security finding, which only ever records a failure, a structure
  * check reports a verdict for every skill it runs against: it passed, it
- * failed, or it was suppressed. Suppression is a first-class state - a skill's
- * `eval.yaml` may switch a check off with a written reason, and that reason
- * travels with the result so a report can show the check as deliberately
- * suppressed rather than silently absent. Failures carry the offending file,
- * line, and evidence so the report is debuggable without re-running.
+ * failed, it warned, or it was suppressed. A warning is advice, not a gate:
+ * it is always listed like a failure but never fails the run, which is what
+ * makes warn-only checks and warn thresholds possible. Suppression is a
+ * first-class state - a skill's `eval.yaml` may switch a check off with a
+ * written reason, and that reason travels with the result so a report can
+ * show the check as deliberately suppressed rather than silently absent.
+ * Failures carry the offending file, line, and evidence so the report is
+ * debuggable without re-running.
  */
 final readonly class StructureResult {
 
@@ -28,6 +31,11 @@ final readonly class StructureResult {
   public const string FAIL = 'fail';
 
   /**
+   * The check ran and advises attention without failing the gate.
+   */
+  public const string WARN = 'warn';
+
+  /**
    * The check was switched off for this skill with a written reason.
    */
   public const string SUPPRESSED = 'suppressed';
@@ -40,7 +48,8 @@ final readonly class StructureResult {
    * @param string $skill
    *   The skill name the check ran against.
    * @param string $status
-   *   One of {@see self::PASS}, {@see self::FAIL}, {@see self::SUPPRESSED}.
+   *   One of {@see self::PASS}, {@see self::FAIL}, {@see self::WARN},
+   *   {@see self::SUPPRESSED}.
    * @param string $message
    *   The human-readable outcome and, on failure, the fix direction.
    * @param string $file
@@ -101,6 +110,29 @@ final readonly class StructureResult {
    */
   public static function fail(string $check, string $skill, string $message, string $file = '', int $line = 0, string $evidence = ''): self {
     return new self($check, $skill, self::FAIL, $message, $file, $line, $evidence);
+  }
+
+  /**
+   * Creates a warning result that never fails the gate.
+   *
+   * @param string $check
+   *   The check id.
+   * @param string $skill
+   *   The skill name.
+   * @param string $message
+   *   The human-readable advice.
+   * @param string $file
+   *   The offending file relative to the repository root, or an empty string.
+   * @param int $line
+   *   The 1-based offending line, or 0 when the result names no single line.
+   * @param string $evidence
+   *   The offending content, or an empty string.
+   *
+   * @return self
+   *   The warning result.
+   */
+  public static function warn(string $check, string $skill, string $message, string $file = '', int $line = 0, string $evidence = ''): self {
+    return new self($check, $skill, self::WARN, $message, $file, $line, $evidence);
   }
 
   /**
