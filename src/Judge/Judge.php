@@ -68,10 +68,11 @@ final readonly class Judge {
    *   The working directory the judge call runs in.
    *
    * @return \AlexSkrypnyk\SkillTest\Judge\JudgeVerdict
-   *   The parsed verdict.
+   *   The parsed verdict, guaranteed to cover exactly the rubric.
    *
    * @throws \AlexSkrypnyk\SkillTest\Judge\JudgeException
-   *   When the judge process fails or returns an unparseable verdict.
+   *   When the judge process fails, returns an unparseable verdict, or scores a
+   *   set of criteria that does not match the rubric one-for-one.
    */
   public function evaluate(array $rubric, string $task_prompt, string $transcript, string $model, string $cwd): JudgeVerdict {
     $prompt = JudgePrompt::build($rubric, $task_prompt, self::evidence($transcript));
@@ -83,7 +84,36 @@ final readonly class Judge {
       throw new JudgeException(sprintf('the judge run exited with code %d.', $exit_code));
     }
 
-    return (new VerdictParser())->parse($stdout);
+    $verdict = (new VerdictParser())->parse($stdout);
+
+    self::assertCoversRubric($verdict, count($rubric));
+
+    return $verdict;
+  }
+
+  /**
+   * Rejects a verdict that does not score exactly the rubric, one id per line.
+   *
+   * A judge that omits, duplicates, or invents a criterion id has not produced
+   * a usable verdict for the rubric, so gating on the criteria it did return
+   * would silently pass a trial on an unproven criterion. Requiring the id set
+   * to be exactly `1..N` makes an incomplete verdict a judge failure instead.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Judge\JudgeVerdict $verdict
+   *   The parsed verdict.
+   * @param int $expected
+   *   The number of rubric criteria the verdict must cover.
+   *
+   * @throws \AlexSkrypnyk\SkillTest\Judge\JudgeException
+   *   When the verdict's criterion ids are not exactly `1..$expected`.
+   */
+  protected static function assertCoversRubric(JudgeVerdict $verdict, int $expected): void {
+    $ids = array_map(static fn(JudgeCriterion $criterion): int => $criterion->id, $verdict->criteria);
+    sort($ids);
+
+    if ($ids !== range(1, $expected)) {
+      throw new JudgeException(sprintf('the judge scored criteria [%s] but the rubric has %d.', implode(', ', $ids), $expected));
+    }
   }
 
   /**

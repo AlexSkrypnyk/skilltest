@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Judge;
 use AlexSkrypnyk\SkillTest\Judge\Judge;
 use AlexSkrypnyk\SkillTest\Judge\JudgeException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -70,6 +71,23 @@ final class JudgeTest extends TestCase {
     $this->expectException(JudgeException::class);
 
     $judge->evaluate(['crit'], 'task', '{}', 'haiku', '/repo');
+  }
+
+  #[DataProvider('dataProviderIncompleteVerdict')]
+  public function testVerdictNotMatchingTheRubricIsAJudgeFailure(string $verdict): void {
+    $judge = new Judge('claude', $this->runner([0, $verdict]));
+
+    $this->expectException(JudgeException::class);
+    $this->expectExceptionMessage('the rubric has 2');
+
+    $judge->evaluate(['names the issue', 'lists changes'], 'task', '{}', 'haiku', '/repo');
+  }
+
+  public static function dataProviderIncompleteVerdict(): \Iterator {
+    yield 'fewer criteria than the rubric' => ['{"criteria":[{"id":1,"pass":true}]}'];
+    yield 'more criteria than the rubric' => ['{"criteria":[{"id":1,"pass":true},{"id":2,"pass":true},{"id":3,"pass":true}]}'];
+    yield 'an out-of-range id' => ['{"criteria":[{"id":1,"pass":true},{"id":3,"pass":true}]}'];
+    yield 'a duplicated id' => ['{"criteria":[{"id":1,"pass":true},{"id":1,"pass":false}]}'];
   }
 
   /**
