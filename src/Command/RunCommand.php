@@ -233,7 +233,7 @@ class RunCommand extends Command {
       $stderr->writeln('WARNING redaction disabled (report.redact: false); environment secrets may be written to persisted artifacts.', OutputInterface::VERBOSITY_QUIET);
     }
 
-    $writer = new ResultsWriter(Redactor::fromEnvironment((array) getenv(), $redact));
+    $writer = new ResultsWriter(Redactor::fromEnvironment(getenv(), $redact));
 
     if ($dir !== NULL) {
       $stderr->writeln(sprintf('results written to %s', $writer->writeDir($document, $dir, gmdate('Ymd-His'))));

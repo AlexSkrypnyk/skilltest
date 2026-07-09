@@ -73,10 +73,12 @@ final readonly class Redactor {
     $secrets = [];
 
     foreach ($env as $name => $value) {
-      if (!is_string($name) || !is_string($value)) {
+      if (!is_string($name)) {
         continue;
       }
-
+      if (!is_string($value)) {
+        continue;
+      }
       if (strlen($value) < self::MIN_SECRET_LENGTH) {
         continue;
       }

@@ -363,7 +363,7 @@ final class RunCommandTest extends TestCase {
 
     $matches = glob($root . '/runs/*/results.json') ?: [];
     $this->assertCount(1, $matches, 'Expected exactly one timestamped run directory holding results.json.');
-    $this->assertMatchesResultsSchema((string) file_get_contents((string) $matches[0]));
+    $this->assertMatchesResultsSchema((string) file_get_contents($matches[0]));
   }
 
   public function testSecretIsRedactedFromPersistedResults(): void {

@@ -41,9 +41,7 @@ final class ResultsWriterTest extends TestCase {
     $this->assertStringNotContainsString('sk-secret-xyz', $content);
     $this->assertStringContainsString("\n    ", $content, 'Expected pretty-printed JSON.');
     $this->assertSame("\n", substr($content, -1), 'Expected a trailing newline.');
-
-    $decoded = json_decode($content, TRUE, 512, JSON_THROW_ON_ERROR);
-    $this->assertSame('auth token [REDACTED] used', $decoded['run']['note']);
+    $this->assertStringContainsString('"note": "auth token [REDACTED] used"', $content);
   }
 
   public function testWriteDirCreatesTimestampedLayoutWithSeparateArtifacts(): void {

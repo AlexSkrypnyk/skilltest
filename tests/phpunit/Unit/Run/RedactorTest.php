@@ -92,7 +92,7 @@ final class RedactorTest extends TestCase {
     $this->assertSame($expected, $redactor->redactDocument($document));
   }
 
-  public function testNoCredentialsProducesANoOpRedactor(): void {
+  public function testNoCredentialsProducesNoOpRedactor(): void {
     $redactor = Redactor::fromEnvironment(['HOME' => '/Users/person'], TRUE);
 
     $this->assertSame('untouched /Users/person', $redactor->redactString('untouched /Users/person'));

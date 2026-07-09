@@ -31,44 +31,31 @@ final class ResultsSchemaTest extends TestCase {
     $this->assertMatchesResultsSchema((string) json_encode(self::deterministicDocument()));
   }
 
-  #[DataProvider('dataProviderMalformedDocuments')]
-  public function testMalformedDocumentsAreRejected(callable $mutate): void {
-    $document = self::deterministicDocument();
-    $mutate($document);
-
+  #[DataProvider('dataProviderMalformedDocumentsAreRejected')]
+  public function testMalformedDocumentsAreRejected(array $document): void {
     $this->assertNotSame([], $this->resultsSchemaErrors((string) json_encode($document)), 'Expected the schema to reject the malformed document.');
   }
 
   /**
-   * Provides mutations that each break the deterministic document.
+   * Provides documents that each break the schema in exactly one way.
    *
-   * @return array<string, array{callable}>
-   *   Named mutators applied to a valid document by reference.
+   * Each case overrides or drops one part of the valid document via top-level
+   * array operations, so the fixtures stay derived from one source of truth
+   * without mutating nested offsets.
+   *
+   * @return \Iterator<string, array{array<string, mixed>}>
+   *   Named malformed documents.
    */
-  public static function dataProviderMalformedDocuments(): array {
-    return [
-      'missing version' => [static function (array &$document): void {
-        unset($document['version']);
-      }],
-      'wrong major version' => [static function (array &$document): void {
-        $document['version'] = '2';
-      }],
-      'non-integer duration' => [static function (array &$document): void {
-        $document['run']['duration_ms'] = 'soon';
-      }],
-      'skills not an array' => [static function (array &$document): void {
-        $document['skills'] = 'none';
-      }],
-      'check missing pass verdict' => [static function (array &$document): void {
-        unset($document['skills'][0]['deterministic']['structure'][0]['pass']);
-      }],
-      'totals missing tokens' => [static function (array &$document): void {
-        unset($document['totals']['tokens']);
-      }],
-      'negative failure count' => [static function (array &$document): void {
-        $document['totals']['failures'] = -1;
-      }],
-    ];
+  public static function dataProviderMalformedDocumentsAreRejected(): \Iterator {
+    $base = self::deterministicDocument();
+
+    yield 'missing version' => [array_diff_key($base, ['version' => 0])];
+    yield 'wrong major version' => [[...$base, 'version' => '2']];
+    yield 'non-integer duration' => [[...$base, 'run' => ['id' => 'st-x', 'started' => 'now', 'duration_ms' => 'soon', 'command' => 'run', 'environment' => 'host']]];
+    yield 'skills not an array' => [[...$base, 'skills' => 'none']];
+    yield 'check missing pass verdict' => [[...$base, 'skills' => [['skill' => 'alpha', 'deterministic' => ['structure' => [['check' => 'structure.frontmatter']]]]]]];
+    yield 'totals missing tokens' => [[...$base, 'totals' => ['checks' => 3, 'failures' => 0, 'trials' => 0, 'cost_usd' => 0.0]]];
+    yield 'negative failure count' => [[...$base, 'totals' => ['checks' => 3, 'failures' => -1, 'trials' => 0, 'tokens' => ['in' => 0, 'out' => 0], 'cost_usd' => 0.0]]];
   }
 
   /**
