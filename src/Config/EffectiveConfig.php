@@ -44,6 +44,8 @@ final readonly class EffectiveConfig {
    *   The normalised contract (tools, commands, skills).
    * @param array<string, mixed> $security
    *   The normalised security block (packs, forbidden-tokens).
+   * @param array<string, mixed> $structure
+   *   The normalised structure block (per-check suppressions and params).
    * @param string|null $transcript
    *   The deterministic transcript fixture path, relative to the skill dir.
    * @param string[] $models
@@ -72,6 +74,7 @@ final readonly class EffectiveConfig {
     public string $path,
     public array $contract,
     public array $security,
+    public array $structure,
     public ?string $transcript,
     public array $models,
     public float $threshold,
@@ -110,6 +113,7 @@ final readonly class EffectiveConfig {
       $path,
       self::resolveContract($repo_config, $eval),
       self::resolveSecurity($eval),
+      self::resolveStructure($eval),
       Data::toStringOrNull(Data::get($eval, 'deterministic', 'transcript')),
       self::resolveModels($repo_config, $llm, $cli),
       Data::toFloatOrNull($cli['threshold'] ?? NULL) ?? Data::toFloatOrNull(Data::get($llm, 'threshold')) ?? self::DEFAULT_THRESHOLD,
@@ -187,6 +191,24 @@ final readonly class EffectiveConfig {
   }
 
   /**
+   * Normalises the structure block: per-check suppressions and parameters.
+   *
+   * @param array<mixed> $eval
+   *   The parsed `eval.yaml`.
+   *
+   * @return array<string, mixed>
+   *   The normalised structure block, keyed by check id.
+   */
+  protected static function resolveStructure(array $eval): array {
+    $structure = Data::toArray(Data::get($eval, 'structure'));
+
+    return [
+      'suppress' => Data::toStringMap(Data::get($structure, 'suppress')),
+      'params' => Data::toArray(Data::get($structure, 'params')),
+    ];
+  }
+
+  /**
    * Resolves the model list: CLI over eval over the repo ladder or default.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
@@ -256,6 +278,7 @@ final readonly class EffectiveConfig {
       'path' => $this->path,
       'contract' => $this->contract,
       'security' => $this->security,
+      'structure' => $this->structure,
       'deterministic' => ['transcript' => $this->transcript],
       'llm' => [
         'models' => $this->models,

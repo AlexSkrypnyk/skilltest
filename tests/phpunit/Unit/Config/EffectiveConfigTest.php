@@ -160,6 +160,26 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertSame(['transcript' => NULL], $array['deterministic']);
     $this->assertArrayHasKey('contract', $array);
     $this->assertArrayHasKey('security', $array);
+    $this->assertArrayHasKey('structure', $array);
+  }
+
+  public function testStructureResolvesSuppressAndParams(): void {
+    $eval = [
+      'structure' => [
+        'suppress' => ['structure.name-matches-dir' => 'legacy directory name'],
+        'params' => ['structure.description-length' => ['min' => 24, 'max' => 800]],
+      ],
+    ];
+    $config = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], 'foo', 'skills/foo');
+
+    $this->assertSame(['structure.name-matches-dir' => 'legacy directory name'], $config->structure['suppress']);
+    $this->assertSame(['structure.description-length' => ['min' => 24, 'max' => 800]], $config->structure['params']);
+  }
+
+  public function testStructureDefaultsToEmptyBlocks(): void {
+    $config = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], 'foo', 'skills/foo');
+
+    $this->assertSame(['suppress' => [], 'params' => []], $config->structure);
   }
 
 }

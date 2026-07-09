@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Security;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
+use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 
 /**
  * The deterministic `security` group: a supply-chain scan of shipped files.
@@ -114,7 +115,7 @@ final readonly class SecurityScanner {
     $tokens = Data::toStringList(Data::get($loaded_skill->effective->security, 'forbidden-tokens'));
     $findings = [];
 
-    foreach ($this->files($dir) as $absolute) {
+    foreach (SkillFiles::under($dir) as $absolute) {
       if ($absolute === $loaded_skill->file) {
         continue;
       }
@@ -168,72 +169,6 @@ final readonly class SecurityScanner {
     }
 
     return $findings;
-  }
-
-  /**
-   * Returns every regular file under a directory, recursively, sorted.
-   *
-   * @param string $dir
-   *   The absolute directory to walk.
-   *
-   * @return string[]
-   *   The absolute file paths, sorted for deterministic reporting.
-   */
-  protected function files(string $dir): array {
-    $found = $this->collect($dir);
-    sort($found);
-
-    return $found;
-  }
-
-  /**
-   * Collects regular files under a directory, recursively and unsorted.
-   *
-   * @param string $dir
-   *   The absolute directory to walk.
-   *
-   * @return string[]
-   *   The absolute file paths, in traversal order.
-   */
-  protected function collect(string $dir): array {
-    $entries = @scandir($dir);
-
-    // @codeCoverageIgnoreStart
-    if ($entries === FALSE) {
-      return [];
-    }
-    // @codeCoverageIgnoreEnd
-    $files = [];
-
-    foreach ($entries as $entry) {
-      if ($entry === '.') {
-        continue;
-      }
-      if ($entry === '..') {
-        continue;
-      }
-
-      $path = $dir . '/' . $entry;
-
-      // A symlink could loop back into the skill or resolve outside it
-      // entirely; a supply-chain scan only ever reads the skill's own real
-      // files, so never follow one.
-      if (is_link($path)) {
-        continue;
-      }
-
-      if (is_dir($path)) {
-        foreach ($this->collect($path) as $nested) {
-          $files[] = $nested;
-        }
-
-        continue;
-      }
-
-      $files[] = $path;
-    }
-
-    return $files;
   }
 
   /**

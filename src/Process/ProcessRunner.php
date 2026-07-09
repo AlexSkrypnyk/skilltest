@@ -8,12 +8,14 @@ namespace AlexSkrypnyk\SkillTest\Process;
  * Runs a command as a child process under a wall-clock timeout.
  *
  * The single seam every part of the tool uses to shell out: contract checks,
- * the llm runner, and `init --ai` drafting all need the same guarantees, so the
- * mechanics live once here. Stdout is the one pipe read; stderr is discarded to
- * `/dev/null` so a chatty process cannot fill an unread pipe buffer and
- * deadlock. The single pipe is drained without blocking while the process runs,
- * and a process that outlives its timeout is terminated so a hang cannot block
- * the caller indefinitely.
+ * the llm runner, `init --ai` drafting, and the structure group's command-
+ * reference resolution all need the same guarantees, so the mechanics live
+ * once here. Stdout is the one pipe read; stderr is discarded to `/dev/null`
+ * so a chatty process cannot fill an unread pipe buffer and deadlock. The
+ * single pipe is drained without blocking while the process runs, and a
+ * process that outlives its timeout is terminated - escalating to an
+ * untrappable SIGKILL when it traps or ignores the first signal - so a hang
+ * cannot block the caller indefinitely.
  */
 final readonly class ProcessRunner {
 
@@ -26,6 +28,11 @@ final readonly class ProcessRunner {
    * The exit code reported when a command exceeds its timeout.
    */
   public const int TIMEOUT_EXIT = 124;
+
+  /**
+   * Seconds to wait for a terminated command to exit before force-killing it.
+   */
+  public const float TERMINATE_GRACE = 1.0;
 
   /**
    * Constructs a ProcessRunner.
@@ -69,10 +76,11 @@ final readonly class ProcessRunner {
     $deadline = microtime(TRUE) + $this->timeout;
 
     while (TRUE) {
-      // Enforce the deadline at the top so a process that streams output
-      // without pause cannot loop past it by continually satisfying the read.
+      // Enforce the deadline on every iteration, before reading: a command that
+      // streams stdout without pause must not keep the loop reading past its
+      // budget just because a chunk is always available.
       if (microtime(TRUE) >= $deadline) {
-        proc_terminate($process);
+        self::terminate($process);
 
         break;
       }
@@ -100,6 +108,32 @@ final readonly class ProcessRunner {
     proc_close($process);
 
     return [$exit_code, $stdout];
+  }
+
+  /**
+   * Terminates a process, escalating to SIGKILL if it ignores the first signal.
+   *
+   * A command that traps or ignores the termination signal would make
+   * proc_close() block forever, so a brief grace period followed by an
+   * untrappable SIGKILL guarantees the wait cannot hang.
+   *
+   * @param resource $process
+   *   The process handle returned by proc_open().
+   */
+  protected static function terminate($process): void {
+    proc_terminate($process);
+
+    $deadline = microtime(TRUE) + self::TERMINATE_GRACE;
+
+    while (microtime(TRUE) < $deadline) {
+      if (!proc_get_status($process)['running']) {
+        return;
+      }
+
+      usleep(1000);
+    }
+
+    proc_terminate($process, 9);
   }
 
 }
