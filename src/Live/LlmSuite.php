@@ -62,6 +62,11 @@ final readonly class LlmSuite {
   public const string CHECK_MCP = 'live.mcp';
 
   /**
+   * The check id an abstaining or failed responder renders under.
+   */
+  public const string CHECK_RESPONDER = 'live.responder';
+
+  /**
    * The default per-trial wall-clock budget, in seconds.
    */
   public const float DEFAULT_TIMEOUT = 300.0;
@@ -75,6 +80,11 @@ final readonly class LlmSuite {
    * The judge that scores a trial when its skill declares a rubric.
    */
   protected Judge $judge;
+
+  /**
+   * The responder that plays the user when a task declares one.
+   */
+  protected Responder $responder;
 
   /**
    * Constructs an LlmSuite.
@@ -95,6 +105,8 @@ final readonly class LlmSuite {
    *   An override for the custom-check process runner, for tests.
    * @param \Closure|null $judge_runner
    *   An override for the judge process runner, for tests.
+   * @param \Closure|null $responder_runner
+   *   An override for the responder process runner, for tests.
    */
   public function __construct(
     protected string $root,
@@ -105,8 +117,10 @@ final readonly class LlmSuite {
     protected float $timeout = self::DEFAULT_TIMEOUT,
     protected ?\Closure $checkRunner = NULL,
     ?\Closure $judge_runner = NULL,
+    ?\Closure $responder_runner = NULL,
   ) {
     $this->judge = new Judge($binary, $judge_runner, $timeout);
+    $this->responder = new Responder($binary, $responder_runner, $timeout);
   }
 
   /**
@@ -192,10 +206,11 @@ final readonly class LlmSuite {
 
     foreach ($entries as $entry) {
       $inputs = TrialWorkspace::parseInputs($entry['task'], $skill->file);
+      $responder = ResponderConfig::fromTask($entry['task'], $skill->file, $effective->judgeModel, $effective->modelAliases);
       $models = [];
 
       foreach ($effective->models as $token) {
-        $trials = $this->runTrials($config, $skill, $entry, $inputs, $token);
+        $trials = $this->runTrials($config, $skill, $entry, $inputs, $responder, $token);
         $models[] = new ModelOutcome($this->resolveModelId($token, $effective->modelAliases), $token, $trials, $effective->threshold);
       }
 
@@ -216,13 +231,15 @@ final readonly class LlmSuite {
    *   The validated task entry.
    * @param array{fixture: ?string, repos: array<int, array{source: string, commit: string, dest: string}>, workdir: ?string} $inputs
    *   The parsed task inputs.
+   * @param \AlexSkrypnyk\SkillTest\Live\ResponderConfig|null $responder
+   *   The task's responder configuration, or NULL for a single-shot task.
    * @param string $token
    *   The model alias or id from configuration.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\TrialResult[]
    *   The trial results, in trial order.
    */
-  protected function runTrials(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token): array {
+  protected function runTrials(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, ?ResponderConfig $responder, string $token): array {
     $effective = $skill->effective;
     $mock = McpMock::fromTask($entry['task'], $skill->file, dirname($skill->file));
     $allowed = $this->allowedTools($effective, $mock);
@@ -234,7 +251,7 @@ final readonly class LlmSuite {
 
     for ($start = 0; $start < $total; $start += $limit) {
       $numbers = range($start + 1, min($start + $limit, $total));
-      $results += $this->runBatch($config, $skill, $entry, $inputs, $token, $model_id, $mock, $allowed, $numbers);
+      $results += $this->runBatch($config, $skill, $entry, $inputs, $responder, $token, $model_id, $mock, $allowed, $numbers);
     }
 
     ksort($results);
@@ -270,6 +287,13 @@ final readonly class LlmSuite {
   /**
    * Assembles, runs, grades, and tears down one concurrent batch of trials.
    *
+   * A single-shot batch runs every trial's command at once through the
+   * environment's process pool, so `--parallel` shortens wall-clock. An
+   * interactive batch drives each trial's conversation loop in turn - the loop
+   * is stateful and each turn feeds the next, so trials run sequentially - but
+   * every workspace is still assembled and torn down together, and grading is
+   * identical whichever shape produced the transcript.
+   *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $config
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
@@ -278,10 +302,12 @@ final readonly class LlmSuite {
    *   The validated task entry.
    * @param array{fixture: ?string, repos: array<int, array{source: string, commit: string, dest: string}>, workdir: ?string} $inputs
    *   The parsed task inputs.
+   * @param \AlexSkrypnyk\SkillTest\Live\ResponderConfig|null $responder
+   *   The task's responder configuration, or NULL for a single-shot task.
    * @param string $token
    *   The model alias or id from configuration.
    * @param string $model_id
-   *   The resolved model id, for the hook template variables.
+   *   The resolved model id, for the hook template variables and turn commands.
    * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
    *   The task's parsed mocks, written into each trial workspace.
    * @param string[] $allowed
@@ -295,10 +321,9 @@ final readonly class LlmSuite {
    * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
    *   When a workspace cannot be assembled or a `before-task` hook aborts.
    */
-  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, string $token, string $model_id, McpMock $mock, array $allowed, array $numbers): array {
+  protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, ?ResponderConfig $responder, string $token, string $model_id, McpMock $mock, array $allowed, array $numbers): array {
     $effective = $skill->effective;
     $workspaces = [];
-    $batch = [];
     $graded = [];
 
     try {
@@ -306,19 +331,15 @@ final readonly class LlmSuite {
         $workspace = $this->environment->setup($effective->skill, $effective->path, $inputs);
         $workspaces[$number] = $workspace;
         $this->lifecycle->beforeTask($this->taskVars($effective, $entry, $model_id, $number, $workspace));
-
-        // The MCP config path differs per workspace, so the command is finished
-        // here from the workspace the environment assembled the mocks into.
-        $mcp_config = $mock->isEmpty() ? NULL : McpMockWiring::write($workspace->path(), $mock->servers(), SelfInvocation::resolve());
-        $batch[$number] = [$workspace, AgentCommand::build($this->binary, $entry['prompt'], $model_id, $effective->maxTurns, $allowed, $mcp_config)];
       }
 
-      $outcomes = $this->environment->exec($batch);
+      $conversations = $responder instanceof ResponderConfig
+        ? $this->runInteractive($workspaces, $entry, $model_id, $effective->maxTurns, $allowed, $responder)
+        : $this->runSingleShot($workspaces, $entry, $model_id, $effective->maxTurns, $allowed, $mock);
 
       foreach ($numbers as $number) {
-        [$exit_code, $stdout, $duration_ms] = $outcomes[$number];
         $this->lifecycle->afterTask($this->taskVars($effective, $entry, $model_id, $number, $workspaces[$number]));
-        $graded[$number] = $this->grade($config, $skill, $entry, $token, $number, $exit_code, $stdout, $duration_ms, $workspaces[$number], $mock);
+        $graded[$number] = $this->grade($config, $skill, $entry, $token, $number, $conversations[$number], $workspaces[$number], $mock);
       }
     }
     finally {
@@ -328,6 +349,75 @@ final readonly class LlmSuite {
     }
 
     return $graded;
+  }
+
+  /**
+   * Runs a batch of single-prompt trials at once through the process pool.
+   *
+   * @param array<int, \AlexSkrypnyk\SkillTest\Live\TrialWorkspace> $workspaces
+   *   The assembled workspaces, keyed by trial number.
+   * @param array{name: string, prompt: string, task: array<mixed>} $entry
+   *   The validated task entry, supplying the opening prompt.
+   * @param string $model_id
+   *   The resolved execution model id.
+   * @param int|null $max_turns
+   *   The per-trial turn cap, or NULL for none.
+   * @param string[] $allowed
+   *   The allowed-tools list, already extended with the mocked tools.
+   * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
+   *   The task's parsed mocks, written into each trial workspace.
+   *
+   * @return array<int, \AlexSkrypnyk\SkillTest\Live\Conversation>
+   *   The one-turn conversations keyed by trial number.
+   */
+  protected function runSingleShot(array $workspaces, array $entry, string $model_id, ?int $max_turns, array $allowed, McpMock $mock): array {
+    $batch = [];
+
+    foreach ($workspaces as $number => $workspace) {
+      // The MCP config path differs per workspace, so the command is finished
+      // here from the workspace the environment assembled the mocks into.
+      $mcp_config = $mock->isEmpty() ? NULL : McpMockWiring::write($workspace->path(), $mock->servers(), SelfInvocation::resolve());
+      $batch[$number] = [$workspace, AgentCommand::build($this->binary, $entry['prompt'], $model_id, $max_turns, $allowed, $mcp_config)];
+    }
+
+    $conversations = [];
+
+    foreach ($this->environment->exec($batch) as $number => [$exit_code, $stdout, $duration_ms]) {
+      $conversations[$number] = Conversation::singleShot($exit_code, $stdout, $duration_ms);
+    }
+
+    return $conversations;
+  }
+
+  /**
+   * Drives each trial's conversation loop, one at a time.
+   *
+   * @param array<int, \AlexSkrypnyk\SkillTest\Live\TrialWorkspace> $workspaces
+   *   The assembled workspaces, keyed by trial number.
+   * @param array{name: string, prompt: string, task: array<mixed>} $entry
+   *   The validated task entry, supplying the opening prompt.
+   * @param string $model_id
+   *   The resolved execution model id.
+   * @param int|null $max_turns
+   *   The per-turn turn cap, or NULL for none.
+   * @param string[] $allowed
+   *   The contract's allowed tools.
+   * @param \AlexSkrypnyk\SkillTest\Live\ResponderConfig $responder
+   *   The task's responder configuration.
+   *
+   * @return array<int, \AlexSkrypnyk\SkillTest\Live\Conversation>
+   *   The graded-ready conversations keyed by trial number.
+   */
+  protected function runInteractive(array $workspaces, array $entry, string $model_id, ?int $max_turns, array $allowed, ResponderConfig $responder): array {
+    $runner = new ConversationRunner($this->binary, $this->root, $this->responder);
+    $conversations = [];
+
+    foreach ($workspaces as $number => $workspace) {
+      $turn = fn(string $line): array => $this->environment->exec([[$workspace, $line]])[0];
+      $conversations[$number] = $runner->run($turn, $entry['prompt'], $model_id, $max_turns, $allowed, $responder);
+    }
+
+    return $conversations;
   }
 
   /**
@@ -387,12 +477,8 @@ final readonly class LlmSuite {
    *   The model alias or id from configuration.
    * @param int $number
    *   The 1-based trial number.
-   * @param int $exit_code
-   *   The agent process exit code.
-   * @param string $stdout
-   *   The captured stream-json transcript.
-   * @param int $duration_ms
-   *   The measured wall-clock duration.
+   * @param \AlexSkrypnyk\SkillTest\Live\Conversation $conversation
+   *   The trial's run: its accumulated transcript, exit, metrics, and outcome.
    * @param \AlexSkrypnyk\SkillTest\Live\TrialWorkspace $workspace
    *   The trial workspace, where the transcript is staged for custom checks.
    * @param \AlexSkrypnyk\SkillTest\Live\Mcp\McpMock $mock
@@ -401,8 +487,9 @@ final readonly class LlmSuite {
    * @return \AlexSkrypnyk\SkillTest\Live\TrialResult
    *   The graded trial.
    */
-  protected function grade(LoadedConfig $config, LoadedSkill $skill, array $entry, string $token, int $number, int $exit_code, string $stdout, int $duration_ms, TrialWorkspace $workspace, McpMock $mock): TrialResult {
+  protected function grade(LoadedConfig $config, LoadedSkill $skill, array $entry, string $token, int $number, Conversation $conversation, TrialWorkspace $workspace, McpMock $mock): TrialResult {
     $effective = $skill->effective;
+    $stdout = $conversation->transcript;
     $transcript = new Transcript($stdout);
     $checks = (new ContractChecker($config->repo->aliases))->check($transcript, $effective->contract);
 
@@ -410,33 +497,43 @@ final readonly class LlmSuite {
       $checks = array_merge($checks, $this->customChecks($effective, $stdout, $workspace));
     }
 
-    [$criteria, $judge_model, $judge_checks] = $this->judgeTrial($effective, $entry, $stdout, $exit_code);
+    // An abstention or a responder error is an incomplete run, so the judge is
+    // not spent on it - the same treatment a non-zero agent exit gets.
+    $judgeable = $conversation->exitCode === 0 && !$conversation->responderFailed();
+    [$criteria, $judge_model, $judge_checks] = $this->judgeTrial($effective, $entry, $stdout, $judgeable);
     $checks = array_merge($checks, $judge_checks);
 
     [$mock_logs, $mock_checks] = $this->mockOutcome($effective, $entry, $token, $number, $workspace, $mock);
     $checks = array_merge($checks, $mock_checks);
 
-    if ($exit_code !== 0) {
-      array_unshift($checks, $this->agentFailure($exit_code));
+    $outcome = $conversation->outcome;
+
+    if ($outcome instanceof ResponderOutcome && $outcome->isFailure()) {
+      array_unshift($checks, $this->responderFailure($outcome));
+    }
+
+    if ($conversation->exitCode !== 0) {
+      array_unshift($checks, $this->agentFailure($conversation->exitCode));
     }
 
     $pass = array_reduce($checks, static fn(bool $carry, CheckResult $result): bool => $carry && $result->pass, TRUE);
-    $metrics = TranscriptMetrics::fromTranscript($stdout);
 
     return new TrialResult(
       $number,
       $pass,
       $checks,
-      $metrics->tokensIn,
-      $metrics->tokensOut,
-      $metrics->turns,
-      $metrics->cost,
-      $duration_ms,
+      $conversation->tokensIn,
+      $conversation->tokensOut,
+      $conversation->turns,
+      $conversation->cost,
+      $conversation->durationMs,
       $stdout,
       $this->transcriptPath($effective->skill, $entry['name'], $token, $number),
       $criteria,
       $judge_model,
       $mock_logs,
+      $outcome,
+      $conversation->followups,
     );
   }
 
@@ -531,13 +628,14 @@ final readonly class LlmSuite {
   /**
    * Scores a trial against its skill's rubric, when one is declared.
    *
-   * Runs only when the skill declares a rubric; a failed agent run is already a
-   * failing trial with a partial transcript, so the judge is not spent on it,
-   * though the pinned model is still reported so a judged skill records one
-   * judge model across every trial. A judge failure (an unparseable verdict or
-   * a broken judge process) folds in a distinct failing check rather than a
-   * silent pass; a verdict that blocks under the abstention policy folds in a
-   * rubric check naming the tally.
+   * Runs only when the skill declares a rubric and the run is judgeable; a
+   * broken or incomplete run (a non-zero agent exit, an abstention, a responder
+   * failure) is already a failing trial with a partial transcript, so the judge
+   * is not spent on it, though the pinned model is still reported so a judged
+   * skill records one judge model across every trial. A judge failure (an
+   * unparseable verdict or a broken judge process) folds in a distinct failing
+   * check rather than a silent pass; a verdict that blocks under the abstention
+   * policy folds in a rubric check naming the tally.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
    *   The skill's effective configuration.
@@ -545,14 +643,14 @@ final readonly class LlmSuite {
    *   The validated task entry.
    * @param string $stdout
    *   The trial's captured transcript.
-   * @param int $exit_code
-   *   The agent process exit code.
+   * @param bool $judgeable
+   *   Whether the run reached a state worth judging.
    *
    * @return array{0: \AlexSkrypnyk\SkillTest\Judge\JudgeCriterion[], 1: string|null, 2: \AlexSkrypnyk\SkillTest\Contract\CheckResult[]}
    *   The per-criterion verdict, the pinned judge model id, and any failing
    *   judge checks to fold into the trial.
    */
-  protected function judgeTrial(EffectiveConfig $effective, array $entry, string $stdout, int $exit_code): array {
+  protected function judgeTrial(EffectiveConfig $effective, array $entry, string $stdout, bool $judgeable): array {
     $token = $effective->judgeModel;
 
     if ($effective->rubric === [] || $token === NULL) {
@@ -561,7 +659,7 @@ final readonly class LlmSuite {
 
     $judge_model = $this->resolveModelId($token, $effective->modelAliases);
 
-    if ($exit_code !== 0) {
+    if (!$judgeable) {
       return [[], $judge_model, []];
     }
 
@@ -632,6 +730,28 @@ final readonly class LlmSuite {
       : sprintf('agent run exited with code %d.', $exit_code);
 
     return CheckResult::fail(self::CHECK_AGENT, 'agent run', '', $message);
+  }
+
+  /**
+   * Builds the failing check that folds a responder failure into the verdict.
+   *
+   * An abstention says the persona brief was too vague to answer the skill; any
+   * other responder failure means the responder process broke or returned an
+   * unusable move. Either way the conversation never reached a state worth
+   * grading, so the trial fails on this check.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Live\ResponderOutcome $outcome
+   *   The failing responder outcome.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Contract\CheckResult
+   *   The failing responder check.
+   */
+  protected function responderFailure(ResponderOutcome $outcome): CheckResult {
+    $message = $outcome === ResponderOutcome::Abstained
+      ? 'the responder abstained: the persona brief could not answer the skill.'
+      : 'the responder failed to produce a usable reply.';
+
+    return CheckResult::fail(self::CHECK_RESPONDER, 'responder', '', $message);
   }
 
   /**

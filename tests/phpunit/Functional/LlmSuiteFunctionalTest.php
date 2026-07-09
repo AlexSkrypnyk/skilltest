@@ -13,6 +13,7 @@ use AlexSkrypnyk\SkillTest\Live\Lifecycle;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
+use AlexSkrypnyk\SkillTest\Live\ResponderOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -41,6 +42,11 @@ final class LlmSuiteFunctionalTest extends TestCase {
    * A transcript that violates the alpha contract.
    */
   protected const string FAIL_TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"git push origin main"}}' . "\n" . '{"type":"result","num_turns":2,"total_cost_usd":0.02,"usage":{"input_tokens":80,"output_tokens":40}}' . "\n";
+
+  /**
+   * An opening agent turn that asks a question and makes no tool call.
+   */
+  protected const string QUESTION_TRANSCRIPT = '{"type":"result","result":"Which board should I use?","session_id":"sess-1"}' . "\n";
 
   /**
    * The base contract every helper eval declares.
@@ -272,6 +278,103 @@ final class LlmSuiteFunctionalTest extends TestCase {
     $this->assertArrayHasKey('artifacts/alpha__invoked__haiku__t1.jsonl', $artifacts);
   }
 
+  public function testInteractiveSkillCompletesViaResponderAndPasses(): void {
+    $config = $this->load($this->interactiveTail('interactive', 6, 'You are the repo owner.'));
+    $pool = $this->pool([self::QUESTION_TRANSCRIPT, self::PASS_TRANSCRIPT]);
+    $responder = $this->responder(['{"action":"reply","message":"Team Board"}', '{"action":"stop"}']);
+
+    $report = $this->suite($pool, NULL, 1, NULL, NULL, $responder)->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertTrue($trial->pass);
+    $this->assertFalse($report->failed());
+    $this->assertSame(ResponderOutcome::Completed, $trial->responderOutcome);
+    $this->assertSame(1, $trial->followups);
+    $this->assertSame(['outcome' => 'completed', 'followups' => 1], $trial->toArray()['responder']);
+    $this->assertStringContainsString('Team Board', $trial->transcript);
+  }
+
+  public function testResponderAbstentionYieldsTheAbstainedOutcome(): void {
+    $config = $this->load($this->interactiveTail('interactive', 6, 'You are a vague owner.'));
+    $responder = $this->responder(['{"action":"abstain"}']);
+
+    $report = $this->suite($this->pool([self::QUESTION_TRANSCRIPT]), NULL, 1, NULL, NULL, $responder)->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertSame(ResponderOutcome::Abstained, $trial->responderOutcome);
+    $this->assertSame(['outcome' => 'abstained', 'followups' => 0], $trial->toArray()['responder']);
+    $this->assertContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
+  }
+
+  public function testFollowupCapYieldsTheCapExhaustedOutcome(): void {
+    $config = $this->load($this->interactiveTail('interactive', 1, 'You are a chatty owner.'));
+    $pool = $this->pool([self::QUESTION_TRANSCRIPT, self::PASS_TRANSCRIPT]);
+    $responder = $this->responder(['{"action":"reply","message":"one"}', '{"action":"reply","message":"two"}']);
+
+    $report = $this->suite($pool, NULL, 1, NULL, NULL, $responder)->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertSame(ResponderOutcome::CapExhausted, $trial->responderOutcome);
+    $this->assertSame(1, $trial->followups);
+    $this->assertSame(['outcome' => 'cap-exhausted', 'followups' => 1], $trial->toArray()['responder']);
+    $this->assertNotContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
+    // Cap-exhaustion grades the final state, which here satisfies the contract.
+    $this->assertTrue($trial->pass);
+  }
+
+  public function testAnUnusableResponderYieldsTheErrorOutcome(): void {
+    $config = $this->load($this->interactiveTail('interactive', 6, 'You are the owner.'));
+    $responder = $this->responder(['not a usable decision']);
+
+    $report = $this->suite($this->pool([self::QUESTION_TRANSCRIPT]), NULL, 1, NULL, NULL, $responder)->run($config, []);
+
+    $trial = $report->skills[0]->tasks[0]->models[0]->trials[0];
+    $this->assertFalse($trial->pass);
+    $this->assertSame(ResponderOutcome::Error, $trial->responderOutcome);
+    $this->assertSame(['outcome' => 'error', 'followups' => 0], $trial->toArray()['responder']);
+    $this->assertContains(LlmSuite::CHECK_RESPONDER, $this->checkIds($trial));
+  }
+
+  public function testTwoPersonasAreGradedIndependently(): void {
+    $tail = "llm:\n  trials: 1\n  tasks:\n"
+      . "    - name: passes\n      prompt: Do it.\n      responder:\n        instructions: You are a precise owner.\n        max-followups: 6\n"
+      . "    - name: abstains\n      prompt: Do it.\n      responder:\n        instructions: You are a vague owner.\n        max-followups: 6\n";
+    $config = $this->load($tail);
+    $pool = $this->pool([self::QUESTION_TRANSCRIPT, self::PASS_TRANSCRIPT, self::QUESTION_TRANSCRIPT]);
+    $responder = $this->responder(['{"action":"reply","message":"Team Board"}', '{"action":"stop"}', '{"action":"abstain"}']);
+
+    $report = $this->suite($pool, NULL, 1, NULL, NULL, $responder)->run($config, []);
+
+    $tasks = $report->skills[0]->tasks;
+    $this->assertSame('passes', $tasks[0]->task);
+    $this->assertSame('abstains', $tasks[1]->task);
+    $passes = $tasks[0]->models[0]->trials[0];
+    $abstains = $tasks[1]->models[0]->trials[0];
+    $this->assertTrue($passes->pass);
+    $this->assertSame(ResponderOutcome::Completed, $passes->responderOutcome);
+    $this->assertFalse($abstains->pass);
+    $this->assertSame(ResponderOutcome::Abstained, $abstains->responderOutcome);
+    $this->assertTrue($report->failed());
+  }
+
+  /**
+   * Builds an eval `llm` tail declaring one interactive task with a responder.
+   *
+   * @param string $name
+   *   The task name.
+   * @param int $max_followups
+   *   The follow-up cap.
+   * @param string $persona
+   *   The responder persona instructions.
+   *
+   * @return string
+   *   The eval tail.
+   */
+  protected function interactiveTail(string $name, int $max_followups, string $persona): string {
+    return sprintf("llm:\n  trials: 1\n  tasks:\n    - name: %s\n      prompt: Set up the worker.\n      responder:\n        instructions: %s\n        max-followups: %d\n", $name, $persona, $max_followups);
+  }
+
   public function testParallelBatchingRunsEveryTrial(): void {
     $config = $this->load("llm:\n  trials: 3\n  tasks:\n    - name: invoked\n      prompt: Build it\n");
 
@@ -501,14 +604,38 @@ final class LlmSuiteFunctionalTest extends TestCase {
    *   An optional injected judge runner.
    * @param \AlexSkrypnyk\SkillTest\Live\Lifecycle|null $lifecycle
    *   An optional lifecycle; defaults to one with no hooks.
+   * @param \Closure|null $responder
+   *   An optional injected responder runner.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmSuite
    *   The suite.
    */
-  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL, ?Lifecycle $lifecycle = NULL): LlmSuite {
+  protected function suite(\Closure $pool, ?\Closure $check_runner = NULL, int $parallel = 1, ?\Closure $judge = NULL, ?Lifecycle $lifecycle = NULL, ?\Closure $responder = NULL): LlmSuite {
     $environment = new HostEnvironment($this->root, $parallel, 300.0, $pool, NULL, $this->root . '/.artifacts/tmp/ws');
 
-    return new LlmSuite($this->root, 'stub', $environment, $lifecycle ?? new Lifecycle($this->root, []), $parallel, 300.0, $check_runner, $judge);
+    return new LlmSuite($this->root, 'stub', $environment, $lifecycle ?? new Lifecycle($this->root, []), $parallel, 300.0, $check_runner, $judge, $responder);
+  }
+
+  /**
+   * Builds a stateful fake responder that returns queued decisions in order.
+   *
+   * @param array<int, string|array{int, string}> $outcomes
+   *   The per-call responder outcomes: a decision string (exit 0) or an
+   *   `[exit, decision]` pair.
+   *
+   * @return \Closure
+   *   The responder runner closure.
+   */
+  protected function responder(array $outcomes): \Closure {
+    $queue = array_map(static fn(array|string $outcome): array => is_array($outcome) ? $outcome : [0, $outcome], $outcomes);
+    $index = 0;
+
+    return function (string $command, string $cwd) use ($queue, &$index): array {
+      $outcome = $queue[$index];
+      $index++;
+
+      return $outcome;
+    };
   }
 
   /**

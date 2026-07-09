@@ -122,7 +122,9 @@ final readonly class Judge {
    * The judge scores evidence, not vibes: the tool calls the skill made and the
    * final output it produced. Both are pulled from the same stream-json
    * transcript the contract engine grades, so the judge sees exactly what the
-   * run did.
+   * run did. When the run was an interactive conversation, the responder turns
+   * that drove it are surfaced too, so the judge scores the dialogue rather
+   * than an agent talking to itself.
    *
    * @param string $transcript
    *   The raw stream-json transcript.
@@ -131,17 +133,19 @@ final readonly class Judge {
    *   The rendered evidence block.
    */
   protected static function evidence(string $transcript): string {
+    $parsed = new Transcript($transcript);
     $lines = [];
     $number = 0;
 
-    foreach ((new Transcript($transcript))->toolUses() as $use) {
+    foreach ($parsed->toolUses() as $use) {
       $number++;
       $lines[] = sprintf('  %d. %s %s', $number, $use['name'], json_encode($use['input'], JSON_UNESCAPED_SLASHES) ?: '{}');
     }
 
-    $output = self::resultText($transcript);
+    $output = $parsed->resultText();
 
     return implode("\n", [
+      ...self::conversationSection($parsed->responderTurns()),
       'TOOL CALLS:',
       $lines === [] ? '  (none)' : implode("\n", $lines),
       'FINAL OUTPUT:',
@@ -150,30 +154,29 @@ final readonly class Judge {
   }
 
   /**
-   * Extracts the final result text from a stream-json transcript.
+   * Renders the responder-turn section of the evidence, when there is one.
    *
-   * @param string $transcript
-   *   The raw stream-json transcript.
+   * @param list<string> $turns
+   *   The responder turns recorded into the transcript, in order.
    *
-   * @return string
-   *   The last `result` event's text, or the empty string when there is none.
+   * @return string[]
+   *   The section lines, or an empty array for a non-interactive run so the
+   *   evidence of a single-shot trial is unchanged.
    */
-  protected static function resultText(string $transcript): string {
-    $text = '';
-
-    foreach (preg_split('/\R/', trim($transcript)) ?: [] as $line) {
-      if (trim($line) === '') {
-        continue;
-      }
-
-      $decoded = json_decode($line, TRUE);
-
-      if (is_array($decoded) && ($decoded['type'] ?? NULL) === 'result' && isset($decoded['result']) && is_string($decoded['result'])) {
-        $text = $decoded['result'];
-      }
+  protected static function conversationSection(array $turns): array {
+    if ($turns === []) {
+      return [];
     }
 
-    return $text;
+    $lines = [];
+    $number = 0;
+
+    foreach ($turns as $turn) {
+      $number++;
+      $lines[] = sprintf('  %d. %s', $number, $turn);
+    }
+
+    return ['RESPONDER TURNS (the user the responder played):', implode("\n", $lines)];
   }
 
 }

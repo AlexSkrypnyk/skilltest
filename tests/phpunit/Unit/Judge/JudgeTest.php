@@ -54,6 +54,18 @@ final class JudgeTest extends TestCase {
     $this->assertStringContainsString('TOOL CALLS:', $this->command);
     $this->assertStringContainsString('FINAL OUTPUT:', $this->command);
     $this->assertStringContainsString('(none)', $this->command);
+    $this->assertStringNotContainsString('RESPONDER TURNS', $this->command);
+  }
+
+  public function testResponderTurnsSurfaceInTheEvidence(): void {
+    $transcript = '{"type":"user","responder":true,"text":"The board is Team Board."}' . "\n" . '{"type":"result","result":"Configured the worker."}' . "\n";
+    $judge = new Judge('claude', $this->runner([0, '{"criteria":[{"id":1,"pass":true}]}']));
+
+    $judge->evaluate(['crit'], 'task', $transcript, 'haiku', '/repo');
+
+    $this->assertStringContainsString('RESPONDER TURNS', $this->command);
+    $this->assertStringContainsString('The board is Team Board.', $this->command);
+    $this->assertStringContainsString('Configured the worker.', $this->command);
   }
 
   public function testNonZeroExitFailsTheJudge(): void {

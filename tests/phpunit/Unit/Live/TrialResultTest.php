@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
+use AlexSkrypnyk\SkillTest\Live\ResponderOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -75,6 +76,18 @@ final class TrialResultTest extends TestCase {
     ], $row['judge']);
     $this->assertSame(1, $row['unknowns']);
     $this->assertSame('claude-haiku-4-5', $row['judge_model']);
+  }
+
+  public function testSingleShotTrialRendersNoResponderBlock(): void {
+    $trial = new TrialResult(1, TRUE, [], 10, 5, 3, 0.01, 1200, 'jsonl', 'artifacts/t.jsonl');
+
+    $this->assertArrayNotHasKey('responder', $trial->toArray());
+  }
+
+  public function testInteractiveTrialRendersTheResponderBlock(): void {
+    $trial = new TrialResult(1, FALSE, [], 10, 5, 3, 0.01, 1200, 'jsonl', 'artifacts/t.jsonl', [], NULL, [], ResponderOutcome::CapExhausted, 4);
+
+    $this->assertSame(['outcome' => 'cap-exhausted', 'followups' => 4], $trial->toArray()['responder']);
   }
 
 }

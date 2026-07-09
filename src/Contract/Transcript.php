@@ -34,6 +34,23 @@ final class Transcript {
   protected array $toolUses;
 
   /**
+   * The last `result` event's text, or the empty string when there is none.
+   */
+  protected string $resultText;
+
+  /**
+   * The last `session_id` seen, or NULL when the transcript carries none.
+   */
+  protected ?string $sessionId = NULL;
+
+  /**
+   * The injected responder (user) turn texts, in order.
+   *
+   * @var list<string>
+   */
+  protected array $responderTurns;
+
+  /**
    * Constructs a Transcript from raw JSONL.
    *
    * @param string $jsonl
@@ -41,6 +58,7 @@ final class Transcript {
    */
   public function __construct(string $jsonl) {
     $this->toolUses = self::extract($jsonl);
+    [$this->resultText, $this->sessionId, $this->responderTurns] = self::scanMeta($jsonl);
   }
 
   /**
@@ -119,6 +137,42 @@ final class Transcript {
   }
 
   /**
+   * The last `result` event's text.
+   *
+   * This is the agent's final assistant message - the reply a conversational
+   * responder answers and the "final output" a judge scores.
+   *
+   * @return string
+   *   The result text, or the empty string when the transcript has no result.
+   */
+  public function resultText(): string {
+    return $this->resultText;
+  }
+
+  /**
+   * The last session id the transcript reports.
+   *
+   * A headless run emits its `session_id` on both the init and result events;
+   * the last one is the handle a follow-up turn resumes the conversation with.
+   *
+   * @return string|null
+   *   The session id, or NULL when the transcript carries none.
+   */
+  public function sessionId(): ?string {
+    return $this->sessionId;
+  }
+
+  /**
+   * The injected responder (user) turn texts, in order.
+   *
+   * @return list<string>
+   *   The responder replies recorded into the transcript, in order.
+   */
+  public function responderTurns(): array {
+    return $this->responderTurns;
+  }
+
+  /**
    * Extracts every tool-use event from a JSONL transcript.
    *
    * @param string $jsonl
@@ -164,6 +218,52 @@ final class Transcript {
         self::walk($value, $uses);
       }
     }
+  }
+
+  /**
+   * Scans a transcript for its result text, session id, and responder turns.
+   *
+   * A single pass over the top-level events collects the three whole-run facts
+   * the tool-use walk does not: the last `result` event's text and the last
+   * `session_id` (both defined by the run's final tally), and every injected
+   * responder turn in the order the conversation recorded them.
+   *
+   * @param string $jsonl
+   *   The transcript, one JSON object per line.
+   *
+   * @return array{0: string, 1: string|null, 2: list<string>}
+   *   The result text, the last session id, and the responder turn texts.
+   */
+  protected static function scanMeta(string $jsonl): array {
+    $result_text = '';
+    $session_id = NULL;
+    $responder_turns = [];
+
+    foreach (preg_split('/\R/', trim($jsonl)) ?: [] as $line) {
+      if (trim($line) === '') {
+        continue;
+      }
+
+      $decoded = json_decode($line, TRUE);
+
+      if (!is_array($decoded)) {
+        continue;
+      }
+
+      if (isset($decoded['session_id']) && is_string($decoded['session_id'])) {
+        $session_id = $decoded['session_id'];
+      }
+
+      if (($decoded['type'] ?? NULL) === 'result' && isset($decoded['result']) && is_string($decoded['result'])) {
+        $result_text = $decoded['result'];
+      }
+
+      if (($decoded['type'] ?? NULL) === 'user' && ($decoded['responder'] ?? NULL) === TRUE && isset($decoded['text']) && is_string($decoded['text'])) {
+        $responder_turns[] = $decoded['text'];
+      }
+    }
+
+    return [$result_text, $session_id, $responder_turns];
   }
 
 }
