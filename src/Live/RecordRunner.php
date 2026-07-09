@@ -12,14 +12,15 @@ use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
  *
  * The record command needs exactly one clean trial and its raw transcript - not
  * the whole trials-by-models matrix the llm suite aggregates - so this drives
- * one run through the identical machinery: the same {@see Environment} that
- * assembles a fresh workspace the skill is installed into, runs the agent in
- * it, and tears it down, and the same {@see AgentCommand} invocation shape. The
- * workspace is torn down whether the run passed, failed, or threw. Grading is
- * deliberately not done here: the command grades the fixture it writes, so the
- * verdict is asserted against the file that ships, and custom checks run once
- * rather than twice. The environment seam is injectable so the orchestration is
- * testable without a real agent.
+ * one run through the identical machinery: the same
+ * {@see EnvironmentInterface} that assembles a fresh workspace the skill is
+ * installed into, runs the agent in it, and tears it down, and the same
+ * {@see AgentCommand} invocation shape. The workspace is torn down whether the
+ * run passed, failed, or threw. Grading is deliberately not done here: the
+ * command grades the fixture it writes, so the verdict is asserted against the
+ * file that ships, and custom checks run once rather than twice. The
+ * environment seam is injectable so the orchestration is testable without a
+ * real agent.
  */
 final readonly class RecordRunner {
 
@@ -30,13 +31,13 @@ final readonly class RecordRunner {
    *   The repository root.
    * @param string $binary
    *   The resolved agent binary or command prefix.
-   * @param \AlexSkrypnyk\SkillTest\Live\Environment $environment
+   * @param \AlexSkrypnyk\SkillTest\Live\EnvironmentInterface $environment
    *   The environment the trial is assembled, run, and torn down in.
    */
   public function __construct(
     protected string $root,
     protected string $binary,
-    protected Environment $environment,
+    protected EnvironmentInterface $environment,
   ) {}
 
   /**

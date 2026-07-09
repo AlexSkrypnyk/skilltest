@@ -18,7 +18,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * parallel containers) without the caller knowing how the concurrency is
  * achieved.
  */
-interface Environment {
+interface EnvironmentInterface {
 
   /**
    * Prepares run-level state shared by every trial, once before any trial.
@@ -64,8 +64,7 @@ interface Environment {
   public function cleanup(TrialWorkspace $workspace): void;
 
   /**
-   * Tears down the run-level state {@see prepare} created, once after all
-   * trials.
+   * Tears down the run-level state, once after all trials.
    */
   public function teardown(): void;
 

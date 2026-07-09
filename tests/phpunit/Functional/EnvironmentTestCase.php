@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
-use AlexSkrypnyk\SkillTest\Live\Environment;
+use AlexSkrypnyk\SkillTest\Live\EnvironmentInterface;
 use AlexSkrypnyk\SkillTest\Live\TrialWorkspace;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -12,14 +12,15 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class EnvironmentTestCase.
  *
- * The shared contract every {@see Environment} must satisfy, written against
- * the interface so a new implementation (e.g. docker) reuses it verbatim by
- * subclassing and supplying its own {@see createEnvironment}. It asserts only
- * what an environment guarantees regardless of where it runs: setup assembles
- * the workspace (fixture, skill, repos), exec runs each command in its own
- * workspace's context and returns keyed outcomes, and cleanup removes the
- * workspace. Implementation-specific details (where the workspace base lives,
- * how prepare/teardown manage it) belong in the concrete subclass.
+ * The shared contract every {@see EnvironmentInterface} must satisfy, written
+ * against the interface so a new implementation (e.g. docker) reuses it
+ * verbatim by subclassing and supplying its own {@see createEnvironment}. It
+ * asserts only what an environment guarantees regardless of where it runs:
+ * setup assembles the workspace (fixture, skill, repos), exec runs each
+ * command in its own workspace's context and returns keyed outcomes, and
+ * cleanup removes the workspace. Implementation-specific details (where the
+ * workspace base lives, how prepare/teardown manage it) belong in the concrete
+ * subclass.
  */
 #[Group('live')]
 abstract class EnvironmentTestCase extends TestCase {
@@ -50,10 +51,10 @@ abstract class EnvironmentTestCase extends TestCase {
    * @param string $workspace_base
    *   The base directory workspaces must be assembled under.
    *
-   * @return \AlexSkrypnyk\SkillTest\Live\Environment
+   * @return \AlexSkrypnyk\SkillTest\Live\EnvironmentInterface
    *   The environment implementation to exercise.
    */
-  abstract protected function createEnvironment(string $workspace_base): Environment;
+  abstract protected function createEnvironment(string $workspace_base): EnvironmentInterface;
 
   /**
    * {@inheritdoc}
@@ -82,7 +83,7 @@ abstract class EnvironmentTestCase extends TestCase {
     parent::tearDown();
   }
 
-  public function testSetupExecCleanupBracketsATrial(): void {
+  public function testSetupExecCleanupBracketsTrial(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();
 
@@ -104,7 +105,7 @@ abstract class EnvironmentTestCase extends TestCase {
     $environment->teardown();
   }
 
-  public function testExecRunsABatchPreservingKeys(): void {
+  public function testExecRunsBatchPreservingKeys(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();
 

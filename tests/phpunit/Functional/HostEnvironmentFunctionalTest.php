@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
-use AlexSkrypnyk\SkillTest\Live\Environment;
+use AlexSkrypnyk\SkillTest\Live\EnvironmentInterface;
 use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,7 +25,7 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function createEnvironment(string $workspace_base): Environment {
+  protected function createEnvironment(string $workspace_base): EnvironmentInterface {
     return new HostEnvironment($this->root, 1, 300.0, NULL, NULL, $workspace_base);
   }
 
@@ -78,7 +78,7 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
     $this->assertDirectoryDoesNotExist($this->workspaceBase);
   }
 
-  public function testTeardownKeepsANonEmptyBase(): void {
+  public function testTeardownKeepsNonEmptyBase(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();
     $workspace = $environment->setup('alpha', 'skills/alpha', ['fixture' => NULL, 'repos' => [], 'workdir' => NULL]);
@@ -91,7 +91,7 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
     $environment->cleanup($workspace);
   }
 
-  public function testTeardownToleratesAMissingBase(): void {
+  public function testTeardownToleratesMissingBase(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
 
     $environment->teardown();
@@ -99,7 +99,7 @@ final class HostEnvironmentFunctionalTest extends EnvironmentTestCase {
     $this->assertDirectoryDoesNotExist($this->workspaceBase);
   }
 
-  public function testSetupCleansUpAHalfBuiltWorkspaceOnFailure(): void {
+  public function testSetupCleansUpHalfBuiltWorkspaceOnFailure(): void {
     $environment = $this->createEnvironment($this->workspaceBase);
     $environment->prepare();
 

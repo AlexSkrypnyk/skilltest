@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Lifecycle::class)]
 final class LifecycleTest extends TestCase {
 
-  public function testEmptyConfigIsANoOp(): void {
+  public function testEmptyConfigRunsNothing(): void {
     $captured = [];
     $warnings = [];
     $lifecycle = new Lifecycle('/repo', [], $this->runner([], $captured), $this->warn($warnings));
@@ -109,7 +109,7 @@ final class LifecycleTest extends TestCase {
     new Lifecycle('/repo', [Lifecycle::BEFORE_RUN => [['working-directory' => 'x']]], $this->runner([], $captured));
   }
 
-  #[DataProvider('dataProviderExitCodes')]
+  #[DataProvider('dataProviderExitCodesNormalisation')]
   public function testExitCodesNormalisation(mixed $codes, int $exit, bool $accepted): void {
     $captured = [];
     $warnings = [];
@@ -121,20 +121,18 @@ final class LifecycleTest extends TestCase {
     $this->assertSame($accepted, $warnings === []);
   }
 
-  public static function dataProviderExitCodes(): array {
-    return [
-      'default accepts zero' => [NULL, 0, TRUE],
-      'default rejects nonzero' => [NULL, 1, FALSE],
-      'list accepts a member' => [[0, 3], 3, TRUE],
-      'list rejects a non-member' => [[1, 2], 0, FALSE],
-      'scalar code accepted' => [5, 5, TRUE],
-      'empty list falls back to default' => [[], 0, TRUE],
-      'non-int list falls back to default' => [['x'], 0, TRUE],
-      'non-int list rejects nonzero' => [['x'], 1, FALSE],
-    ];
+  public static function dataProviderExitCodesNormalisation(): \Iterator {
+    yield 'default accepts zero' => [NULL, 0, TRUE];
+    yield 'default rejects nonzero' => [NULL, 1, FALSE];
+    yield 'list accepts a member' => [[0, 3], 3, TRUE];
+    yield 'list rejects a non-member' => [[1, 2], 0, FALSE];
+    yield 'scalar code accepted' => [5, 5, TRUE];
+    yield 'empty list falls back to default' => [[], 0, TRUE];
+    yield 'non-int list falls back to default' => [['x'], 0, TRUE];
+    yield 'non-int list rejects nonzero' => [['x'], 1, FALSE];
   }
 
-  #[DataProvider('dataProviderWorkingDirectory')]
+  #[DataProvider('dataProviderWorkingDirectoryResolution')]
   public function testWorkingDirectoryResolution(?string $directory, string $expected): void {
     $captured = [];
     $hook = ['command' => 'run'];
@@ -148,13 +146,11 @@ final class LifecycleTest extends TestCase {
     $this->assertSame($expected, $captured[0][1]);
   }
 
-  public static function dataProviderWorkingDirectory(): array {
-    return [
-      'default is the root' => [NULL, '/repo'],
-      'empty is the root' => ['', '/repo'],
-      'relative resolves under the root' => ['playground', '/repo/playground'],
-      'absolute is used verbatim' => ['/srv/bed', '/srv/bed'],
-    ];
+  public static function dataProviderWorkingDirectoryResolution(): \Iterator {
+    yield 'default is the root' => [NULL, '/repo'];
+    yield 'empty is the root' => ['', '/repo'];
+    yield 'relative resolves under the root' => ['playground', '/repo/playground'];
+    yield 'absolute is used verbatim' => ['/srv/bed', '/srv/bed'];
   }
 
   /**

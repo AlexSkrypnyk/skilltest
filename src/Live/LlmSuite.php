@@ -30,10 +30,11 @@ use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
  * passes only when every contract and custom check passes and the agent exited
  * cleanly within its timeout; a task passes on a model when its pass rate meets
  * the threshold, with no retries to mask a flaky skill. Trials run through an
- * injected {@see Environment} - where a trial runs and what it can touch, never
- * what passing means - and a {@see Lifecycle} brackets the run and every trial
- * with deterministic setup and teardown hooks; both, and the check seam, are
- * injectable so the whole orchestration is testable without a real agent.
+ * injected {@see EnvironmentInterface} - where a trial runs and what it can
+ * touch, never what passing means - and a {@see Lifecycle} brackets the run
+ * and every trial with deterministic setup and teardown hooks; both, and the
+ * check seam, are injectable so the whole orchestration is testable without a
+ * real agent.
  */
 final readonly class LlmSuite {
 
@@ -74,7 +75,7 @@ final readonly class LlmSuite {
    *   The repository root.
    * @param string $binary
    *   The resolved agent binary or command prefix.
-   * @param \AlexSkrypnyk\SkillTest\Live\Environment $environment
+   * @param \AlexSkrypnyk\SkillTest\Live\EnvironmentInterface $environment
    *   The environment trials are assembled, run, and torn down in.
    * @param \AlexSkrypnyk\SkillTest\Live\Lifecycle $lifecycle
    *   The lifecycle hooks bracketing the run and every trial.
@@ -90,7 +91,7 @@ final readonly class LlmSuite {
   public function __construct(
     protected string $root,
     protected string $binary,
-    protected Environment $environment,
+    protected EnvironmentInterface $environment,
     protected Lifecycle $lifecycle,
     protected int $parallel = 1,
     protected float $timeout = self::DEFAULT_TIMEOUT,
@@ -316,15 +317,18 @@ final readonly class LlmSuite {
       'workspace' => $workspace->path(),
     ];
 
+    // 'inputs' also carries structural keys: 'repos' is a list dropped by the
+    // scalar guard below, and 'workdir' is the one scalar structural key to
+    // exclude. Every other scalar input becomes a template variable.
     foreach (Data::toArray(Data::get($entry['task'], 'inputs')) as $key => $value) {
-      if ($key === 'repos' || $key === 'workdir') {
+      if ($key === 'workdir') {
         continue;
       }
 
       $string = Data::toStringOrNull($value);
 
       if ($string !== NULL) {
-        $vars['vars.' . (string) $key] = $string;
+        $vars['vars.' . $key] = $string;
       }
     }
 

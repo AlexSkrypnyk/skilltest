@@ -283,8 +283,8 @@ final class LlmSuiteFunctionalTest extends TestCase {
   }
 
   public function testLifecycleHooksFireInOrderWithSubstitutedVariables(): void {
-    // 'workdir' is a structural input, not a template variable, so it is skipped
-    // while 'site' becomes '{{ vars.site }}'.
+    // 'workdir' is a structural input, not a template variable, so it is
+    // skipped while 'site' becomes '{{ vars.site }}'.
     $config = $this->load("llm:\n  trials: 1\n  tasks:\n    - name: invoked\n      prompt: Build it\n      inputs:\n        workdir: sub\n        site: example\n");
     $log = $this->root . '/hooks.log';
     $target = escapeshellarg($log);

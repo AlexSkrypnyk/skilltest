@@ -19,7 +19,7 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * the turn cap rather than an OS boundary - honest for development and for CI
  * runners that are already ephemeral sandboxes.
  */
-final class HostEnvironment implements Environment {
+final class HostEnvironment implements EnvironmentInterface {
 
   /**
    * The scratch directory, relative to the repo root, workspaces live under.
