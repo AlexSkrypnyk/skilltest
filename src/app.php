@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
+use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
 use AlexSkrypnyk\SkillTest\Command\ValidateCommand;
 use AlexSkrypnyk\SkillTest\Command\VersionCommand;
@@ -21,6 +22,7 @@ $application->add(new VersionCommand());
 $application->add(new ValidateCommand());
 $application->add(new CoverageCommand());
 $application->add(new SecurityCommand());
+$application->add(new InitCommand());
 
 $application->run();
 // @codeCoverageIgnoreEnd
