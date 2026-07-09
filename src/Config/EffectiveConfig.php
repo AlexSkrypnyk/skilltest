@@ -121,7 +121,7 @@ final readonly class EffectiveConfig {
       Data::toStringOrNull(Data::get($eval, 'deterministic', 'transcript')),
       self::resolveModels($repo_config, $llm, $cli),
       Data::toFloatOrNull($cli['threshold'] ?? NULL) ?? Data::toFloatOrNull(Data::get($llm, 'threshold')) ?? self::DEFAULT_THRESHOLD,
-      Data::toIntOrNull($cli['trials'] ?? NULL) ?? Data::toIntOrNull(Data::get($llm, 'trials')) ?? self::DEFAULT_TRIALS,
+      Data::toIntOrNull($cli['trials'] ?? NULL) ?? Data::toIntOrNull(Data::get($llm, 'trials')) ?? Data::toIntOrNull($cli['default-trials'] ?? NULL) ?? self::DEFAULT_TRIALS,
       Data::toIntOrNull(Data::get($llm, 'max-turns')),
       Data::toStringOrNull($cli['env'] ?? NULL) ?? $repo_config->environment,
       self::resolveJudgeModel($repo_config, $cli),

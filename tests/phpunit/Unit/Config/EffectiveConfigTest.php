@@ -164,6 +164,20 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertSame(2, $config->trials);
   }
 
+  public function testDefaultTrialsFillsInOnlyWhenNothingElseSpecifiesTrials(): void {
+    // The command fallback applies when neither CLI nor eval sets trials.
+    $filled = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], ['default-trials' => 3], 'name', 'skills/name');
+    $this->assertSame(3, $filled->trials);
+
+    // An explicit eval trials count outranks the command fallback.
+    $eval_wins = EffectiveConfig::resolve(RepoConfig::fromArray([]), ['llm' => ['trials' => 5]], ['default-trials' => 3], 'name', 'skills/name');
+    $this->assertSame(5, $eval_wins->trials);
+
+    // An explicit CLI --trials outranks both the eval value and the fallback.
+    $cli_wins = EffectiveConfig::resolve(RepoConfig::fromArray([]), ['llm' => ['trials' => 5]], ['trials' => 9, 'default-trials' => 3], 'name', 'skills/name');
+    $this->assertSame(9, $cli_wins->trials);
+  }
+
   public function testBaselineNotDuplicated(): void {
     $config = EffectiveConfig::resolve(RepoConfig::fromArray([]), ['security' => ['packs' => ['baseline']]], [], 'name', 'skills/name');
 

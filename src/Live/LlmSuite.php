@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
+use AlexSkrypnyk\SkillTest\Config\Glob;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
@@ -133,6 +134,10 @@ final readonly class LlmSuite {
    *   The loaded configuration, already narrowed to the selected skills.
    * @param string[] $task_globs
    *   The task-name globs; empty selects every declared task.
+   * @param bool $stop_at_pass
+   *   When TRUE, climb the ladder weakest first and stop each skill at the
+   *   first model that passes every one of its tasks, leaving the stronger rows
+   *   unrun; when FALSE, run the full matrix.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\LlmReport
    *   The aggregated run outcome.
@@ -141,7 +146,7 @@ final readonly class LlmSuite {
    *   When the selection runs no tasks, a task is malformed, no model is
    *   configured, or a workspace cannot be assembled.
    */
-  public function run(LoadedConfig $config, array $task_globs): LlmReport {
+  public function run(LoadedConfig $config, array $task_globs, bool $stop_at_pass = FALSE): LlmReport {
     // Resolve and validate the selection before any hook fires, so a
     // configuration error surfaces without disturbing external state.
     $selected = [];
@@ -178,7 +183,7 @@ final readonly class LlmSuite {
 
       foreach ($selected as [$skill, $entries]) {
         $effective = $skill->effective;
-        $skills[] = new SkillOutcome($effective->skill, $effective->path, $this->taskOutcomes($config, $skill, $entries), $effective->threshold, $effective->trials);
+        $skills[] = new SkillOutcome($effective->skill, $effective->path, $this->taskOutcomes($config, $skill, $entries, $stop_at_pass), $effective->threshold, $effective->trials, $effective->rubric, $effective->judgeUnknown);
       }
 
       $this->lifecycle->afterRun([]);
@@ -191,7 +196,16 @@ final readonly class LlmSuite {
   }
 
   /**
-   * Runs every selected task of one skill across every configured model.
+   * Runs every selected task of one skill across the ladder, model by model.
+   *
+   * The ladder is climbed weakest first and every task runs on a model before
+   * the climb moves up, so a model's row across the whole skill is complete
+   * before the next model starts. In full-matrix mode every model runs and each
+   * task ends up with the full ladder; under `--stop-at-pass` the climb stops
+   * at the first model that passes every task, so the stronger rows above the
+   * minimal model are never paid for. Trials for a given task and model are
+   * independent, so the per-task model list is identical to a task-major run in
+   * full-matrix mode.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $config
    *   The loaded configuration.
@@ -199,25 +213,50 @@ final readonly class LlmSuite {
    *   The skill being run.
    * @param array<int, array{name: string, prompt: string, task: array<mixed>}> $entries
    *   The validated task entries.
+   * @param bool $stop_at_pass
+   *   Whether to stop the ladder climb at the first model that passes every
+   *   task.
    *
    * @return \AlexSkrypnyk\SkillTest\Live\TaskOutcome[]
    *   The per-task outcomes.
    */
-  protected function taskOutcomes(LoadedConfig $config, LoadedSkill $skill, array $entries): array {
+  protected function taskOutcomes(LoadedConfig $config, LoadedSkill $skill, array $entries, bool $stop_at_pass): array {
     $effective = $skill->effective;
-    $outcomes = [];
+
+    // Parse each task's inputs and responder once, up front, so the ladder
+    // climb below reuses them across every model rather than re-parsing.
+    $prepared = [];
 
     foreach ($entries as $entry) {
       $inputs = TrialWorkspace::parseInputs($entry['task'], $skill->file);
       $responder = ResponderConfig::fromTask($entry['task'], $skill->file, $effective->judgeModel, $effective->modelAliases);
-      $models = [];
+      $prepared[] = [$entry, $inputs, $responder];
+    }
 
-      foreach ($effective->models as $token) {
+    $models_per_task = array_fill(0, count($prepared), []);
+
+    foreach ($effective->models as $token) {
+      $supports = TRUE;
+
+      foreach ($prepared as $index => [$entry, $inputs, $responder]) {
         $trials = $this->runTrials($config, $skill, $entry, $inputs, $responder, $token);
-        $models[] = new ModelOutcome($this->resolveModelId($token, $effective->modelAliases), $token, $trials, $effective->threshold);
+        $model = new ModelOutcome($this->resolveModelId($token, $effective->modelAliases), $token, $trials, $effective->threshold);
+        $models_per_task[$index][] = $model;
+
+        if (!$model->passed()) {
+          $supports = FALSE;
+        }
       }
 
-      $outcomes[] = new TaskOutcome($entry['name'], $models);
+      if ($stop_at_pass && $supports) {
+        break;
+      }
+    }
+
+    $outcomes = [];
+
+    foreach ($prepared as $index => [$entry]) {
+      $outcomes[] = new TaskOutcome($entry['name'], $models_per_task[$index]);
     }
 
     return $outcomes;
@@ -805,7 +844,7 @@ final readonly class LlmSuite {
         throw new ConfigException("an llm task requires a 'name'.", $config_file, 'llm.tasks');
       }
 
-      if ($globs !== [] && !$this->matchesGlobs($name, $globs)) {
+      if ($globs !== [] && !Glob::matches($name, $globs)) {
         continue;
       }
 
@@ -834,29 +873,6 @@ final readonly class LlmSuite {
    */
   protected function resolveModelId(string $token, array $aliases): string {
     return $aliases[$token] ?? $token;
-  }
-
-  /**
-   * Whether a task name matches any of the selection globs.
-   *
-   * @param string $name
-   *   The task name.
-   * @param string[] $globs
-   *   The globs.
-   *
-   * @return bool
-   *   TRUE when any glob matches.
-   */
-  protected function matchesGlobs(string $name, array $globs): bool {
-    foreach ($globs as $glob) {
-      $regex = '#^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($glob, '#')) . '$#';
-
-      if (preg_match($regex, $name) === 1) {
-        return TRUE;
-      }
-    }
-
-    return FALSE;
   }
 
   /**
