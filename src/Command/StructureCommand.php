@@ -20,11 +20,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * Runs the deterministic `structure` group: pre-baked, default-on checks that
  * prove each skill's files are well-formed, internally consistent, and honest
- * about what they reference. Any failing check fails the gate with exit 1; a
- * hard configuration error such as malformed YAML, or a `commands.resolve`
- * binary that cannot run, fails with exit 2. Coherence of each skill's own
- * `eval.yaml` surfaces as the per-skill `structure.contract-coherent` check
- * rather than aborting the run, so one incoherent skill does not mask the rest.
+ * about what they reference. Any failing check fails the gate with exit 1;
+ * warnings (advisories and warn thresholds) are always listed but never
+ * affect the exit code. A hard configuration error such as malformed YAML, or
+ * a `commands.resolve` binary that cannot run, fails with exit 2. Coherence
+ * of each skill's own `eval.yaml` surfaces as the per-skill
+ * `structure.contract-coherent` check rather than aborting the run, so one
+ * incoherent skill does not mask the rest.
  */
 class StructureCommand extends Command {
 
@@ -241,7 +243,7 @@ class StructureCommand extends Command {
    * @param int $skills
    *   The number of skills checked.
    *
-   * @return array{checks: int, skills: int, passed: int, failed: int, suppressed: int}
+   * @return array{checks: int, skills: int, passed: int, failed: int, warned: int, suppressed: int}
    *   The summary counts.
    */
   protected function summary(array $results, int $skills): array {
@@ -250,6 +252,7 @@ class StructureCommand extends Command {
       'skills' => $skills,
       'passed' => $this->countStatus($results, StructureResult::PASS),
       'failed' => $this->countStatus($results, StructureResult::FAIL),
+      'warned' => $this->countStatus($results, StructureResult::WARN),
       'suppressed' => $this->countStatus($results, StructureResult::SUPPRESSED),
     ];
   }
@@ -268,7 +271,7 @@ class StructureCommand extends Command {
   protected function summaryLine(array $results, int $skills): string {
     $summary = $this->summary($results, $skills);
 
-    return sprintf('%d check(s) across %d skill(s): %d passed, %d failed, %d suppressed.', $summary['checks'], $summary['skills'], $summary['passed'], $summary['failed'], $summary['suppressed']);
+    return sprintf('%d check(s) across %d skill(s): %d passed, %d failed, %d warned, %d suppressed.', $summary['checks'], $summary['skills'], $summary['passed'], $summary['failed'], $summary['warned'], $summary['suppressed']);
   }
 
   /**

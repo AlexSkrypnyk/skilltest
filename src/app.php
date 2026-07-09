@@ -12,6 +12,7 @@ use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
 use AlexSkrypnyk\SkillTest\Command\StructureCommand;
+use AlexSkrypnyk\SkillTest\Command\TokensCommand;
 use AlexSkrypnyk\SkillTest\Command\ValidateCommand;
 use AlexSkrypnyk\SkillTest\Command\VersionCommand;
 use AlexSkrypnyk\SkillTest\Version;
@@ -26,6 +27,7 @@ $application->add(new CoverageCommand());
 $application->add(new SecurityCommand());
 $application->add(new InitCommand());
 $application->add(new StructureCommand());
+$application->add(new TokensCommand());
 $application->add(new RunCommand());
 
 $application->setDefaultCommand('run');

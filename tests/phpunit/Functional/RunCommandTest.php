@@ -120,7 +120,7 @@ final class RunCommandTest extends TestCase {
 
     $output = $this->runCommand(['--dir' => $root], 1);
 
-    $this->assertStringContainsString('alpha structure FAIL (1 of 8 check(s) failed)', $output);
+    $this->assertStringContainsString('alpha structure FAIL (1 of 10 check(s) failed)', $output);
     $this->assertStringContainsString('structure.name-matches-dir FAIL', $output);
   }
 
@@ -208,9 +208,9 @@ final class RunCommandTest extends TestCase {
   public function testCheckMatchingNothingIsConfigError(): void {
     $root = $this->realRepo();
 
-    $output = $this->runCommand(['--dir' => $root, '--check' => 'structure.token-budget'], 2);
+    $output = $this->runCommand(['--dir' => $root, '--check' => 'structure.no-such-check'], 2);
 
-    $this->assertStringContainsString("check 'structure.token-budget' matched nothing in this run", $output);
+    $this->assertStringContainsString("check 'structure.no-such-check' matched nothing in this run", $output);
   }
 
   public function testUnknownCheckPrefixIsConfigError(): void {

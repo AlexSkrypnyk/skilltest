@@ -10,6 +10,7 @@ use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Tokens\TokenCounter;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 
 /**
@@ -18,13 +19,14 @@ use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
  * Runs a fixed catalog of pre-baked checks against every loaded skill and its
  * `SKILL.md`, proving the frontmatter parses and is honest, the tool
  * declaration is safe, the body executes nothing before the model reads it,
- * the files it references exist, the commands it names are real, and its own
- * `eval.yaml` is coherent. Every check is default-on and produces a verdict
- * for every skill; a skill may switch one off in `eval.yaml` with a written
- * reason, and that suppression is reported rather than hidden. The one check
- * that runs a process (`command-refs-resolve`) does so through an injected
- * runner, and a binary that cannot run is a hard configuration error, never a
- * silent pass.
+ * the files it references exist, the commands it names are real, the document
+ * fits its token budget, and its own `eval.yaml` is coherent, plus warn-only
+ * quality advisories about the skill's shape. Every check is default-on and
+ * produces a verdict for every skill; a skill may switch one off in
+ * `eval.yaml` with a written reason, and that suppression is reported rather
+ * than hidden. The one check that runs a process (`command-refs-resolve`)
+ * does so through an injected runner, and a binary that cannot run is a hard
+ * configuration error, never a silent pass.
  */
 final class StructureChecker {
 
@@ -69,9 +71,19 @@ final class StructureChecker {
   public const string CHECK_COMMAND_REFS_RESOLVE = 'structure.command-refs-resolve';
 
   /**
+   * The `SKILL.md` token count is within the configured budget.
+   */
+  public const string CHECK_TOKEN_BUDGET = 'structure.token-budget';
+
+  /**
    * The skill's own `eval.yaml` passes the coherence rules.
    */
   public const string CHECK_CONTRACT_COHERENT = 'structure.contract-coherent';
+
+  /**
+   * Warn-only quality advisories about the skill's shape.
+   */
+  public const string CHECK_ADVISORY = 'structure.advisory';
 
   /**
    * The checks in the fixed order they are reported.
@@ -87,7 +99,9 @@ final class StructureChecker {
     self::CHECK_NO_PRE_MODEL_EXEC,
     self::CHECK_FILES_EXIST,
     self::CHECK_COMMAND_REFS_RESOLVE,
+    self::CHECK_TOKEN_BUDGET,
     self::CHECK_CONTRACT_COHERENT,
+    self::CHECK_ADVISORY,
   ];
 
   /**
@@ -99,6 +113,44 @@ final class StructureChecker {
    * The default maximum description length, in characters.
    */
   public const int DEFAULT_DESCRIPTION_MAX = 1024;
+
+  /**
+   * The default `SKILL.md` token budget.
+   *
+   * Matches the common skill-authoring guidance that a skill document should
+   * stay under ~5k tokens so it loads without crowding the model's context.
+   */
+  public const int DEFAULT_TOKEN_LIMIT = 5000;
+
+  /**
+   * The default count at which the token budget starts warning.
+   */
+  public const int DEFAULT_TOKEN_WARN_AT = 4000;
+
+  /**
+   * Numbered steps in the body beyond which the advisory warns.
+   */
+  public const int ADVISORY_MAX_STEPS = 20;
+
+  /**
+   * Quoted phrases in the description beyond which the advisory warns.
+   */
+  public const int ADVISORY_MAX_TRIGGER_PHRASES = 8;
+
+  /**
+   * Reference markdown files beyond which the advisory warns.
+   */
+  public const int ADVISORY_MAX_REFERENCE_FILES = 12;
+
+  /**
+   * The pattern that marks a body line as a numbered procedure step.
+   */
+  public const string NUMBERED_STEP_PATTERN = '/^\s*\d+[.)]\s/';
+
+  /**
+   * The pattern that captures one quoted phrase in a description.
+   */
+  public const string QUOTED_PHRASE_PATTERN = '/"[^"]+"|\'[^\']+\'/';
 
   /**
    * The pattern that flags an unrestricted Bash grant in one tool entry.
@@ -247,7 +299,9 @@ final class StructureChecker {
         continue;
       }
 
-      $results[] = $this->runCheck($check_id, $loaded_skill, $document, $name, $file, $dir, $catalog, $coherence);
+      foreach ($this->runCheck($check_id, $loaded_skill, $document, $name, $file, $dir, $catalog, $coherence) as $result) {
+        $results[] = $result;
+      }
     }
 
     return $results;
@@ -273,6 +327,10 @@ final class StructureChecker {
   /**
    * Dispatches one check to its implementation.
    *
+   * Returns a list because a check may report more than one verdict: the
+   * advisory check emits one warning per tripped advisory, while every other
+   * check reports exactly one result.
+   *
    * @param string $check_id
    *   The check id to run.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
@@ -290,20 +348,22 @@ final class StructureChecker {
    * @param array<string, \AlexSkrypnyk\SkillTest\Validation\ValidationMessage[]> $coherence
    *   The coherence errors grouped by file.
    *
-   * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
-   *   The result.
+   * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult[]
+   *   The results.
    */
-  protected function runCheck(string $check_id, LoadedSkill $loaded_skill, SkillDocument $document, string $name, string $file, string $dir, ?CommandCatalog $catalog, array $coherence): StructureResult {
+  protected function runCheck(string $check_id, LoadedSkill $loaded_skill, SkillDocument $document, string $name, string $file, string $dir, ?CommandCatalog $catalog, array $coherence): array {
     return match ($check_id) {
-      self::CHECK_FRONTMATTER => $this->checkFrontmatter($document, $name, $file),
-      self::CHECK_NAME_MATCHES_DIR => $this->checkNameMatchesDir($document, $name, $file, $dir),
-      self::CHECK_DESCRIPTION_LENGTH => $this->checkDescriptionLength($loaded_skill, $document, $name, $file),
-      self::CHECK_ALLOWED_TOOLS_DECLARED => $this->checkAllowedToolsDeclared($document, $name, $file),
-      self::CHECK_NO_UNRESTRICTED_BASH => $this->checkNoUnrestrictedBash($document, $name, $file),
-      self::CHECK_NO_PRE_MODEL_EXEC => $this->checkNoPreModelExec($document, $name, $file),
-      self::CHECK_FILES_EXIST => $this->checkFilesExist($document, $name, $file, $dir),
-      self::CHECK_COMMAND_REFS_RESOLVE => $this->checkCommandRefs($loaded_skill, $name, $dir, $this->requireCatalog($catalog)),
-      self::CHECK_CONTRACT_COHERENT => $this->checkContractCoherent($loaded_skill, $name, $coherence),
+      self::CHECK_FRONTMATTER => [$this->checkFrontmatter($document, $name, $file)],
+      self::CHECK_NAME_MATCHES_DIR => [$this->checkNameMatchesDir($document, $name, $file, $dir)],
+      self::CHECK_DESCRIPTION_LENGTH => [$this->checkDescriptionLength($loaded_skill, $document, $name, $file)],
+      self::CHECK_ALLOWED_TOOLS_DECLARED => [$this->checkAllowedToolsDeclared($document, $name, $file)],
+      self::CHECK_NO_UNRESTRICTED_BASH => [$this->checkNoUnrestrictedBash($document, $name, $file)],
+      self::CHECK_NO_PRE_MODEL_EXEC => [$this->checkNoPreModelExec($document, $name, $file)],
+      self::CHECK_FILES_EXIST => [$this->checkFilesExist($document, $name, $file, $dir)],
+      self::CHECK_COMMAND_REFS_RESOLVE => [$this->checkCommandRefs($loaded_skill, $name, $dir, $this->requireCatalog($catalog))],
+      self::CHECK_TOKEN_BUDGET => [$this->checkTokenBudget($loaded_skill, $document, $name, $file)],
+      self::CHECK_CONTRACT_COHERENT => [$this->checkContractCoherent($loaded_skill, $name, $coherence)],
+      self::CHECK_ADVISORY => $this->checkAdvisory($document, $name, $file, $dir),
       // @codeCoverageIgnoreStart
       default => throw new \LogicException('unknown check: ' . $check_id),
       // @codeCoverageIgnoreEnd
@@ -590,6 +650,149 @@ final class StructureChecker {
     }
 
     return StructureResult::pass($id, $name, 'every command reference resolves.');
+  }
+
+  /**
+   * Asserts the `SKILL.md` token count is within the configured budget.
+   *
+   * The count comes from the same counter the `tokens` command uses, so the
+   * gate and the accounting report can never disagree. Over the limit fails;
+   * at or over the warn threshold warns without failing, giving authors
+   * headroom to act before the budget blocks them.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
+   *   The loaded skill, carrying any `limit`/`warn-at`/`vocab` overrides.
+   * @param \AlexSkrypnyk\SkillTest\Structure\SkillDocument $document
+   *   The parsed `SKILL.md`.
+   * @param string $name
+   *   The skill name.
+   * @param string $file
+   *   The `SKILL.md` path relative to the repository root.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
+   *   The result.
+   *
+   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   *   When a configured vocabulary cannot be read or parsed.
+   */
+  protected function checkTokenBudget(LoadedSkill $loaded_skill, SkillDocument $document, string $name, string $file): StructureResult {
+    $id = self::CHECK_TOKEN_BUDGET;
+    $params = Data::toArray(Data::get($loaded_skill->effective->structure, 'params', $id));
+    $limit = Data::toIntOrNull(Data::get($params, 'limit')) ?? self::DEFAULT_TOKEN_LIMIT;
+    $warn_at = Data::toIntOrNull(Data::get($params, 'warn-at')) ?? self::DEFAULT_TOKEN_WARN_AT;
+    $vocab = Data::toStringOrNull(Data::get($params, 'vocab'));
+
+    $counter = new TokenCounter($vocab === NULL ? NULL : $this->absolutePath($vocab));
+    $count = $counter->count($document->content);
+    $method = $counter->method();
+    $evidence = sprintf('%d tokens (%s)', $count, $method);
+
+    if ($count > $limit) {
+      return StructureResult::fail($id, $name, sprintf('SKILL.md is %d tokens (%s), above the limit of %d.', $count, $method, $limit), $file, 1, $evidence);
+    }
+
+    if ($count >= $warn_at) {
+      return StructureResult::warn($id, $name, sprintf('SKILL.md is %d tokens (%s), at or above the warn threshold of %d (limit %d).', $count, $method, $warn_at, $limit), $file, 1, $evidence);
+    }
+
+    return StructureResult::pass($id, $name, sprintf('SKILL.md is %d tokens (%s), within the budget of %d.', $count, $method, $limit));
+  }
+
+  /**
+   * Reports warn-only quality advisories about the skill's shape.
+   *
+   * Advisories are advice, never gates: each tripped heuristic - an over-long
+   * numbered procedure in the body, a description that enumerates too many
+   * quoted trigger phrases, or more reference markdown files than a reader
+   * can hold - is its own warning, and a skill with none gets a single pass.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Structure\SkillDocument $document
+   *   The parsed `SKILL.md`.
+   * @param string $name
+   *   The skill name.
+   * @param string $file
+   *   The `SKILL.md` path relative to the repository root.
+   * @param string $dir
+   *   The absolute skill directory.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult[]
+   *   One warning per tripped advisory, or a single passing result.
+   */
+  protected function checkAdvisory(SkillDocument $document, string $name, string $file, string $dir): array {
+    $id = self::CHECK_ADVISORY;
+    $warnings = [];
+
+    $steps = $this->countMatchingLines($document->body, self::NUMBERED_STEP_PATTERN);
+
+    if ($steps > self::ADVISORY_MAX_STEPS) {
+      $warnings[] = StructureResult::warn($id, $name, sprintf('body reads as an over-long procedure of %d numbered steps (advice: %d or fewer); move detail into reference files.', $steps, self::ADVISORY_MAX_STEPS), $file, 0, sprintf('%d numbered steps', $steps));
+    }
+
+    $description = Data::toStringOrNull(Data::get($document->frontmatter, 'description')) ?? '';
+    $phrases = (int) preg_match_all(self::QUOTED_PHRASE_PATTERN, $description);
+
+    if ($phrases > self::ADVISORY_MAX_TRIGGER_PHRASES) {
+      $warnings[] = StructureResult::warn($id, $name, sprintf('description enumerates %d quoted trigger phrases (advice: %d or fewer); prefer broader intent phrasing.', $phrases, self::ADVISORY_MAX_TRIGGER_PHRASES), $file, 1, sprintf('%d quoted phrases', $phrases));
+    }
+
+    $references = $this->referenceFileCount($dir);
+
+    if ($references > self::ADVISORY_MAX_REFERENCE_FILES) {
+      $warnings[] = StructureResult::warn($id, $name, sprintf('skill ships %d reference markdown files (advice: %d or fewer); consolidate related references.', $references, self::ADVISORY_MAX_REFERENCE_FILES), $file, 0, sprintf('%d reference markdown files', $references));
+    }
+
+    return $warnings === [] ? [StructureResult::pass($id, $name, 'no quality advisories.')] : $warnings;
+  }
+
+  /**
+   * Counts the lines of a text that match a pattern.
+   *
+   * @param string $text
+   *   The text to scan.
+   * @param string $pattern
+   *   The delimited pattern.
+   *
+   * @return int
+   *   The number of matching lines.
+   */
+  protected function countMatchingLines(string $text, string $pattern): int {
+    $count = 0;
+
+    foreach (explode("\n", $text) as $line) {
+      if (preg_match($pattern, $line) === 1) {
+        $count++;
+      }
+    }
+
+    return $count;
+  }
+
+  /**
+   * Counts the markdown files a skill ships besides its `SKILL.md`.
+   *
+   * @param string $dir
+   *   The absolute skill directory.
+   *
+   * @return int
+   *   The reference markdown file count.
+   */
+  protected function referenceFileCount(string $dir): int {
+    $marker = $dir . '/' . Discovery::MARKER;
+
+    return count(array_filter(SkillFiles::markdownUnder($dir), static fn(string $path): bool => $path !== $marker));
+  }
+
+  /**
+   * Resolves a configured path against the repository root unless absolute.
+   *
+   * @param string $path
+   *   The configured path.
+   *
+   * @return string
+   *   The absolute path.
+   */
+  protected function absolutePath(string $path): string {
+    return str_starts_with($path, '/') ? $path : $this->root . '/' . $path;
   }
 
   /**

@@ -16,6 +16,11 @@ namespace AlexSkrypnyk\SkillTest\Config;
 final class SkillFiles {
 
   /**
+   * File extensions that mark a file as markdown.
+   */
+  public const array MARKDOWN_EXTENSIONS = ['md', 'markdown'];
+
+  /**
    * Returns every regular file under a directory, recursively and sorted.
    *
    * @param string $dir
@@ -29,6 +34,32 @@ final class SkillFiles {
     sort($found);
 
     return $found;
+  }
+
+  /**
+   * Returns every markdown file under a directory, recursively and sorted.
+   *
+   * @param string $dir
+   *   The absolute directory to walk.
+   *
+   * @return string[]
+   *   The absolute markdown file paths, sorted for deterministic reporting.
+   */
+  public static function markdownUnder(string $dir): array {
+    return array_values(array_filter(self::under($dir), self::isMarkdown(...)));
+  }
+
+  /**
+   * Whether a path carries a markdown extension.
+   *
+   * @param string $path
+   *   The file path.
+   *
+   * @return bool
+   *   TRUE when the extension is a markdown one.
+   */
+  public static function isMarkdown(string $path): bool {
+    return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::MARKDOWN_EXTENSIONS, TRUE);
   }
 
   /**

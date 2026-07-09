@@ -50,6 +50,25 @@ final class SkillFilesTest extends TestCase {
     ], $files);
   }
 
+  public function testMarkdownUnderKeepsOnlyMarkdownFiles(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skill' => [
+        'SKILL.md' => "x\n",
+        'notes.MARKDOWN' => "n\n",
+        'script.sh' => "s\n",
+        'references' => ['guide.md' => "g\n", 'data.json' => "{}\n"],
+      ],
+    ])->url();
+
+    $files = SkillFiles::markdownUnder($root . '/skill');
+
+    $this->assertSame([
+      $root . '/skill/SKILL.md',
+      $root . '/skill/notes.MARKDOWN',
+      $root . '/skill/references/guide.md',
+    ], $files);
+  }
+
   public function testDoesNotFollowSymlinks(): void {
     $this->tempDir = getcwd() . '/.artifacts/tmp/skillfiles-' . getmypid() . '-' . uniqid();
     mkdir($this->tempDir . '/outside', 0777, TRUE);

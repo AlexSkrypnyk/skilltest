@@ -247,6 +247,118 @@ final class StructureCheckerTest extends TestCase {
     $this->results($this->dir(self::CLEAN), [], self::RESOLVE_REPO, $runner);
   }
 
+  public function testTokenBudgetPassesWithinDefaultBudget(): void {
+    $result = $this->only($this->results($this->dir(self::CLEAN), []), StructureChecker::CHECK_TOKEN_BUDGET);
+
+    $this->assertSame(StructureResult::PASS, $result->status);
+    $this->assertStringContainsString('within the budget of 5000', $result->message);
+  }
+
+  public function testTokenBudgetFailsOverTheLimit(): void {
+    $eval = ['structure' => ['params' => ['structure.token-budget' => ['limit' => 10, 'warn-at' => 5]]]];
+    $result = $this->only($this->results($this->dir(self::CLEAN), $eval), StructureChecker::CHECK_TOKEN_BUDGET);
+
+    $this->assertSame(StructureResult::FAIL, $result->status);
+    $this->assertStringContainsString('above the limit of 10', $result->message);
+    $this->assertStringContainsString('tokens (estimate)', $result->evidence);
+    $this->assertTrue($result->failed());
+  }
+
+  public function testTokenBudgetWarnsWithinWarnAt(): void {
+    $eval = ['structure' => ['params' => ['structure.token-budget' => ['limit' => 30, 'warn-at' => 20]]]];
+    $result = $this->only($this->results($this->dir(self::CLEAN), $eval), StructureChecker::CHECK_TOKEN_BUDGET);
+
+    $this->assertSame(StructureResult::WARN, $result->status);
+    $this->assertStringContainsString('at or above the warn threshold of 20 (limit 30)', $result->message);
+    $this->assertFalse($result->failed());
+  }
+
+  public function testTokenBudgetUsesVocabParam(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['foo' => $this->dir(self::CLEAN)],
+      'vocab.tiktoken' => "aA== 0\n",
+    ])->url();
+    $eval = ['structure' => ['params' => ['structure.token-budget' => ['vocab' => 'vocab.tiktoken']]]];
+    $loaded = new LoadedConfig(RepoConfig::fromArray([]), [], '', [$this->skill($root, 'skills/foo', $eval)], []);
+
+    $result = $this->only((new StructureChecker($root))->check($loaded), StructureChecker::CHECK_TOKEN_BUDGET);
+
+    $this->assertSame(StructureResult::PASS, $result->status);
+    $this->assertStringContainsString('(bpe)', $result->message);
+  }
+
+  public function testAdvisoryPassesForCleanSkill(): void {
+    $advisories = $this->allOf($this->results($this->dir(self::CLEAN), []), StructureChecker::CHECK_ADVISORY);
+
+    $this->assertCount(1, $advisories);
+    $this->assertSame(StructureResult::PASS, $advisories[0]->status);
+    $this->assertStringContainsString('no quality advisories', $advisories[0]->message);
+  }
+
+  public function testAdvisoryWarnsOnOverLongProcedure(): void {
+    $steps = [];
+
+    for ($index = 1; $index <= 21; $index++) {
+      $steps[] = $index . '. Do the next thing.';
+    }
+
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\n" . implode("\n", $steps) . "\n";
+    $advisories = $this->allOf($this->results($this->dir($skill_md), []), StructureChecker::CHECK_ADVISORY);
+
+    $this->assertCount(1, $advisories);
+    $this->assertSame(StructureResult::WARN, $advisories[0]->status);
+    $this->assertStringContainsString('over-long procedure of 21 numbered steps', $advisories[0]->message);
+    $this->assertSame('21 numbered steps', $advisories[0]->evidence);
+    $this->assertFalse($advisories[0]->failed());
+  }
+
+  public function testAdvisoryWarnsOnOverSpecificTriggerPhrasing(): void {
+    $description = 'Triggers on "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9" and more.';
+    $skill_md = "---\nname: foo\ndescription: {$description}\n---\n# Foo\n";
+    $advisories = $this->allOf($this->results($this->dir($skill_md), []), StructureChecker::CHECK_ADVISORY);
+
+    $this->assertCount(1, $advisories);
+    $this->assertSame(StructureResult::WARN, $advisories[0]->status);
+    $this->assertStringContainsString('enumerates 9 quoted trigger phrases', $advisories[0]->message);
+  }
+
+  public function testAdvisoryWarnsOnTooManyReferenceFiles(): void {
+    $references = [];
+
+    for ($index = 1; $index <= 13; $index++) {
+      $references['r' . $index . '.md'] = "reference\n";
+    }
+
+    $advisories = $this->allOf($this->results($this->dir(self::CLEAN, ['references' => $references]), []), StructureChecker::CHECK_ADVISORY);
+
+    $this->assertCount(1, $advisories);
+    $this->assertSame(StructureResult::WARN, $advisories[0]->status);
+    $this->assertStringContainsString('ships 13 reference markdown files', $advisories[0]->message);
+  }
+
+  public function testAdvisoryEmitsOneWarningPerFinding(): void {
+    $steps = [];
+
+    for ($index = 1; $index <= 21; $index++) {
+      $steps[] = $index . '. Do the next thing.';
+    }
+
+    $references = [];
+
+    for ($index = 1; $index <= 13; $index++) {
+      $references['r' . $index . '.md'] = "reference\n";
+    }
+
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\n" . implode("\n", $steps) . "\n";
+    $advisories = $this->allOf($this->results($this->dir($skill_md, ['references' => $references]), []), StructureChecker::CHECK_ADVISORY);
+
+    $this->assertCount(2, $advisories);
+    $this->assertSame(StructureResult::WARN, $advisories[0]->status);
+    $this->assertSame(StructureResult::WARN, $advisories[1]->status);
+    $this->assertStringContainsString('numbered steps', $advisories[0]->message);
+    $this->assertStringContainsString('reference markdown files', $advisories[1]->message);
+  }
+
   public function testSuppressionRendersSuppressedWithReason(): void {
     $eval = ['structure' => ['suppress' => ['structure.name-matches-dir' => 'ships under a shared directory name']]];
     $skill_md = "---\nname: bar\ndescription: A clean well-formed skill for tests.\n---\nbody\n";
@@ -279,7 +391,9 @@ final class StructureCheckerTest extends TestCase {
       StructureChecker::CHECK_NO_UNRESTRICTED_BASH,
       StructureChecker::CHECK_NO_PRE_MODEL_EXEC,
       StructureChecker::CHECK_FILES_EXIST,
+      StructureChecker::CHECK_TOKEN_BUDGET,
       StructureChecker::CHECK_CONTRACT_COHERENT,
+      StructureChecker::CHECK_ADVISORY,
     ], $checks);
 
     foreach ($results as $result) {
@@ -363,6 +477,21 @@ final class StructureCheckerTest extends TestCase {
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray($repo), $eval, [], basename($dir), $dir);
 
     return new LoadedSkill($file, $eval, $effective);
+  }
+
+  /**
+   * Returns every result for a check id, in report order.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Structure\StructureResult[] $results
+   *   The results.
+   * @param string $check_id
+   *   The check id to find.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult[]
+   *   The matching results.
+   */
+  protected function allOf(array $results, string $check_id): array {
+    return array_values(array_filter($results, static fn(StructureResult $result): bool => $result->check === $check_id));
   }
 
   /**
