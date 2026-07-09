@@ -71,7 +71,7 @@ final class SkillDocumentTest extends TestCase {
     $this->assertSame([], $document->frontmatter);
   }
 
-  public function testEmptyFrontmatterIsAValidEmptyMapping(): void {
+  public function testEmptyFrontmatterIsValidEmptyMapping(): void {
     $document = SkillDocument::fromString("---\n---\n# Body\n");
 
     $this->assertTrue($document->frontmatterPresent);

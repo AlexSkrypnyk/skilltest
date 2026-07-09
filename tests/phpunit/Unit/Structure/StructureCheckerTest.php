@@ -52,31 +52,31 @@ final class StructureCheckerTest extends TestCase {
     yield 'frontmatter passes' => [self::CLEAN, StructureChecker::CHECK_FRONTMATTER, StructureResult::PASS, 'parses with a name and description'];
     yield 'frontmatter fails without a block' => ["# no frontmatter\nbody\n", StructureChecker::CHECK_FRONTMATTER, StructureResult::FAIL, 'no YAML frontmatter'];
     yield 'frontmatter fails when malformed' => ["---\nname: [unclosed\n---\nbody\n", StructureChecker::CHECK_FRONTMATTER, StructureResult::FAIL, 'does not parse'];
-    yield 'frontmatter fails without a name' => ["---\n$desc\n---\nbody\n", StructureChecker::CHECK_FRONTMATTER, StructureResult::FAIL, "'name:' is missing"];
+    yield 'frontmatter fails without a name' => ["---\n{$desc}\n---\nbody\n", StructureChecker::CHECK_FRONTMATTER, StructureResult::FAIL, "'name:' is missing"];
     yield 'frontmatter fails with an empty description' => ["---\nname: foo\ndescription: \"\"\n---\nbody\n", StructureChecker::CHECK_FRONTMATTER, StructureResult::FAIL, "'description:' is missing or empty"];
 
     yield 'name matches directory' => [self::CLEAN, StructureChecker::CHECK_NAME_MATCHES_DIR, StructureResult::PASS, "matches the directory 'foo'"];
-    yield 'name mismatch fails' => ["---\nname: bar\n$desc\n---\nbody\n", StructureChecker::CHECK_NAME_MATCHES_DIR, StructureResult::FAIL, "does not match directory 'foo'"];
-    yield 'name missing cannot match' => ["---\n$desc\n---\nbody\n", StructureChecker::CHECK_NAME_MATCHES_DIR, StructureResult::FAIL, 'cannot match the directory'];
+    yield 'name mismatch fails' => ["---\nname: bar\n{$desc}\n---\nbody\n", StructureChecker::CHECK_NAME_MATCHES_DIR, StructureResult::FAIL, "does not match directory 'foo'"];
+    yield 'name missing cannot match' => ["---\n{$desc}\n---\nbody\n", StructureChecker::CHECK_NAME_MATCHES_DIR, StructureResult::FAIL, 'cannot match the directory'];
 
     yield 'description within bounds' => [self::CLEAN, StructureChecker::CHECK_DESCRIPTION_LENGTH, StructureResult::PASS, 'is within'];
     yield 'description too short' => ["---\nname: foo\ndescription: short\n---\nbody\n", StructureChecker::CHECK_DESCRIPTION_LENGTH, StructureResult::FAIL, 'below the minimum'];
     yield 'description missing' => ["---\nname: foo\n---\nbody\n", StructureChecker::CHECK_DESCRIPTION_LENGTH, StructureResult::FAIL, 'is missing'];
 
     yield 'allowed-tools absent passes' => [self::CLEAN, StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::PASS, 'no tool restriction'];
-    yield 'allowed-tools string passes' => ["---\nname: foo\n$desc\nallowed-tools: Read, Bash(git:*)\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::PASS, 'parses'];
-    yield 'allowed-tools list passes' => ["---\nname: foo\n$desc\nallowed-tools:\n  - Read\n  - Bash\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::PASS, 'parses'];
-    yield 'allowed-tools null fails' => ["---\nname: foo\n$desc\nallowed-tools:\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse to a tool string or list'];
-    yield 'allowed-tools map fails' => ["---\nname: foo\n$desc\nallowed-tools:\n  a: b\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse'];
-    yield 'allowed-tools list with a non-scalar item fails' => ["---\nname: foo\n$desc\nallowed-tools:\n  - Read\n  - nested: value\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse'];
+    yield 'allowed-tools string passes' => ["---\nname: foo\n{$desc}\nallowed-tools: Read, Bash(git:*)\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::PASS, 'parses'];
+    yield 'allowed-tools list passes' => ["---\nname: foo\n{$desc}\nallowed-tools:\n  - Read\n  - Bash\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::PASS, 'parses'];
+    yield 'allowed-tools null fails' => ["---\nname: foo\n{$desc}\nallowed-tools:\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse to a tool string or list'];
+    yield 'allowed-tools map fails' => ["---\nname: foo\n{$desc}\nallowed-tools:\n  a: b\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse'];
+    yield 'allowed-tools list with a non-scalar item fails' => ["---\nname: foo\n{$desc}\nallowed-tools:\n  - Read\n  - nested: value\n---\nbody\n", StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED, StructureResult::FAIL, 'does not parse'];
 
     yield 'no unrestricted bash passes when absent' => [self::CLEAN, StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::PASS, 'no unrestricted Bash'];
-    yield 'restricted bash passes' => ["---\nname: foo\n$desc\nallowed-tools: Bash(git:*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::PASS, 'no unrestricted Bash'];
-    yield 'unrestricted bash star fails' => ["---\nname: foo\n$desc\nallowed-tools: Bash(*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::FAIL, 'unrestricted Bash'];
-    yield 'unrestricted bash colon-star fails' => ["---\nname: foo\n$desc\nallowed-tools: Bash(:*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::FAIL, 'unrestricted Bash'];
+    yield 'restricted bash passes' => ["---\nname: foo\n{$desc}\nallowed-tools: Bash(git:*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::PASS, 'no unrestricted Bash'];
+    yield 'unrestricted bash star fails' => ["---\nname: foo\n{$desc}\nallowed-tools: Bash(*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::FAIL, 'unrestricted Bash'];
+    yield 'unrestricted bash colon-star fails' => ["---\nname: foo\n{$desc}\nallowed-tools: Bash(:*)\n---\nbody\n", StructureChecker::CHECK_NO_UNRESTRICTED_BASH, StructureResult::FAIL, 'unrestricted Bash'];
 
     yield 'no pre-model exec passes' => [self::CLEAN, StructureChecker::CHECK_NO_PRE_MODEL_EXEC, StructureResult::PASS, 'no pre-model command'];
-    yield 'pre-model exec fails' => ["---\nname: foo\n$desc\n---\n# B\nContext: !`date`\n", StructureChecker::CHECK_NO_PRE_MODEL_EXEC, StructureResult::FAIL, 'pre-model dynamic-context'];
+    yield 'pre-model exec fails' => ["---\nname: foo\n{$desc}\n---\n# B\nContext: !`date`\n", StructureChecker::CHECK_NO_PRE_MODEL_EXEC, StructureResult::FAIL, 'pre-model dynamic-context'];
   }
 
   public function testDescriptionLengthParamsOverrideMax(): void {
@@ -157,7 +157,7 @@ final class StructureCheckerTest extends TestCase {
 
   public function testFilesExistIgnoresUrlsAnchorsCommandsAndAbsolutePaths(): void {
     $body = "URL [site](https://example.com/x). Anchor [top](#intro). Command `ahoy lint`. Absolute `/etc/hosts`. Word `git`.";
-    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n$body\n";
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n{$body}\n";
     $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_FILES_EXIST);
 
     $this->assertSame(StructureResult::PASS, $result->status);

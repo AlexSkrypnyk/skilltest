@@ -44,7 +44,7 @@ class StructureCommand extends Command {
   protected function configure(): void {
     $this
       ->setName('structure')
-      ->setDescription('Check that every skill\'s files are well-formed and honest (the structure group)')
+      ->setDescription("Check that every skill's files are well-formed and honest (the structure group)")
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
       ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text');
   }
@@ -164,7 +164,7 @@ class StructureCommand extends Command {
    * Renders the non-passing results, then the summary line.
    *
    * Passing checks are counted in the summary but not listed, so the report
-   * draws the eye to what needs attention: failures and deliberate suppressions.
+   * draws the eye to what needs attention: failures and suppressions.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.

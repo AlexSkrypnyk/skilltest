@@ -122,7 +122,7 @@ final class StructureCommandTest extends TestCase {
     $this->assertSame('pass', $this->findResult($decoded, 'structure.frontmatter')['status']);
   }
 
-  public function testMarkdownRendersATableOfNotableResults(): void {
+  public function testMarkdownRendersTableOfNotableResults(): void {
     $skill_md = "---\nname: wrong-name\ndescription: short\n---\n# Body\n";
     $root = vfsStream::setup('root', NULL, ['skills' => ['foo' => ['SKILL.md' => $skill_md, 'eval.yaml' => "version: \"1\"\n"]]]);
 

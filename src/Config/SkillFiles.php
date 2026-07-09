@@ -8,10 +8,10 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * Lists the real regular files a skill ships, recursively.
  *
  * Both the security scan and the structure group read every file a skill
- * bundles, so they share one walk. Symlinks are never followed: a symlink could
- * loop back into the skill or resolve outside it entirely, and a check only ever
- * reasons about the skill's own real files. Results are sorted so a report over
- * them is deterministic.
+ * bundles, so they share one walk. Symlinks are never followed: one could
+ * loop back into the skill or resolve outside it, and a scan only ever
+ * reasons about the skill's own real files. Results are sorted so a report
+ * over them is deterministic.
  */
 final class SkillFiles {
 

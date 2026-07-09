@@ -15,7 +15,7 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * hold skill documentation honest: every `<binary> <subcommand>` a skill names
  * must be a command the binary actually has. This runs the binary's list
  * command once, parses whatever shape it prints (a JSON array of names, a JSON
- * array of `{name}` objects, Symfony's `{commands:[...]}`, or a plain-text list),
+ * array of `{name}` objects, Symfony's `{commands:[...]}`, or a text list),
  * and exposes the first token of every known command name. A binary that cannot
  * run or whose output cannot be parsed is a hard error, never a silent skip -
  * the check would otherwise pass by doing nothing. The process call is injected

@@ -77,7 +77,7 @@ final class CommandCatalogTest extends TestCase {
     $catalog->firstTokens();
   }
 
-  #[DataProvider('dataProviderUnparseableOutput')]
+  #[DataProvider('dataProviderUnparseableOutputThrows')]
   public function testUnparseableOutputThrows(string $stdout): void {
     $catalog = new CommandCatalog('/repo', 'bin/harness', [], fn(): array => [0, $stdout]);
 
@@ -87,7 +87,7 @@ final class CommandCatalogTest extends TestCase {
     $catalog->firstTokens();
   }
 
-  public static function dataProviderUnparseableOutput(): \Iterator {
+  public static function dataProviderUnparseableOutputThrows(): \Iterator {
     yield 'empty output' => [''];
     yield 'whitespace only' => ["  \n  \n"];
     yield 'empty json array' => ['[]'];

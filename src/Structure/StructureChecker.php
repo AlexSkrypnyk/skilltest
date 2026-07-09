@@ -11,20 +11,20 @@ use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
-use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
 
 /**
  * The deterministic `structure` group: each skill's files are well-formed.
  *
  * Runs a fixed catalog of pre-baked checks against every loaded skill and its
  * `SKILL.md`, proving the frontmatter parses and is honest, the tool
- * declaration is safe, the body executes nothing before the model reads it, the
- * files it references exist, the commands it names are real, and its own
- * `eval.yaml` is coherent. Every check is default-on and produces a verdict for
- * every skill; a skill may switch one off in `eval.yaml` with a written reason,
- * and that suppression is reported rather than hidden. The one check that runs a
- * process (`command-refs-resolve`) does so through an injected runner, and a
- * binary that cannot run is a hard configuration error, never a silent pass.
+ * declaration is safe, the body executes nothing before the model reads it,
+ * the files it references exist, the commands it names are real, and its own
+ * `eval.yaml` is coherent. Every check is default-on and produces a verdict
+ * for every skill; a skill may switch one off in `eval.yaml` with a written
+ * reason, and that suppression is reported rather than hidden. The one check
+ * that runs a process (`command-refs-resolve`) does so through an injected
+ * runner, and a binary that cannot run is a hard configuration error, never a
+ * silent pass.
  */
 final class StructureChecker {
 
@@ -130,13 +130,6 @@ final class StructureChecker {
   protected string $root;
 
   /**
-   * Runs the command-list binary, when one is configured; NULL uses the default.
-   *
-   * @var \Closure(string, string): array{0: int, 1: string}|null
-   */
-  protected ?\Closure $commandRunner;
-
-  /**
    * Constructs a StructureChecker.
    *
    * @param string $root
@@ -145,9 +138,8 @@ final class StructureChecker {
    *   An optional runner for the `commands.resolve` binary, injected so the
    *   command-reference check is testable without a real process.
    */
-  public function __construct(string $root, ?\Closure $commandRunner = NULL) {
+  public function __construct(string $root, protected ?\Closure $commandRunner = NULL) {
     $this->root = rtrim($root, '/');
-    $this->commandRunner = $commandRunner;
   }
 
   /**
@@ -271,7 +263,7 @@ final class StructureChecker {
    *   The ordered check ids to run.
    */
   protected function plannedChecks(?CommandCatalog $catalog): array {
-    if ($catalog !== NULL) {
+    if ($catalog instanceof CommandCatalog) {
       return self::CHECKS;
     }
 
@@ -312,6 +304,9 @@ final class StructureChecker {
       self::CHECK_FILES_EXIST => $this->checkFilesExist($document, $name, $file, $dir),
       self::CHECK_COMMAND_REFS_RESOLVE => $this->checkCommandRefs($loaded_skill, $name, $dir, $this->requireCatalog($catalog)),
       self::CHECK_CONTRACT_COHERENT => $this->checkContractCoherent($loaded_skill, $name, $coherence),
+      // @codeCoverageIgnoreStart
+      default => throw new \LogicException('unknown check: ' . $check_id),
+      // @codeCoverageIgnoreEnd
     };
   }
 
@@ -889,7 +884,7 @@ final class StructureChecker {
    */
   protected function requireCatalog(?CommandCatalog $catalog): CommandCatalog {
     // @codeCoverageIgnoreStart
-    if ($catalog === NULL) {
+    if (!$catalog instanceof CommandCatalog) {
       throw new \LogicException('The command-reference check ran without a catalog.');
     }
     // @codeCoverageIgnoreEnd

@@ -111,11 +111,11 @@ final readonly class ProcessRunner {
   }
 
   /**
-   * Terminates a process, escalating to SIGKILL when it ignores the first signal.
+   * Terminates a process, escalating to SIGKILL if it ignores the first signal.
    *
-   * proc_close() waits for the process to exit, so a command that traps or
-   * ignores the termination signal would block it forever. A brief grace period
-   * followed by an untrappable SIGKILL guarantees the wait cannot hang.
+   * A command that traps or ignores the termination signal would make
+   * proc_close() block forever, so a brief grace period followed by an
+   * untrappable SIGKILL guarantees the wait cannot hang.
    *
    * @param resource $process
    *   The process handle returned by proc_open().
