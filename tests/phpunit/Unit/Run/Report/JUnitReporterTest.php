@@ -162,7 +162,7 @@ final class JUnitReporterTest extends TestCase {
   protected function suite(?\SimpleXMLElement $suites, string $name): \SimpleXMLElement {
     $matches = $suites instanceof \SimpleXMLElement ? ($suites->xpath(sprintf("//testsuite[@name='%s']", $name)) ?: []) : [];
 
-    if (!isset($matches[0]) || !$matches[0] instanceof \SimpleXMLElement) {
+    if (!isset($matches[0])) {
       $this->fail(sprintf('No testsuite named "%s".', $name));
     }
 

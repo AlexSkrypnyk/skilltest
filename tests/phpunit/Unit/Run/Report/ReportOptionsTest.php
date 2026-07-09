@@ -82,14 +82,14 @@ final class ReportOptionsTest extends TestCase {
     $this->assertSame([], $options->junitTargets);
   }
 
-  public function testJunitReporterWithoutAPathIsAnError(): void {
+  public function testJunitReporterWithoutPathIsAnError(): void {
     $options = ReportOptions::parse(FALSE, NULL, ['junit:'], FALSE, NULL, NULL, NULL);
 
     $this->assertFalse($options->valid());
     $this->assertStringContainsString('junit requires a path', $options->errors[0]->message);
   }
 
-  public function testSessionLogRequiresASessionDir(): void {
+  public function testSessionLogRequiresSessionDir(): void {
     $options = ReportOptions::parse(FALSE, NULL, [], TRUE, NULL, NULL, NULL);
 
     $this->assertFalse($options->valid());
@@ -97,7 +97,7 @@ final class ReportOptionsTest extends TestCase {
     $this->assertNull($options->sessionDir);
   }
 
-  public function testSessionLogWithADirIsAccepted(): void {
+  public function testSessionLogWithDirIsAccepted(): void {
     $options = ReportOptions::parse(FALSE, NULL, [], TRUE, 'runs', NULL, NULL);
 
     $this->assertTrue($options->valid());

@@ -436,7 +436,7 @@ final class RunCommandTest extends TestCase {
     $this->assertStringContainsString('alpha transcript PASS', $output);
   }
 
-  public function testReporterJunitWritesASchemaValidFileWithFailures(): void {
+  public function testReporterJunitWritesSchemaValidFileWithFailures(): void {
     $root = $this->realRepo();
     file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', self::BROKEN_TRANSCRIPT);
     $file = $root . '/build/junit.xml';
@@ -537,7 +537,7 @@ final class RunCommandTest extends TestCase {
     $this->assertStringContainsString('[REDACTED]', $session_content);
   }
 
-  public function testDisabledRedactionWarnsWhenAReporterWrites(): void {
+  public function testDisabledRedactionWarnsWhenReporterWrites(): void {
     $root = $this->realRepo(hooks: FALSE);
     file_put_contents($root . '/skilltest.yml', "version: \"1\"\nreport:\n  redact: false\n");
     $junit = $root . '/build/junit.xml';

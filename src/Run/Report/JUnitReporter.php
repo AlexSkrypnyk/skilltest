@@ -163,7 +163,7 @@ final class JUnitReporter {
   }
 
   /**
-   * Builds one `<testcase>`, attaching a `<failure>` when the check did not pass.
+   * Builds one `<testcase>`, adding a `<failure>` when the check did not pass.
    *
    * @param \DOMDocument $dom
    *   The document the elements are created in.
@@ -240,7 +240,7 @@ final class JUnitReporter {
   }
 
   /**
-   * Appends a `<testsuite>` when it has cases, returning its test and fail counts.
+   * Appends a non-empty `<testsuite>`, returning its test and failure counts.
    *
    * @param \DOMDocument $dom
    *   The document the suite is created in.
@@ -305,7 +305,7 @@ final class JUnitReporter {
    *   The well-formed text.
    */
   protected function safe(string $text): string {
-    $utf8 = (string) mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+    $utf8 = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
     $clean = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $utf8);
 
     return is_string($clean) ? $clean : '';

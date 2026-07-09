@@ -190,7 +190,7 @@ class RunCommand extends Command {
   }
 
   /**
-   * Emits every requested reporter: persisted results, JUnit, session log, stdout.
+   * Emits every requested reporter: results, JUnit, session log, and stdout.
    *
    * One redactor scrubs every external artifact, and a single loud warning is
    * forced to stderr when redaction is disabled and any such artifact is

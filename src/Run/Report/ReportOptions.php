@@ -160,9 +160,9 @@ final readonly class ReportOptions {
    * Whether any output leaves the process as a redactable external artifact.
    *
    * The persisted results, a JUnit file, the session log, and the PR-bound
-   * github-comment all carry run detail off the machine, so a disabled-redaction
-   * warning is owed whenever one of them is active; plain `--json` to stdout is
-   * a local debugging convenience and is excluded.
+   * github-comment all carry run detail off the machine, so a disabled
+   * redaction warning is owed whenever one of them is active; plain `--json`
+   * to stdout is a local debugging convenience and is excluded.
    *
    * @return bool
    *   TRUE when at least one external artifact is written or emitted.

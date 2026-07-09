@@ -25,31 +25,29 @@ final class TrialSummaryTest extends TestCase {
   /**
    * Data provider for testLine.
    *
-   * @return array<string, array{array<string, mixed>, string}>
+   * @return \Iterator<string, array{array<string, mixed>, string}>
    *   The trial and its expected summary line.
    */
-  public static function dataProviderLine(): array {
-    return [
-      'nothing failed' => [
-        ['trial' => 1, 'pass' => TRUE, 'contract' => [['check' => 'contract.tools.required', 'pass' => TRUE]], 'judge' => [['criterion' => 1, 'pass' => TRUE]]],
-        '',
-      ],
-      'empty trial' => [
-        [],
-        '',
-      ],
-      'contract failure only' => [
-        ['contract' => [['check' => 'contract.tools.required', 'pass' => FALSE], ['check' => 'contract.commands.forbidden', 'pass' => FALSE]]],
-        'failed: contract contract.tools.required; contract contract.commands.forbidden',
-      ],
-      'judge failure only' => [
-        ['judge' => [['criterion' => 1, 'pass' => TRUE], ['criterion' => 2, 'pass' => FALSE], ['criterion' => 3, 'pass' => FALSE]]],
-        'failed: judge criteria 2, 3',
-      ],
-      'both contract and judge failures' => [
-        ['contract' => [['check' => 'contract.tools.required', 'pass' => FALSE]], 'judge' => [['criterion' => 2, 'pass' => FALSE]]],
-        'failed: contract contract.tools.required; judge criteria 2',
-      ],
+  public static function dataProviderLine(): \Iterator {
+    yield 'nothing failed' => [
+      ['trial' => 1, 'pass' => TRUE, 'contract' => [['check' => 'contract.tools.required', 'pass' => TRUE]], 'judge' => [['criterion' => 1, 'pass' => TRUE]]],
+      '',
+    ];
+    yield 'empty trial' => [
+      [],
+      '',
+    ];
+    yield 'contract failure only' => [
+      ['contract' => [['check' => 'contract.tools.required', 'pass' => FALSE], ['check' => 'contract.commands.forbidden', 'pass' => FALSE]]],
+      'failed: contract contract.tools.required; contract contract.commands.forbidden',
+    ];
+    yield 'judge failure only' => [
+      ['judge' => [['criterion' => 1, 'pass' => TRUE], ['criterion' => 2, 'pass' => FALSE], ['criterion' => 3, 'pass' => FALSE]]],
+      'failed: judge criteria 2, 3',
+    ];
+    yield 'both contract and judge failures' => [
+      ['contract' => [['check' => 'contract.tools.required', 'pass' => FALSE]], 'judge' => [['criterion' => 2, 'pass' => FALSE]]],
+      'failed: contract contract.tools.required; judge criteria 2',
     ];
   }
 

@@ -16,7 +16,7 @@ namespace AlexSkrypnyk\SkillTest\Run;
  */
 final readonly class ResultsWriter {
 
-  use WritesFiles;
+  use WritesFilesTrait;
 
   /**
    * The results filename inside a run directory.

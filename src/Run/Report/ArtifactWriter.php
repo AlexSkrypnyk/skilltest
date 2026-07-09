@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Run\Report;
 
-use AlexSkrypnyk\SkillTest\Run\WritesFiles;
+use AlexSkrypnyk\SkillTest\Run\WritesFilesTrait;
 
 /**
  * Writes a single reporter artifact - JUnit XML or a session log - to disk.
@@ -16,7 +16,7 @@ use AlexSkrypnyk\SkillTest\Run\WritesFiles;
  */
 final readonly class ArtifactWriter {
 
-  use WritesFiles;
+  use WritesFilesTrait;
 
   /**
    * Writes content to a file, creating missing parent directories.

@@ -12,7 +12,7 @@ namespace AlexSkrypnyk\SkillTest\Run;
  * results document, JUnit XML, and the session log - so it lives in one place
  * instead of being copied into each writer.
  */
-trait WritesFiles {
+trait WritesFilesTrait {
 
   /**
    * Creates a directory and its parents when it does not already exist.

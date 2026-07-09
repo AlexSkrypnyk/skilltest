@@ -185,7 +185,7 @@ final class GithubCommentReporter {
    *   The scope label (skill.group, hooks, or coverage).
    */
   protected function collect(array &$failures, array $check, string $scope): void {
-    if ((Data::toBoolOrNull(Data::get($check, 'pass')) ?? FALSE) === TRUE) {
+    if (Data::toBoolOrNull(Data::get($check, 'pass')) ?? FALSE) {
       return;
     }
 
@@ -219,7 +219,7 @@ final class GithubCommentReporter {
         $alias = Data::toStringOrNull(Data::get($model, 'alias')) ?? $model_id;
 
         foreach (Data::toArrayList(Data::get($model, 'trials')) as $trial) {
-          if ((Data::toBoolOrNull(Data::get($trial, 'pass')) ?? FALSE) === TRUE) {
+          if (Data::toBoolOrNull(Data::get($trial, 'pass')) ?? FALSE) {
             continue;
           }
 
@@ -234,7 +234,7 @@ final class GithubCommentReporter {
   }
 
   /**
-   * Formats one failure list item: id, scope, detail, and an evidence code span.
+   * Formats one failure list item: id, scope, detail, and evidence code span.
    *
    * @param string $id
    *   The check id.
@@ -322,7 +322,7 @@ final class GithubCommentReporter {
   }
 
   /**
-   * Collects the model column labels across a skill's tasks, in first-seen order.
+   * Collects the model columns across a skill's tasks, in first-seen order.
    *
    * @param array<int, array<mixed>> $tasks
    *   The skill's llm tasks.
