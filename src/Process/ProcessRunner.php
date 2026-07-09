@@ -7,10 +7,13 @@ namespace AlexSkrypnyk\SkillTest\Process;
 /**
  * Runs a command as a child process under a wall-clock timeout.
  *
- * The single seam every part of the tool uses to shell out: contract checks,
- * the llm runner, `init --ai` drafting, and the structure group's command-
- * reference resolution all need the same guarantees, so the mechanics live
- * once here. Stdout is the one pipe read; stderr is discarded to `/dev/null`
+ * The single seam a part of the tool uses to shell out to one command: custom
+ * checks, hook scripts, `init --ai` drafting, workspace git operations, and the
+ * structure group's command-reference resolution all need the same guarantees,
+ * so the mechanics live once here. Concurrent live trials run through
+ * {@see \AlexSkrypnyk\SkillTest\Live\ProcessPool} instead, which drives many
+ * commands at once. Stdout is the one pipe read; stderr is discarded to
+ * `/dev/null`
  * so a chatty process cannot fill an unread pipe buffer and deadlock. The
  * single pipe is drained without blocking while the process runs, and a
  * process that outlives its timeout is terminated - escalating to an

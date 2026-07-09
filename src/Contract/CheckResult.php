@@ -92,4 +92,24 @@ final readonly class CheckResult {
     ];
   }
 
+  /**
+   * Returns the result as a results-document check row.
+   *
+   * The stable id renders under the `check` key the results schema uses, so
+   * every reporter reads a check, a hook case, and a live contract assertion
+   * the same way.
+   *
+   * @return array{check: string, label: string, pass: bool, evidence: string, message: string}
+   *   The result as check, label, pass, evidence, and message keys.
+   */
+  public function toCheckRow(): array {
+    return [
+      'check' => $this->id,
+      'label' => $this->label,
+      'pass' => $this->pass,
+      'evidence' => $this->evidence,
+      'message' => $this->message,
+    ];
+  }
+
 }

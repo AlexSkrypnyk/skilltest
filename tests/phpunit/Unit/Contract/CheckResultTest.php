@@ -48,4 +48,16 @@ final class CheckResultTest extends TestCase {
     ], $result->toArray());
   }
 
+  public function testToCheckRowRendersUnderTheCheckKey(): void {
+    $result = CheckResult::fail('contract.commands.forbidden', 'no push', 'git push', 'forbidden.');
+
+    $this->assertSame([
+      'check' => 'contract.commands.forbidden',
+      'label' => 'no push',
+      'pass' => FALSE,
+      'evidence' => 'git push',
+      'message' => 'forbidden.',
+    ], $result->toCheckRow());
+  }
+
 }

@@ -195,13 +195,7 @@ final readonly class RunReport {
    *   The document row.
    */
   protected static function checkRow(CheckResult $result): array {
-    return [
-      'check' => $result->id,
-      'label' => $result->label,
-      'pass' => $result->pass,
-      'evidence' => $result->evidence,
-      'message' => $result->message,
-    ];
+    return $result->toCheckRow();
   }
 
   /**
