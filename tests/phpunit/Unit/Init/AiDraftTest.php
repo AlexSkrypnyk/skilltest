@@ -66,17 +66,8 @@ final class AiDraftTest extends TestCase {
     $this->assertSame([['text' => 'c', 'low' => FALSE]], $draft->rubric);
   }
 
-  public function testTopLevelJsonArrayYieldsEmptyDraft(): void {
-    $draft = AiDraft::fromResponse('[1, 2, 3]');
-
-    $this->assertInstanceOf(AiDraft::class, $draft);
-    $this->assertSame([], $draft->tasks);
-    $this->assertSame([], $draft->commands);
-    $this->assertSame([], $draft->rubric);
-  }
-
   #[DataProvider('dataProviderUnparseable')]
-  public function testUnparseableResponseYieldsNull(string $response): void {
+  public function testNonObjectResponseYieldsNull(string $response): void {
     $this->assertNull(AiDraft::fromResponse($response));
   }
 
@@ -87,6 +78,7 @@ final class AiDraftTest extends TestCase {
     yield 'open brace but no close' => ['a stray { with no close'];
     yield 'close before open' => ['} then {'];
     yield 'braces wrapping invalid json' => ['prefix { not: valid, json } suffix'];
+    yield 'top-level array is not an object' => ['[1, 2, 3]'];
   }
 
 }

@@ -66,7 +66,8 @@ final readonly class AiDraft {
    *   The raw model stdout.
    *
    * @return array<mixed>|null
-   *   The decoded object, or NULL when none is present.
+   *   The decoded object, or NULL when none is present. A JSON array is not an
+   *   object and is rejected so the caller falls back to the template.
    */
   protected static function decode(string $response): ?array {
     $trimmed = trim($response);
@@ -75,10 +76,10 @@ final readonly class AiDraft {
       return NULL;
     }
 
-    $decoded = json_decode($trimmed, TRUE);
+    $whole = self::object(json_decode($trimmed, TRUE));
 
-    if (is_array($decoded)) {
-      return $decoded;
+    if ($whole !== NULL) {
+      return $whole;
     }
 
     $start = strpos($trimmed, '{');
@@ -88,9 +89,20 @@ final readonly class AiDraft {
       return NULL;
     }
 
-    $decoded = json_decode(substr($trimmed, $start, $end - $start + 1), TRUE);
+    return self::object(json_decode(substr($trimmed, $start, $end - $start + 1), TRUE));
+  }
 
-    return is_array($decoded) ? $decoded : NULL;
+  /**
+   * Narrows a decoded value to a JSON object (an associative array).
+   *
+   * @param mixed $decoded
+   *   A json_decode result.
+   *
+   * @return array<mixed>|null
+   *   The value when it is a non-list array, NULL otherwise.
+   */
+  protected static function object(mixed $decoded): ?array {
+    return is_array($decoded) && !array_is_list($decoded) ? $decoded : NULL;
   }
 
   /**
