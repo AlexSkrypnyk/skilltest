@@ -202,6 +202,9 @@ final readonly class RunSelection {
   /**
    * Whether a skill name matches any of the selection globs.
    *
+   * Globs are matched with a regex translation (`*` and `?` wildcards) so
+   * matching behaves identically on every platform.
+   *
    * @param string $name
    *   The skill name.
    *
@@ -210,7 +213,9 @@ final readonly class RunSelection {
    */
   protected function matchesGlobs(string $name): bool {
     foreach ($this->globs as $glob) {
-      if (fnmatch($glob, $name)) {
+      $regex = '#^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($glob, '#')) . '$#';
+
+      if (preg_match($regex, $name) === 1) {
         return TRUE;
       }
     }

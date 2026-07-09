@@ -43,12 +43,12 @@ final readonly class RunPlan {
    *   entry per skill with its per-group check lines, and the hook lines.
    */
   public function describe(): array {
-    $groups = array_values(array_filter(RunSelection::GROUPS, fn(string $group): bool => $this->selection->runs($group)));
+    $groups = array_values(array_filter(RunSelection::GROUPS, $this->selection->runs(...)));
 
     return [
       'groups' => $groups,
       'coverage' => $this->selection->coverageGateRuns(),
-      'skills' => array_map($this->skillPlan(...), $this->loadedConfig->skills),
+      'skills' => array_values(array_map($this->skillPlan(...), $this->loadedConfig->skills)),
       'hooks' => $this->selection->runs(RunSelection::GROUP_HOOKS) ? $this->hookLines() : [],
     ];
   }
@@ -132,7 +132,7 @@ final readonly class RunPlan {
       $checks[] = SecurityScanner::FORBIDDEN_TOKEN_CHECK;
     }
 
-    return array_values(array_filter($checks, fn(string $check): bool => $this->selection->matches($check)));
+    return array_values(array_filter($checks, $this->selection->matches(...)));
   }
 
   /**
@@ -191,8 +191,10 @@ final readonly class RunPlan {
 
     foreach ($this->loadedConfig->repo->hooks as $hook) {
       $script = Data::toStringOrNull(Data::get($hook, 'script'));
-
-      if ($script === NULL || $script === '') {
+      if ($script === NULL) {
+        continue;
+      }
+      if ($script === '') {
         continue;
       }
 

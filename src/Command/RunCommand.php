@@ -289,13 +289,13 @@ class RunCommand extends Command {
     if ($selection->runs(RunSelection::GROUP_HOOKS) && $filtered->repo->hooks !== []) {
       $failed = count(array_filter($report->hooks, static fn(CheckResult $result): bool => !$result->pass));
       $this->groupLine($output, 'repo', 'hooks', $failed === 0, $failed === 0 ? sprintf('%d case(s)', count($report->hooks)) : sprintf('%d of %d case(s) failed', $failed, count($report->hooks)), $quiet);
-      $this->failureLines($output, array_map(static fn(CheckResult $result): string => self::checkLine($result), array_filter($report->hooks, static fn(CheckResult $result): bool => !$result->pass)), $quiet);
+      $this->failureLines($output, array_map(self::checkLine(...), array_filter($report->hooks, static fn(CheckResult $result): bool => !$result->pass)), $quiet);
     }
 
     if ($selection->coverageGateRuns()) {
       $subject = count($report->skills) + count($filtered->skillsWithoutEval);
       $this->groupLine($output, 'repo', 'coverage', $report->coverage === [], $report->coverage === [] ? sprintf('%d skill(s)', $subject) : sprintf('%d violation(s)', count($report->coverage)), $quiet);
-      $this->failureLines($output, array_map(static fn(CoverageRow $row): string => self::coverageLine($row), $report->coverage), $quiet);
+      $this->failureLines($output, array_map(self::coverageLine(...), $report->coverage), $quiet);
     }
 
     if (!$quiet) {
@@ -345,7 +345,7 @@ class RunCommand extends Command {
       else {
         $failed = count(array_filter($skill->transcript, static fn(CheckResult $result): bool => !$result->pass));
         $this->groupLine($output, $skill->skill, 'transcript', $failed === 0, $failed === 0 ? sprintf('%d check(s)', count($skill->transcript)) : sprintf('%d of %d check(s) failed', $failed, count($skill->transcript)), $quiet);
-        $this->failureLines($output, array_map(static fn(CheckResult $result): string => self::checkLine($result), array_filter($skill->transcript, static fn(CheckResult $result): bool => !$result->pass)), $quiet);
+        $this->failureLines($output, array_map(self::checkLine(...), array_filter($skill->transcript, static fn(CheckResult $result): bool => !$result->pass)), $quiet);
       }
     }
   }

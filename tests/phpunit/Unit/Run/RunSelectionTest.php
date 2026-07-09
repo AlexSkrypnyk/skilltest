@@ -64,18 +64,16 @@ final class RunSelectionTest extends TestCase {
   /**
    * Data provider for testOwnerGroup.
    *
-   * @return array<string, array{0: string, 1: string|null}>
+   * @return \Iterator<string, array{string, (string | null)}>
    *   The cases.
    */
-  public static function dataProviderOwnerGroup(): array {
-    return [
-      'structure' => ['structure.frontmatter', 'structure'],
-      'security' => ['security.curl-pipe-shell', 'security'],
-      'hooks' => ['hooks.reject-push', 'hooks'],
-      'contract' => ['contract.commands.forbidden', 'transcript'],
-      'custom check' => ['check.board-column', 'transcript'],
-      'unknown' => ['coverage.eval-exists', NULL],
-    ];
+  public static function dataProviderOwnerGroup(): \Iterator {
+    yield 'structure' => ['structure.frontmatter', 'structure'];
+    yield 'security' => ['security.curl-pipe-shell', 'security'];
+    yield 'hooks' => ['hooks.reject-push', 'hooks'];
+    yield 'contract' => ['contract.commands.forbidden', 'transcript'];
+    yield 'custom check' => ['check.board-column', 'transcript'];
+    yield 'unknown' => ['coverage.eval-exists', NULL];
   }
 
   public function testRunsEveryGroupWithoutNarrowing(): void {

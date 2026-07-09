@@ -104,6 +104,14 @@ final class RunPlanTest extends TestCase {
     $this->assertSame([], $plan['hooks']);
   }
 
+  public function testEmptyScriptHookIsSkipped(): void {
+    $config = $this->config(['hooks' => [['script' => '', 'cases' => [['tool' => 'Bash', 'expect' => 'block']]]]]);
+
+    $plan = (new RunPlan($config, RunSelection::create([], 'hooks', NULL)))->describe();
+
+    $this->assertSame([], $plan['hooks']);
+  }
+
   /**
    * Builds a loaded configuration with two skills.
    *

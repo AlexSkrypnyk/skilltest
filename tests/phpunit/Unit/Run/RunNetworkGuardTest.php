@@ -32,11 +32,11 @@ final class RunNetworkGuardTest extends TestCase {
     'HttpClient',
     'http://',
     'https://',
-    'file_get_contents(\'http',
+    "file_get_contents('http",
     'file_get_contents("http',
   ];
 
-  #[DataProvider('dataProviderRunPathSources')]
+  #[DataProvider('dataProviderRunPathSourceContainsNoNetworkPrimitive')]
   public function testRunPathSourceContainsNoNetworkPrimitive(string $file): void {
     $source = file_get_contents($file);
     $this->assertIsString($source);
@@ -52,7 +52,7 @@ final class RunNetworkGuardTest extends TestCase {
    * @return array<string, array{0: string}>
    *   One case per run path source file.
    */
-  public static function dataProviderRunPathSources(): array {
+  public static function dataProviderRunPathSourceContainsNoNetworkPrimitive(): array {
     $src = dirname(__DIR__, 4) . '/src';
     $files = glob($src . '/Run/*.php') ?: [];
     $files[] = $src . '/Command/RunCommand.php';

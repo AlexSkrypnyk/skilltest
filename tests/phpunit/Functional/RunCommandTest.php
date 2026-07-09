@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 final class RunCommandTest extends TestCase {
 
   use ApplicationTrait;
+  use ArrayPathTrait;
 
   /**
    * A hook script that blocks `git push` input and records every execution.
@@ -268,11 +270,9 @@ final class RunCommandTest extends TestCase {
 
     $decoded = $this->decode($this->runCommand(['--dir' => $root, '--list' => TRUE, '--json' => TRUE], 0));
 
-    $plan = $decoded['plan'];
-    $this->assertIsArray($plan);
-    $this->assertSame(['structure', 'security', 'hooks', 'transcript'], $plan['groups']);
-    $this->assertTrue($plan['coverage']);
-    $this->assertSame('alpha', $plan['skills'][0]['skill']);
+    $this->assertSame(['structure', 'security', 'hooks', 'transcript'], $this->path($decoded, 'plan', 'groups'));
+    $this->assertTrue($this->path($decoded, 'plan', 'coverage'));
+    $this->assertSame('alpha', $this->path($decoded, 'plan', 'skills', 0, 'skill'));
     $this->assertFileDoesNotExist($root . '/hooks/guard.ran');
   }
 
@@ -282,25 +282,24 @@ final class RunCommandTest extends TestCase {
     $decoded = $this->decode($this->runCommand(['--dir' => $root, '--json' => TRUE], 0));
 
     $this->assertSame('1', $decoded['version']);
-    $this->assertSame('skilltest', $decoded['tool']['name']);
-    $this->assertSame('run', $decoded['run']['command']);
-    $this->assertSame('host', $decoded['run']['environment']);
-    $this->assertArrayHasKey('duration_ms', $decoded['run']);
+    $this->assertSame('skilltest', $this->path($decoded, 'tool', 'name'));
+    $this->assertSame('run', $this->path($decoded, 'run', 'command'));
+    $this->assertSame('host', $this->path($decoded, 'run', 'environment'));
+    $this->assertArrayHasKey('duration_ms', $this->pathArray($decoded, 'run'));
 
-    $alpha = $decoded['skills'][0];
-    $this->assertSame('alpha', $alpha['skill']);
-    $this->assertSame('structure.frontmatter', $alpha['deterministic']['structure'][0]['check']);
-    $this->assertTrue($alpha['deterministic']['structure'][0]['pass']);
-    $this->assertSame([], $alpha['deterministic']['security']);
-    $this->assertSame('contract.tools.required', $alpha['deterministic']['transcript'][0]['check']);
-    $this->assertSame('Bash', $alpha['deterministic']['transcript'][0]['evidence']);
+    $this->assertSame('alpha', $this->path($decoded, 'skills', 0, 'skill'));
+    $this->assertSame('structure.frontmatter', $this->path($decoded, 'skills', 0, 'deterministic', 'structure', 0, 'check'));
+    $this->assertTrue($this->path($decoded, 'skills', 0, 'deterministic', 'structure', 0, 'pass'));
+    $this->assertSame([], $this->path($decoded, 'skills', 0, 'deterministic', 'security'));
+    $this->assertSame('contract.tools.required', $this->path($decoded, 'skills', 0, 'deterministic', 'transcript', 0, 'check'));
+    $this->assertSame('Bash', $this->path($decoded, 'skills', 0, 'deterministic', 'transcript', 0, 'evidence'));
 
-    $this->assertCount(2, $decoded['hooks']);
-    $this->assertSame('hooks.guard', $decoded['hooks'][0]['check']);
-    $this->assertSame([], $decoded['coverage']['violations']);
+    $this->assertCount(2, $this->pathArray($decoded, 'hooks'));
+    $this->assertSame('hooks.guard', $this->path($decoded, 'hooks', 0, 'check'));
+    $this->assertSame([], $this->path($decoded, 'coverage', 'violations'));
 
-    $this->assertSame(0, $decoded['totals']['failures']);
-    $this->assertGreaterThan(0, $decoded['totals']['checks']);
+    $this->assertSame(0, $this->path($decoded, 'totals', 'failures'));
+    $this->assertGreaterThan(0, $this->path($decoded, 'totals', 'checks'));
   }
 
   public function testJsonCarriesFailuresWithEvidence(): void {
@@ -309,11 +308,21 @@ final class RunCommandTest extends TestCase {
 
     $decoded = $this->decode($this->runCommand(['--dir' => $root, '--json' => TRUE], 1));
 
-    $transcript = $decoded['skills'][0]['deterministic']['transcript'];
-    $forbidden = array_values(array_filter($transcript, static fn(array $row): bool => $row['check'] === 'contract.commands.forbidden'));
-    $this->assertFalse($forbidden[0]['pass']);
-    $this->assertSame('git push origin main', $forbidden[0]['evidence']);
-    $this->assertGreaterThan(0, $decoded['totals']['failures']);
+    $forbidden = NULL;
+
+    foreach ($this->pathArray($decoded, 'skills', 0, 'deterministic', 'transcript') as $row) {
+      if (is_array($row) && ($row['check'] ?? NULL) === 'contract.commands.forbidden') {
+        $forbidden = $row;
+      }
+    }
+
+    if (!is_array($forbidden)) {
+      $this->fail('No contract.commands.forbidden row in the transcript results.');
+    }
+
+    $this->assertFalse($forbidden['pass']);
+    $this->assertSame('git push origin main', $forbidden['evidence']);
+    $this->assertGreaterThan(0, $this->path($decoded, 'totals', 'failures'));
   }
 
   public function testJsonConfigErrorEmitsErrorDocument(): void {
@@ -429,7 +438,11 @@ final class RunCommandTest extends TestCase {
   /**
    * Runs the run command and asserts the exit code.
    *
-   * @param array<string, mixed> $input
+   * The tester is driven directly rather than through `applicationRun()`
+   * because the repeatable `--skill` option takes an array value, which the
+   * trait's string-or-bool input contract does not admit.
+   *
+   * @param array<string, string|bool|string[]> $input
    *   The command input.
    * @param int $expected_exit
    *   The expected exit code.
@@ -439,7 +452,7 @@ final class RunCommandTest extends TestCase {
    */
   protected function runCommand(array $input, int $expected_exit): string {
     $this->applicationInitFromCommand(RunCommand::class);
-    $this->applicationRun($input, [], $expected_exit !== 0);
+    $this->applicationGetTester()->run($input, ['capture_stderr_separately' => TRUE]);
 
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 

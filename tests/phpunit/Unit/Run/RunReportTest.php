@@ -10,6 +10,7 @@ use AlexSkrypnyk\SkillTest\Run\RunReport;
 use AlexSkrypnyk\SkillTest\Run\SkillRunResult;
 use AlexSkrypnyk\SkillTest\Security\SecurityFinding;
 use AlexSkrypnyk\SkillTest\Structure\StructureResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -21,6 +22,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RunReport::class)]
 #[CoversClass(SkillRunResult::class)]
 final class RunReportTest extends TestCase {
+
+  use ArrayPathTrait;
 
   public function testEmptyReportHasNoChecksAndPasses(): void {
     $report = new RunReport([], [], []);
@@ -86,31 +89,25 @@ final class RunReportTest extends TestCase {
     $this->assertSame($tool, $document['tool']);
     $this->assertSame($run, $document['run']);
 
-    $skills = $document['skills'];
-    $this->assertIsArray($skills);
-    $this->assertCount(1, $skills);
-    $this->assertSame('alpha', $skills[0]['skill']);
-    $this->assertSame('skills/alpha', $skills[0]['path']);
+    $this->assertCount(1, $this->pathArray($document, 'skills'));
+    $this->assertSame('alpha', $this->path($document, 'skills', 0, 'skill'));
+    $this->assertSame('skills/alpha', $this->path($document, 'skills', 0, 'path'));
 
-    $deterministic = $skills[0]['deterministic'];
-    $this->assertSame('structure.files-exist', $deterministic['structure'][0]['check']);
-    $this->assertFalse($deterministic['structure'][0]['pass']);
-    $this->assertSame('security.curl-pipe-shell', $deterministic['security'][0]['check']);
-    $this->assertFalse($deterministic['security'][0]['pass']);
-    $this->assertSame('contract.tools.required', $deterministic['transcript'][0]['check']);
-    $this->assertTrue($deterministic['transcript'][0]['pass']);
-    $this->assertSame('Bash', $deterministic['transcript'][0]['evidence']);
+    $deterministic = $this->pathArray($document, 'skills', 0, 'deterministic');
+    $this->assertSame('structure.files-exist', $this->path($deterministic, 'structure', 0, 'check'));
+    $this->assertFalse($this->path($deterministic, 'structure', 0, 'pass'));
+    $this->assertSame('security.curl-pipe-shell', $this->path($deterministic, 'security', 0, 'check'));
+    $this->assertFalse($this->path($deterministic, 'security', 0, 'pass'));
+    $this->assertSame('contract.tools.required', $this->path($deterministic, 'transcript', 0, 'check'));
+    $this->assertTrue($this->path($deterministic, 'transcript', 0, 'pass'));
+    $this->assertSame('Bash', $this->path($deterministic, 'transcript', 0, 'evidence'));
 
-    $hooks = $document['hooks'];
-    $this->assertIsArray($hooks);
-    $this->assertSame('hooks.reject-push', $hooks[0]['check']);
-    $this->assertFalse($hooks[0]['pass']);
+    $this->assertSame('hooks.reject-push', $this->path($document, 'hooks', 0, 'check'));
+    $this->assertFalse($this->path($document, 'hooks', 0, 'pass'));
 
-    $coverage = $document['coverage'];
-    $this->assertIsArray($coverage);
-    $this->assertSame('coverage.eval-exists', $coverage['violations'][0]['check']);
-    $this->assertFalse($coverage['violations'][0]['pass']);
-    $this->assertStringContainsString("skill 'gamma' has no eval.yaml", $coverage['violations'][0]['message']);
+    $this->assertSame('coverage.eval-exists', $this->path($document, 'coverage', 'violations', 0, 'check'));
+    $this->assertFalse($this->path($document, 'coverage', 'violations', 0, 'pass'));
+    $this->assertStringContainsString("skill 'gamma' has no eval.yaml", $this->pathString($document, 'coverage', 'violations', 0, 'message'));
 
     $this->assertSame(['checks' => 5, 'failures' => 4, 'trials' => 0, 'tokens' => ['in' => 0, 'out' => 0], 'cost_usd' => 0.0], $document['totals']);
   }
