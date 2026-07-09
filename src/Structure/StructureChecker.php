@@ -101,9 +101,12 @@ final class StructureChecker {
   public const int DEFAULT_DESCRIPTION_MAX = 1024;
 
   /**
-   * The reference pattern that flags an unrestricted Bash grant.
+   * The pattern that flags an unrestricted Bash grant in one tool entry.
+   *
+   * Matches `Bash(*)` and `Bash(:*)` (with optional surrounding whitespace),
+   * the wildcard forms that grant every Bash command.
    */
-  public const string UNRESTRICTED_BASH_PATTERN = '#allowed-tools\s*:.*Bash\(\s*(?::?\*)\s*\)#i';
+  public const string UNRESTRICTED_BASH_GRANT = '#Bash\(\s*:?\*\s*\)#i';
 
   /**
    * The pattern that flags a pre-model dynamic-context execution.
@@ -468,12 +471,14 @@ final class StructureChecker {
    */
   protected function checkNoUnrestrictedBash(SkillDocument $document, string $name, string $file): StructureResult {
     $id = self::CHECK_NO_UNRESTRICTED_BASH;
-    $match = $this->firstLineMatching($document->content, self::UNRESTRICTED_BASH_PATTERN, 1);
 
-    if ($match !== NULL) {
-      [$line, $evidence] = $match;
-
-      return StructureResult::fail($id, $name, 'allowed-tools grants unrestricted Bash access.', $file, $line, $evidence);
+    // Inspect the declared tool entries, not the raw document: a `Bash(*)` in
+    // the body is documentation, not a grant, and a multiline list form must be
+    // caught as surely as the inline string form.
+    foreach ($this->allowedToolEntries($document) as [$line, $entry]) {
+      if (preg_match(self::UNRESTRICTED_BASH_GRANT, $entry) === 1) {
+        return StructureResult::fail($id, $name, 'allowed-tools grants unrestricted Bash access.', $file, $line, $entry);
+      }
     }
 
     return StructureResult::pass($id, $name, 'no unrestricted Bash grant.');
@@ -524,6 +529,10 @@ final class StructureChecker {
     $id = self::CHECK_FILES_EXIST;
 
     foreach ($this->referencedFiles($document) as [$line, $path]) {
+      if ($this->escapesDirectory($path)) {
+        return StructureResult::fail($id, $name, sprintf("referenced file '%s' escapes the skill directory.", $path), $file, $line, $path);
+      }
+
       if (!file_exists($dir . '/' . $path)) {
         return StructureResult::fail($id, $name, sprintf("referenced file '%s' does not exist in the skill directory.", $path), $file, $line, $path);
       }
@@ -714,7 +723,7 @@ final class StructureChecker {
       return NULL;
     }
 
-    if (str_contains($path, '://') || str_starts_with($path, 'mailto:') || str_contains($path, '..')) {
+    if (str_contains($path, '://') || str_starts_with($path, 'mailto:')) {
       return NULL;
     }
 
@@ -727,6 +736,23 @@ final class StructureChecker {
     }
 
     return $path;
+  }
+
+  /**
+   * Whether a relative path steps outside the skill directory.
+   *
+   * A `..` path segment points at a parent, so the reference is to a file the
+   * skill does not ship; the check requires references to resolve inside the
+   * skill directory, so such a path fails rather than being followed.
+   *
+   * @param string $path
+   *   The candidate path.
+   *
+   * @return bool
+   *   TRUE when a parent-directory segment is present.
+   */
+  protected function escapesDirectory(string $path): bool {
+    return preg_match('#(^|/)\.\.(/|$)#', $path) === 1;
   }
 
   /**
@@ -767,6 +793,70 @@ final class StructureChecker {
     }
 
     return NULL;
+  }
+
+  /**
+   * The declared allowed-tools entries as [file line, entry] pairs.
+   *
+   * Reads the parsed frontmatter value in either form - a comma-separated
+   * string or a YAML list - and pairs each entry with the file line it appears
+   * on, so a finding can point at the offending declaration.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Structure\SkillDocument $document
+   *   The parsed `SKILL.md`.
+   *
+   * @return array<int, array{0: int, 1: string}>
+   *   Each entry as its 1-based file line and its trimmed text.
+   */
+  protected function allowedToolEntries(SkillDocument $document): array {
+    if (!array_key_exists('allowed-tools', $document->frontmatter)) {
+      return [];
+    }
+
+    $value = $document->frontmatter['allowed-tools'];
+    $raw = [];
+
+    if (is_string($value)) {
+      $raw = explode(',', $value);
+    }
+    elseif (is_array($value)) {
+      $raw = Data::toStringList($value);
+    }
+
+    $entries = [];
+
+    foreach ($raw as $part) {
+      $entry = trim($part);
+
+      if ($entry !== '') {
+        $entries[] = [$this->lineContaining($document->content, $entry), $entry];
+      }
+    }
+
+    return $entries;
+  }
+
+  /**
+   * The 1-based file line a needle first appears on, or 1 when it is absent.
+   *
+   * @param string $content
+   *   The full document content.
+   * @param string $needle
+   *   The substring to locate.
+   *
+   * @return int
+   *   The 1-based line number.
+   */
+  protected function lineContaining(string $content, string $needle): int {
+    foreach (explode("\n", $content) as $index => $line) {
+      if (str_contains($line, $needle)) {
+        return $index + 1;
+      }
+    }
+
+    // @codeCoverageIgnoreStart
+    return 1;
+    // @codeCoverageIgnoreEnd
   }
 
   /**

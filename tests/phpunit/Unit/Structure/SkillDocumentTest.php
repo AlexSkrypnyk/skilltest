@@ -71,6 +71,14 @@ final class SkillDocumentTest extends TestCase {
     $this->assertSame([], $document->frontmatter);
   }
 
+  public function testEmptyFrontmatterIsAValidEmptyMapping(): void {
+    $document = SkillDocument::fromString("---\n---\n# Body\n");
+
+    $this->assertTrue($document->frontmatterPresent);
+    $this->assertTrue($document->frontmatterValid);
+    $this->assertSame([], $document->frontmatter);
+  }
+
   public function testCarriageReturnsOnFencesAreTolerated(): void {
     $document = SkillDocument::fromString("---\r\nname: foo\r\n---\r\nbody\r\n");
 

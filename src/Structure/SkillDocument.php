@@ -128,6 +128,12 @@ final readonly class SkillDocument {
    *   The parsed mapping, or NULL when it does not parse to one.
    */
   protected static function parse(string $raw): ?array {
+    // An empty frontmatter block is a valid, if empty, mapping - not a parse
+    // failure. Yaml::parse('') returns NULL, so handle it before parsing.
+    if (trim($raw) === '') {
+      return [];
+    }
+
     try {
       $parsed = Yaml::parse($raw);
     }

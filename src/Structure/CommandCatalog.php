@@ -216,17 +216,24 @@ final class CommandCatalog {
   /**
    * Extracts command names from a plain-text command list, one per line.
    *
+   * Only a line whose leading token is a command name standing alone or
+   * followed by a description gap counts: the token must be at end of line or
+   * separated from any description by two or more spaces. This keeps help
+   * headers like `Usage:`, `Available commands:`, and `Options` - which run a
+   * single space into their next word - from being read as commands. JSON
+   * output (the recommended `list` form) avoids this heuristic entirely.
+   *
    * @param string $text
    *   The trimmed output.
    *
    * @return string[]
-   *   The first word of each line that begins with a command word.
+   *   The command name of each qualifying line.
    */
   protected function namesFromText(string $text): array {
     $names = [];
 
     foreach (explode("\n", $text) as $line) {
-      if (preg_match('/^\s*([a-z][\w:-]*)/i', $line, $matches) === 1) {
+      if (preg_match('/^\s*([a-z][\w-]*(?::[\w-]+)*)(?:\s{2,}|\s*$)/i', $line, $matches) === 1) {
         $names[] = $matches[1];
       }
     }

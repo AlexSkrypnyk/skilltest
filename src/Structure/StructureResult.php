@@ -137,7 +137,11 @@ final readonly class StructureResult {
    *   The rendered result.
    */
   public function render(): string {
-    $location = $this->file === '' ? $this->skill : sprintf('%s:%d', $this->file, $this->line);
+    $location = match (TRUE) {
+      $this->file === '' => $this->skill,
+      $this->line > 0 => sprintf('%s:%d', $this->file, $this->line),
+      default => $this->file,
+    };
     $line = sprintf('%s %s %s - %s', $this->check, strtoupper($this->status), $location, $this->message);
 
     return $this->evidence === '' ? $line : sprintf('%s [%s]', $line, $this->evidence);

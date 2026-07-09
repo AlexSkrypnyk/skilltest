@@ -103,6 +103,22 @@ final class StructureCheckerTest extends TestCase {
     $this->assertStringContainsString('Bash(*)', $result->evidence);
   }
 
+  public function testNoUnrestrictedBashCatchesMultilineListForm(): void {
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\nallowed-tools:\n  - Read\n  - Bash(*)\n---\nbody\n";
+    $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_NO_UNRESTRICTED_BASH);
+
+    $this->assertSame(StructureResult::FAIL, $result->status);
+    $this->assertSame('Bash(*)', $result->evidence);
+    $this->assertSame(6, $result->line);
+  }
+
+  public function testNoUnrestrictedBashIgnoresBashInBody(): void {
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Body\nExample: `allowed-tools: Bash(*)` grants everything.\n";
+    $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_NO_UNRESTRICTED_BASH);
+
+    $this->assertSame(StructureResult::PASS, $result->status);
+  }
+
   public function testPreModelExecReportsFileLineNotBodyLine(): void {
     $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# B\nContext: !`date`\n";
     $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_NO_PRE_MODEL_EXEC);
@@ -139,12 +155,21 @@ final class StructureCheckerTest extends TestCase {
     $this->assertSame(5, $result->line);
   }
 
-  public function testFilesExistIgnoresUrlsAnchorsCommandsAndEscapes(): void {
-    $body = "URL [site](https://example.com/x). Anchor [top](#intro). Command `ahoy lint`. Absolute `/etc/hosts`. Parent `../out.md`. Word `git`.";
+  public function testFilesExistIgnoresUrlsAnchorsCommandsAndAbsolutePaths(): void {
+    $body = "URL [site](https://example.com/x). Anchor [top](#intro). Command `ahoy lint`. Absolute `/etc/hosts`. Word `git`.";
     $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n$body\n";
     $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_FILES_EXIST);
 
     $this->assertSame(StructureResult::PASS, $result->status);
+  }
+
+  public function testFilesExistFailsForParentDirectoryReference(): void {
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\nSee `../out.md` for details.\n";
+    $result = $this->only($this->results($this->dir($skill_md), []), StructureChecker::CHECK_FILES_EXIST);
+
+    $this->assertSame(StructureResult::FAIL, $result->status);
+    $this->assertStringContainsString('escapes the skill directory', $result->message);
+    $this->assertSame('../out.md', $result->evidence);
   }
 
   public function testContractCoherentPassesForCoherentEval(): void {

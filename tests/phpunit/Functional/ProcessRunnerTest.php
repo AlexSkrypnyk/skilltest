@@ -49,7 +49,7 @@ final class ProcessRunnerTest extends TestCase {
   public function testCapturesStdoutAndZeroExit(): void {
     file_put_contents($this->workdir . '/ok.php', "<?php\nfwrite(STDOUT, 'hello');\nexit(0);\n");
 
-    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run('php ok.php', $this->workdir);
+    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run($this->php('ok.php'), $this->workdir);
 
     $this->assertSame(0, $exit_code);
     $this->assertSame('hello', $stdout);
@@ -58,7 +58,7 @@ final class ProcessRunnerTest extends TestCase {
   public function testCapturesNonZeroExit(): void {
     file_put_contents($this->workdir . '/fail.php', "<?php\nexit(2);\n");
 
-    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run('php fail.php', $this->workdir);
+    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run($this->php('fail.php'), $this->workdir);
 
     $this->assertSame(2, $exit_code);
     $this->assertSame('', $stdout);
@@ -67,7 +67,7 @@ final class ProcessRunnerTest extends TestCase {
   public function testDiscardsStderr(): void {
     file_put_contents($this->workdir . '/noise.php', "<?php\nfwrite(STDERR, 'boom');\nfwrite(STDOUT, 'clean');\nexit(0);\n");
 
-    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run('php noise.php', $this->workdir);
+    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run($this->php('noise.php'), $this->workdir);
 
     $this->assertSame(0, $exit_code);
     $this->assertSame('clean', $stdout);
@@ -76,9 +76,28 @@ final class ProcessRunnerTest extends TestCase {
   public function testTerminatesOnTimeout(): void {
     file_put_contents($this->workdir . '/hang.php', "<?php\nsleep(5);\nexit(0);\n");
 
-    [$exit_code] = (new ProcessRunner(0.5))->run('php hang.php', $this->workdir);
+    [$exit_code] = (new ProcessRunner(0.5))->run($this->php('hang.php'), $this->workdir);
 
     $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
+  }
+
+  public function testForceKillsCommandThatIgnoresTermination(): void {
+    [$exit_code] = (new ProcessRunner(0.3))->run("trap '' TERM; sleep 30", $this->workdir);
+
+    $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
+  }
+
+  /**
+   * Builds a command that runs a script under the current PHP interpreter.
+   *
+   * @param string $script
+   *   The script filename, relative to the working directory.
+   *
+   * @return string
+   *   The escaped command.
+   */
+  protected function php(string $script): string {
+    return escapeshellarg(PHP_BINARY) . ' ' . $script;
   }
 
   /**

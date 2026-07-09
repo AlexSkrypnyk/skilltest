@@ -61,6 +61,12 @@ final class StructureResultTest extends TestCase {
     $this->assertSame('structure.files-exist FAIL skills/foo/SKILL.md:12 - missing. [refs/x.md]', $result->render());
   }
 
+  public function testRenderOmitsLineSuffixWhenLineIsZero(): void {
+    $result = StructureResult::fail('structure.contract-coherent', 'foo', 'incoherent.', 'skills/foo/eval.yaml', 0, 'both required and forbidden');
+
+    $this->assertSame('structure.contract-coherent FAIL skills/foo/eval.yaml - incoherent. [both required and forbidden]', $result->render());
+  }
+
   public function testRenderSuppressed(): void {
     $result = StructureResult::suppressed('structure.name-matches-dir', 'foo', 'legacy.');
 
