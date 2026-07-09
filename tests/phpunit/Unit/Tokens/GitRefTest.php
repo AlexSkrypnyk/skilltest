@@ -65,7 +65,7 @@ final class GitRefTest extends TestCase {
     $git = new GitRef('/repo/', $runner);
 
     $this->assertSame("file body\n", $git->contentAt('main', 'skills/foo/SKILL.md'));
-    $this->assertSame("git show 'main:skills/foo/SKILL.md'", $calls[0][0]);
+    $this->assertSame("git show --end-of-options 'main:skills/foo/SKILL.md'", $calls[0][0]);
     $this->assertSame('/repo', $calls[0][1], 'the trailing slash is trimmed from the working directory');
   }
 
@@ -84,7 +84,7 @@ final class GitRefTest extends TestCase {
     };
 
     $this->assertFalse((new GitRef('/repo', $runner))->exists('origin/main'));
-    $this->assertSame("git rev-parse --verify --quiet 'origin/main^{commit}'", $commands[0]);
+    $this->assertSame("git rev-parse --verify --quiet --end-of-options 'origin/main^{commit}'", $commands[0]);
   }
 
   /**

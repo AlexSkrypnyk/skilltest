@@ -105,7 +105,9 @@ final class GitRef {
    *   TRUE when the ref resolves.
    */
   public function exists(string $ref): bool {
-    [$exit_code] = ($this->runner)('git rev-parse --verify --quiet ' . escapeshellarg($ref . '^{commit}'), $this->root);
+    // The end-of-options marker keeps a ref that starts with a dash from
+    // being read as a git option; shell escaping alone cannot prevent that.
+    [$exit_code] = ($this->runner)('git rev-parse --verify --quiet --end-of-options ' . escapeshellarg($ref . '^{commit}'), $this->root);
 
     return $exit_code === 0;
   }
@@ -122,7 +124,9 @@ final class GitRef {
    *   The content, or NULL when the file does not exist at the ref.
    */
   public function contentAt(string $ref, string $path): ?string {
-    [$exit_code, $stdout] = ($this->runner)('git show ' . escapeshellarg($ref . ':' . $path), $this->root);
+    // The end-of-options marker keeps a ref that starts with a dash from
+    // being read as a git option; shell escaping alone cannot prevent that.
+    [$exit_code, $stdout] = ($this->runner)('git show --end-of-options ' . escapeshellarg($ref . ':' . $path), $this->root);
 
     return $exit_code === 0 ? $stdout : NULL;
   }
