@@ -184,6 +184,25 @@ final class LlmCommandTest extends TestCase {
     $this->assertStringContainsString("contract.commands.forbidden FAIL - forbidden behaviour 'no push'", $output);
   }
 
+  public function testInterpretReadsFailingRun(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 1);
+
+    $this->assertStringContainsString("task 'invoked' on haiku in 'alpha'", $output);
+    $this->assertStringContainsString("Strengthen the skill's guidance", $output);
+  }
+
+  public function testInterpretConfirmsPassingRun(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $output = $this->runCommand(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 0);
+
+    $this->assertStringContainsString('check(s) passed', $output);
+  }
+
   public function testParallelResultsMatchSerial(): void {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));

@@ -110,6 +110,16 @@ final class MatrixCommandTest extends TestCase {
     $this->assertStringContainsString('minimal model: sonnet (threshold 0.80, 3 trials)', $output);
   }
 
+  public function testInterpretReadsTheWeakestModel(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->modelAgent($root));
+
+    $output = $this->runCommand(['--dir' => $root, '--interpret' => TRUE], 0);
+
+    $this->assertStringContainsString("task 'invoked' on haiku in 'alpha'", $output);
+    $this->assertStringContainsString("Strengthen the skill's guidance", $output);
+  }
+
   public function testFailureModesNameFailedCheckIdsWithCounts(): void {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));

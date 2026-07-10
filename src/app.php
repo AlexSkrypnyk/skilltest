@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use AlexSkrypnyk\SkillTest\Command\CacheCommand;
+use AlexSkrypnyk\SkillTest\Command\CompareCommand;
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
 use AlexSkrypnyk\SkillTest\Command\GateCommand;
 use AlexSkrypnyk\SkillTest\Command\GradeCommand;
@@ -17,6 +18,7 @@ use AlexSkrypnyk\SkillTest\Command\MatrixCommand;
 use AlexSkrypnyk\SkillTest\Command\McpServeCommand;
 use AlexSkrypnyk\SkillTest\Command\MigrateCommand;
 use AlexSkrypnyk\SkillTest\Command\RecordCommand;
+use AlexSkrypnyk\SkillTest\Command\ReportCommand;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
 use AlexSkrypnyk\SkillTest\Command\SelfUpdateCommand;
@@ -51,6 +53,8 @@ $application->add(new SelfUpdateCommand());
 $application->add(new CacheCommand());
 $application->add(new GradeCommand());
 $application->add(new GateCommand());
+$application->add(new CompareCommand());
+$application->add(new ReportCommand());
 
 $application->setDefaultCommand('run');
 
