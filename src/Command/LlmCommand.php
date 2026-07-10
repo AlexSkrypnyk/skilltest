@@ -20,6 +20,7 @@ use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
 use AlexSkrypnyk\SkillTest\Live\TaskOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Results\Interpreter;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
@@ -80,7 +81,8 @@ class LlmCommand extends Command {
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
       ->addOption(name: 'keep-workspace', mode: InputOption::VALUE_NONE, description: 'Preserve each trial workspace after the run and print its path for debugging')
       ->addOption(name: 'cache', mode: InputOption::VALUE_NONE, description: 'Reuse cached trial results keyed on the task, fixtures, model, and skill content')
-      ->addOption(name: 'no-cache', mode: InputOption::VALUE_NONE, description: 'Ignore and do not write cached trial results (overrides --cache)');
+      ->addOption(name: 'no-cache', mode: InputOption::VALUE_NONE, description: 'Ignore and do not write cached trial results (overrides --cache)')
+      ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the top failure and a concrete next step');
   }
 
   /**
@@ -191,6 +193,11 @@ class LlmCommand extends Command {
     }
     else {
       $this->renderReport($output, $report);
+
+      if ((bool) $input->getOption('interpret')) {
+        $output->writeln('');
+        $output->writeln(Interpreter::paragraph($document));
+      }
     }
 
     return $report->failed() ? ExitCode::FAIL : ExitCode::PASS;

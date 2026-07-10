@@ -15,6 +15,7 @@ use AlexSkrypnyk\SkillTest\Live\Matrix\MatrixPlan;
 use AlexSkrypnyk\SkillTest\Live\Matrix\MatrixRenderer;
 use AlexSkrypnyk\SkillTest\Live\Matrix\MatrixReport;
 use AlexSkrypnyk\SkillTest\Render\Table;
+use AlexSkrypnyk\SkillTest\Results\Interpreter;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
@@ -86,7 +87,8 @@ class MatrixCommand extends Command {
       ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Human output format: text or markdown', default: 'text')
       ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
-      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory');
+      ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
+      ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the weakest task and a concrete next step');
   }
 
   /**
@@ -203,6 +205,11 @@ class MatrixCommand extends Command {
 
       foreach ((new MatrixRenderer(MatrixReport::fromReport($report, $loaded->repo->defaultModel)))->render($format) as $line) {
         $output->writeln($line);
+      }
+
+      if ((bool) $input->getOption('interpret')) {
+        $output->writeln('');
+        $output->writeln(Interpreter::paragraph($document));
       }
     }
 

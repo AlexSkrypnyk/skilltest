@@ -11,6 +11,7 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
+use AlexSkrypnyk\SkillTest\Results\Interpreter;
 use AlexSkrypnyk\SkillTest\Run\Redactor;
 use AlexSkrypnyk\SkillTest\Run\Report\ArtifactWriter;
 use AlexSkrypnyk\SkillTest\Run\Report\GithubCommentReporter;
@@ -86,6 +87,7 @@ class RunCommand extends Command {
       ->addOption(name: 'session-dir', mode: InputOption::VALUE_REQUIRED, description: 'Directory the --session-log NDJSON stream is written to')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts')
+      ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the top failure and a concrete next step')
       ->addOption(name: 'no-update-check', mode: InputOption::VALUE_NONE, description: 'Skip the once-a-day check for a newer skilltest release');
   }
 
@@ -148,12 +150,20 @@ class RunCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf("check '%s' matched nothing in this run; verify the id with --list.", $selection->check))]);
     }
 
-    if ($report_options->wantsDocument()) {
-      $this->emitReports($output, $stderr, $filtered, $report_options, $this->document($report, $filtered, $started, $started_at));
+    $interpret = (bool) $input->getOption('interpret');
+    $document = $report_options->wantsDocument() || $interpret ? $this->document($report, $filtered, $started, $started_at) : NULL;
+
+    if ($document !== NULL && $report_options->wantsDocument()) {
+      $this->emitReports($output, $stderr, $filtered, $report_options, $document);
     }
 
     if ($report_options->stdoutFormat() === 'human') {
       $this->renderReport($output, $filtered, $selection, $report);
+
+      if ($interpret && $document !== NULL) {
+        $output->writeln('');
+        $output->writeln(Interpreter::paragraph($document));
+      }
     }
 
     $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('no-update-check'));

@@ -123,6 +123,24 @@ final class RunCommandTest extends TestCase {
     $this->assertStringContainsString("contract.commands.forbidden FAIL - forbidden behaviour 'no git pushes' matched: git push origin main", $output);
   }
 
+  public function testInterpretConfirmsPassingRun(): void {
+    $root = $this->realRepo();
+
+    $output = $this->runCommand(['--dir' => $root, '--interpret' => TRUE], 0);
+
+    $this->assertStringContainsString('check(s) passed', $output);
+  }
+
+  public function testInterpretNamesTheTopFailureAndNextStep(): void {
+    $root = $this->realRepo();
+    file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', self::BROKEN_TRANSCRIPT);
+
+    $output = $this->runCommand(['--dir' => $root, '--interpret' => TRUE], 1);
+
+    $this->assertStringContainsString('contract failure contract.commands.required', $output);
+    $this->assertStringContainsString('skilltest record --skill alpha', $output);
+  }
+
   public function testBrokenHookCaseFailsAndIsNamed(): void {
     $root = $this->realRepo();
     file_put_contents($root . '/hooks/guard.sh', "#!/bin/sh\nexit 0\n");
