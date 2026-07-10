@@ -76,7 +76,7 @@ final class ResultsDocumentTest extends TestCase {
     $this->assertSame('1', ResultsDocument::fromFile($this->file)->version());
   }
 
-  #[DataProvider('dataProviderVersion')]
+  #[DataProvider('dataProviderVersionGating')]
   public function testVersionGating(string $version, bool $current): void {
     $document = $this->document();
     $document['version'] = $version;
@@ -84,7 +84,7 @@ final class ResultsDocumentTest extends TestCase {
     $this->assertSame($current, (new ResultsDocument($document))->isCurrentMajor());
   }
 
-  public static function dataProviderVersion(): \Iterator {
+  public static function dataProviderVersionGating(): \Iterator {
     yield 'current major' => ['1', TRUE];
     yield 'current major minor' => ['1.4', TRUE];
     yield 'foreign major' => ['2', FALSE];
@@ -99,7 +99,7 @@ final class ResultsDocumentTest extends TestCase {
   }
 
   public function testEmptyDocumentRatesPerfect(): void {
-    $this->assertSame(1.0, (new ResultsDocument($this->document()))->passRate());
+    $this->assertEqualsWithDelta(1.0, (new ResultsDocument($this->document()))->passRate(), PHP_FLOAT_EPSILON);
   }
 
   public function testPassRateSpansChecksTrialsHooksAndCoverage(): void {
@@ -117,7 +117,7 @@ final class ResultsDocumentTest extends TestCase {
 
     // 1 passing structure check + 1 passing trial out of: structure(1) +
     // trials(2) + hook(1) + coverage(1) = 2 passed of 5 units.
-    $this->assertSame(0.4, (new ResultsDocument($document))->passRate());
+    $this->assertEqualsWithDelta(0.4, (new ResultsDocument($document))->passRate(), PHP_FLOAT_EPSILON);
   }
 
   public function testTasksRecomputeModelVerdictAgainstThreshold(): void {

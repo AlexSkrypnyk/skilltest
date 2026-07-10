@@ -16,7 +16,7 @@ use AlexSkrypnyk\SkillTest\Results\TaskView;
  * matter the aggregate); did a skill's minimal model climb the ladder (a cost
  * regression is a decision, not an accident); and did the task set drift, held
  * to the configured allow/warn/fail policy. It reads both runs through the same
- * {@see ResultsDocument} model, so the numbers it gates on are the numbers every
+ * {@see ResultsDocument} model, so the numbers it gates on are those every
  * report shows.
  */
 final readonly class Gate {

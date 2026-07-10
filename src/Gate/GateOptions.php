@@ -11,7 +11,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  *
  * Holds the aggregate regression tolerance in percentage points and the drift
  * policy for tasks the current run added or dropped. Parsing is total: it
- * returns either a valid policy or the list of reasons it could not be built, so
+ * returns either a valid policy or the reasons it could not be built, so
  * a bad flag surfaces as a configuration error before any comparison runs.
  */
 final readonly class GateOptions {

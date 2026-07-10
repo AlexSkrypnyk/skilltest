@@ -34,7 +34,7 @@ final class GateTest extends TestCase {
     $this->assertSame([], $report->findings);
   }
 
-  #[DataProvider('dataProviderRegression')]
+  #[DataProvider('dataProviderAggregateRegression')]
   public function testAggregateRegression(float $max, bool $fails): void {
     $baseline = $this->ratedDoc('alpha', 2, 0);
     $current = $this->ratedDoc('alpha', 1, 1);
@@ -49,7 +49,7 @@ final class GateTest extends TestCase {
     }
   }
 
-  public static function dataProviderRegression(): \Iterator {
+  public static function dataProviderAggregateRegression(): \Iterator {
     yield 'zero tolerance fails on any drop' => [0.0, TRUE];
     yield 'drop equal to tolerance passes' => [50.0, FALSE];
     yield 'drop beyond tolerance fails' => [49.0, TRUE];
@@ -71,7 +71,7 @@ final class GateTest extends TestCase {
 
     $report = (new Gate())->compare($doc, $doc, $this->options(), [TaskView::key('alpha', 'critical')]);
 
-    $this->assertSame(0.0, $report->drop());
+    $this->assertEqualsWithDelta(0.0, $report->drop(), PHP_FLOAT_EPSILON);
     $this->assertTrue($report->failed());
     $this->assertCount(1, $report->findings);
     $this->assertSame('golden', $report->findings[0]->category);
@@ -108,17 +108,17 @@ final class GateTest extends TestCase {
     $this->assertStringContainsString("minimal model for 'alpha' climbed the ladder haiku -> sonnet", $climb->message);
   }
 
-  #[DataProvider('dataProviderStableMinimal')]
+  #[DataProvider('dataProviderMinimalModelStableOrImprovedPasses')]
   public function testMinimalModelStableOrImprovedPasses(string $baseline_min, string $current_min): void {
     $baseline = $this->climbDoc($baseline_min);
     $current = $this->climbDoc($current_min);
 
     $report = (new Gate())->compare($current, $baseline, $this->options(100.0), []);
 
-    $this->assertNull($this->findingOf($report->findings, 'minimal-model'));
+    $this->assertNotInstanceOf(GateFinding::class, $this->findingOf($report->findings, 'minimal-model'));
   }
 
-  public static function dataProviderStableMinimal(): \Iterator {
+  public static function dataProviderMinimalModelStableOrImprovedPasses(): \Iterator {
     yield 'unchanged' => ['sonnet', 'sonnet'];
     yield 'improved down the ladder' => ['sonnet', 'haiku'];
   }
@@ -142,7 +142,7 @@ final class GateTest extends TestCase {
 
     $report = (new Gate())->compare($current, $baseline, $this->options(100.0), []);
 
-    $this->assertNull($this->findingOf($report->findings, 'minimal-model'));
+    $this->assertNotInstanceOf(GateFinding::class, $this->findingOf($report->findings, 'minimal-model'));
   }
 
   public function testMinimalModelUncomparableSkillIgnored(): void {
@@ -153,24 +153,24 @@ final class GateTest extends TestCase {
 
     $report = (new Gate())->compare($current, $baseline, $this->options(100.0), []);
 
-    $this->assertNull($this->findingOf($report->findings, 'minimal-model'));
+    $this->assertNotInstanceOf(GateFinding::class, $this->findingOf($report->findings, 'minimal-model'));
   }
 
-  #[DataProvider('dataProviderDrift')]
+  #[DataProvider('dataProviderTaskDrift')]
   public function testTaskDrift(string $policy, string $category, ?string $expected_severity): void {
-    $withTask = $this->llmDoc('alpha', 'extra', [$this->modelEntry('haiku', [$this->trial(1, TRUE)])], 'haiku');
-    $withoutTask = $this->llmDoc('alpha', 'base', [$this->modelEntry('haiku', [$this->trial(1, TRUE)])], 'haiku');
+    $with_task = $this->llmDoc('alpha', 'extra', [$this->modelEntry('haiku', [$this->trial(1, TRUE)])], 'haiku');
+    $without_task = $this->llmDoc('alpha', 'base', [$this->modelEntry('haiku', [$this->trial(1, TRUE)])], 'haiku');
 
     // A new task is present in current but not baseline; a removed task is the
     // reverse - so the same pair drives both directions by swapping arguments.
-    [$current, $baseline] = $category === 'new-task' ? [$withTask, $withoutTask] : [$withoutTask, $withTask];
+    [$current, $baseline] = $category === 'new-task' ? [$with_task, $without_task] : [$without_task, $with_task];
     $options = $category === 'new-task' ? $this->options(100.0, $policy, 'allow') : $this->options(100.0, 'allow', $policy);
 
     $report = (new Gate())->compare($current, $baseline, $options, []);
     $finding = $this->findingOf($report->findings, $category);
 
     if ($expected_severity === NULL) {
-      $this->assertNull($finding);
+      $this->assertNotInstanceOf(GateFinding::class, $finding);
 
       return;
     }
@@ -179,7 +179,7 @@ final class GateTest extends TestCase {
     $this->assertSame($expected_severity, $finding->severity);
   }
 
-  public static function dataProviderDrift(): \Iterator {
+  public static function dataProviderTaskDrift(): \Iterator {
     yield 'new task allow is silent' => ['allow', 'new-task', NULL];
     yield 'new task warn surfaces' => ['warn', 'new-task', GateFinding::WARN];
     yield 'new task fail fails' => ['fail', 'new-task', GateFinding::FAIL];

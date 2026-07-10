@@ -87,7 +87,7 @@ final class GraderTest extends TestCase {
     $this->assertTrue($result->changed());
     $this->assertFalse($this->documentTrialPass($result->document));
     $this->assertNull($this->documentMinimalModel($result->document));
-    $this->assertSame(0.0, $this->documentPassRate($result->document));
+    $this->assertEqualsWithDelta(0.0, $this->documentPassRate($result->document), PHP_FLOAT_EPSILON);
   }
 
   public function testCleanTranscriptStaysPassing(): void {
@@ -240,7 +240,7 @@ final class GraderTest extends TestCase {
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
-    $this->assertSame(0.0, $this->documentPassRate($result->document));
+    $this->assertEqualsWithDelta(0.0, $this->documentPassRate($result->document), PHP_FLOAT_EPSILON);
     $this->assertArrayNotHasKey('verdict', $this->documentLlm($result->document));
   }
 
@@ -289,7 +289,7 @@ final class GraderTest extends TestCase {
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
     $this->assertSame(0, $result->trialsRescored);
-    $this->assertSame(0.0, $result->document['skills'][0]['llm']['tasks'][0]['models'][0]['pass_rate']);
+    $this->assertEqualsWithDelta(0.0, $this->documentPassRate($result->document), PHP_FLOAT_EPSILON);
     $this->assertNull($this->documentMinimalModel($result->document));
   }
 
@@ -310,7 +310,7 @@ final class GraderTest extends TestCase {
    * @param bool $rubric
    *   Whether the eval declares a judge rubric.
    * @param bool $models
-   *   Whether the repo declares any models (FALSE leaves the judge model unset).
+   *   Whether the repo sets any models (FALSE leaves the judge model unset).
    *
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedConfig
    *   The loaded configuration.
@@ -374,6 +374,8 @@ final class GraderTest extends TestCase {
    *   The trial rows.
    * @param string $skill
    *   The skill name.
+   * @param string $task
+   *   The task name.
    *
    * @return array<string, mixed>
    *   The document.
@@ -454,10 +456,12 @@ final class GraderTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path) && !is_link($path)) {

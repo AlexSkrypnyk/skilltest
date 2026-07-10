@@ -8,7 +8,7 @@ namespace AlexSkrypnyk\SkillTest\Grade;
  * The outcome of re-scoring a saved run: the new document and what moved.
  *
  * Carries the rebuilt results document alongside the counts that make a
- * re-grade legible: how many trials were re-scored, and how many flipped in each
+ * re-grade legible: how many trials re-scored, and how many flipped in each
  * direction. A trial that newly fails is the signal a tightened contract or
  * rubric was looking for; a trial that newly passes says the run would clear a
  * loosened bar. The notes surface anything the re-grade could not do offline,
@@ -19,7 +19,7 @@ final readonly class RescoreResult {
   /**
    * Constructs a RescoreResult.
    *
-   * @param array<string, mixed> $document
+   * @param array<mixed> $document
    *   The re-scored results document.
    * @param int $trialsRescored
    *   The number of trials whose verdict was recomputed.

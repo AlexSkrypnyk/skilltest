@@ -7,10 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Gate;
 /**
  * The outcome of one gate comparison: the rates, the findings, and the verdict.
  *
- * Carries the two aggregate pass rates it compared and the tolerance it applied,
+ * Carries the two pass rates it compared and the tolerance it applied,
  * plus every finding in the order the gate produced them (regression, golden,
- * minimal-model, then drift). The verdict is derived, not stored: the gate fails
- * the moment any finding is failing, so a warning-only run still passes. This is
+ * minimal-model, drift). The verdict is derived, not stored: the gate fails
+ * the moment any finding fails, so a warning-only run still passes. This is
  * the single object every gate renderer consumes.
  */
 final readonly class GateReport {

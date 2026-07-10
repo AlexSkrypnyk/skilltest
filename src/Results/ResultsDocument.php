@@ -14,7 +14,7 @@ use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
  * The one place the saved document's arithmetic lives, so re-grading and the
  * regression gate read a run the same way instead of re-walking the nested
  * arrays each time. It answers the questions a comparison asks: the schema
- * version (so a foreign-major document is rejected, never silently misread), the
+ * version (so a foreign-major document is rejected, never misread), the
  * aggregate pass rate over every deterministic check and every llm trial, each
  * task's per-model verdict recomputed from the raw trials against the skill's
  * threshold, and each skill's minimal-model verdict and ladder order. It is a
@@ -30,7 +30,7 @@ final readonly class ResultsDocument {
   /**
    * Constructs a ResultsDocument.
    *
-   * @param array<string, mixed> $data
+   * @param array<mixed> $data
    *   The decoded results document.
    */
   public function __construct(
@@ -118,10 +118,10 @@ final readonly class ResultsDocument {
   /**
    * The aggregate pass rate over every graded unit in the document.
    *
-   * A unit is one deterministic check (structure, security, transcript, hook, or
+   * A unit is one check (structure, security, transcript, hook, or
    * coverage violation) or one llm trial. The rate is recomputed from the
    * document itself rather than read from `totals`, so it is a true pass rate
-   * across checks and trials alike. An empty document has nothing failing, so it
+   * across checks and trials. An empty document has nothing failing, so it
    * rates a perfect 1.0.
    *
    * @return float
@@ -189,7 +189,7 @@ final readonly class ResultsDocument {
   /**
    * Each skill's minimal-model verdict, keyed by skill name.
    *
-   * Only skills that carry an llm verdict are included; the value is the minimal
+   * Only skills with an llm verdict are included; the value is the minimal
    * model alias, or NULL when no model supported the skill.
    *
    * @return array<string, string|null>

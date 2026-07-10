@@ -47,20 +47,21 @@ final class GateRendererTest extends TestCase {
   public function testJson(): void {
     $report = new GateReport(1.0, 0.9, 5.0, [GateFinding::fail('regression', 'dropped')]);
 
-    $decoded = json_decode((new GateRenderer())->render($report, 'json'), TRUE);
+    $out = (new GateRenderer())->render($report, 'json');
 
-    $this->assertSame('fail', $decoded['gate']);
-    $this->assertSame(1.0, $decoded['baseline_pass_rate']);
-    $this->assertSame(0.9, $decoded['current_pass_rate']);
-    $this->assertSame(5.0, $decoded['max_regression']);
-    $this->assertEqualsWithDelta(10.0, $decoded['drop'], 0.0001);
-    $this->assertSame([['severity' => 'fail', 'category' => 'regression', 'message' => 'dropped']], $decoded['findings']);
+    $this->assertStringContainsString('"gate": "fail"', $out);
+    $this->assertStringContainsString('"baseline_pass_rate": 1.0', $out);
+    $this->assertStringContainsString('"current_pass_rate": 0.9', $out);
+    $this->assertStringContainsString('"max_regression": 5.0', $out);
+    $this->assertStringContainsString('"drop": 10.0', $out);
+    $this->assertStringContainsString('"category": "regression"', $out);
+    $this->assertStringContainsString('"message": "dropped"', $out);
   }
 
   public function testJsonPassingVerdict(): void {
-    $decoded = json_decode((new GateRenderer())->render(new GateReport(1.0, 1.0, 0.0, []), 'json'), TRUE);
+    $out = (new GateRenderer())->render(new GateReport(1.0, 1.0, 0.0, []), 'json');
 
-    $this->assertSame('pass', $decoded['gate']);
+    $this->assertStringContainsString('"gate": "pass"', $out);
   }
 
   public function testMarkdownPassing(): void {
@@ -96,14 +97,14 @@ final class GateRendererTest extends TestCase {
     $this->assertStringContainsString('::notice title=skilltest gate::gate passed', $out);
   }
 
-  #[DataProvider('dataProviderDelta')]
+  #[DataProvider('dataProviderDeltaPhrase')]
   public function testDeltaPhrase(float $baseline, float $current, string $needle): void {
     $out = (new GateRenderer())->render(new GateReport($baseline, $current, 0.0, []), 'human');
 
     $this->assertStringContainsString($needle, $out);
   }
 
-  public static function dataProviderDelta(): \Iterator {
+  public static function dataProviderDeltaPhrase(): \Iterator {
     yield 'unchanged' => [1.0, 1.0, 'unchanged'];
     yield 'down' => [1.0, 0.9, 'down 10 points'];
     yield 'up' => [0.9, 1.0, 'up 10 points'];

@@ -31,7 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * without the run that produced the transcript. Two modes serve two needs:
  * `--transcript <file> --skill <name>` asserts a skill's contract against any
  * transcript - the same verdict the deterministic transcript group reaches, on
- * an arbitrary file; and `--results <file>` re-scores every trial in a saved run
+ * any file; and `--results <file>` re-scores every trial in a saved run
  * against the current contract, so a tightened rule shows exactly which trials
  * it would now fail. Both are token-free; only `--judge` spends tokens, to
  * re-run the rubric against each trial's stored transcript. Exit codes mirror
@@ -319,7 +319,7 @@ class GradeCommand extends Command {
   /**
    * Encodes a results document as pretty JSON with a trailing newline.
    *
-   * @param array<string, mixed> $document
+   * @param array<mixed> $document
    *   The results document.
    *
    * @return string

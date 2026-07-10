@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * Class GradeCommandTest.
  *
  * Functional test for the grade command: asserting a contract against an
- * arbitrary transcript, re-scoring a saved run against a tightened contract with
+ * arbitrary transcript, re-scoring a saved run against a tighter contract with
  * no agent execution, re-judging behind the opt-in flag, and every error path.
  */
 #[CoversClass(GradeCommand::class)]
@@ -515,10 +515,12 @@ final class GradeCommandTest extends TestCase {
     }
 
     foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.' || $item === '..') {
+      if ($item === '.') {
         continue;
       }
-
+      if ($item === '..') {
+        continue;
+      }
       $path = $dir . '/' . $item;
 
       if (is_dir($path) && !is_link($path)) {

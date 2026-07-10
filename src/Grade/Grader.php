@@ -23,7 +23,7 @@ use AlexSkrypnyk\SkillTest\Results\ResultsDocument;
  *
  * The engine behind `skilltest grade --results`. It walks every trial in a
  * saved document and re-asserts the current contract and custom checks against
- * the trial's own transcript artifact - so a tightened contract turns a run that
+ * the trial's own transcript - so a tightened contract turns a run that
  * passed into the failures it would now record, without executing a single
  * agent. The runtime-only failures a transcript cannot reproduce (a non-zero
  * agent exit, a mock miss, a responder abstention) are preserved from the saved
@@ -40,7 +40,7 @@ final readonly class Grader {
    * Constructs a Grader.
    *
    * @param string $root
-   *   The repository root, the working directory custom checks run under and the
+   *   The repository root, where custom checks run, and the
    *   directory the judge is invoked from.
    * @param \AlexSkrypnyk\SkillTest\Judge\Judge|null $judge
    *   The judge to re-score rubrics with, or NULL to reuse the saved verdict.
@@ -53,7 +53,7 @@ final readonly class Grader {
   /**
    * Re-scores a saved results document against the current configuration.
    *
-   * @param array<string, mixed> $document
+   * @param array<mixed> $document
    *   The saved results document.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $config
    *   The current configuration, supplying each skill's contract, checks,
@@ -372,10 +372,10 @@ final readonly class Grader {
   /**
    * Rebuilds the failure total from the re-scored document.
    *
-   * @param array<string, mixed> $document
+   * @param array<mixed> $document
    *   The re-scored document.
    *
-   * @return array<string, mixed>
+   * @return array<mixed>
    *   The document with `totals.failures` recomputed.
    */
   protected function recomputeFailures(array $document): array {

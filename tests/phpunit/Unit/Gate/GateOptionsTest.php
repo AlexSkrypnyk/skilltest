@@ -22,7 +22,7 @@ final class GateOptionsTest extends TestCase {
 
     $this->assertSame([], $errors);
     $this->assertInstanceOf(GateOptions::class, $options);
-    $this->assertSame(0.0, $options->maxRegression);
+    $this->assertEqualsWithDelta(0.0, $options->maxRegression, PHP_FLOAT_EPSILON);
     $this->assertSame('warn', $options->newTasks);
     $this->assertSame('warn', $options->removedTasks);
   }
@@ -32,21 +32,21 @@ final class GateOptionsTest extends TestCase {
 
     $this->assertSame([], $errors);
     $this->assertInstanceOf(GateOptions::class, $options);
-    $this->assertSame(7.5, $options->maxRegression);
+    $this->assertEqualsWithDelta(7.5, $options->maxRegression, PHP_FLOAT_EPSILON);
     $this->assertSame('fail', $options->newTasks);
     $this->assertSame('allow', $options->removedTasks);
   }
 
-  #[DataProvider('dataProviderInvalid')]
+  #[DataProvider('dataProviderInvalidValuesReportErrors')]
   public function testInvalidValuesReportErrors(?string $max, ?string $new, ?string $removed, string $needle): void {
     [$options, $errors] = GateOptions::parse($max, $new, $removed);
 
-    $this->assertNull($options);
+    $this->assertNotInstanceOf(GateOptions::class, $options);
     $this->assertNotEmpty($errors);
     $this->assertStringContainsString($needle, implode("\n", $errors));
   }
 
-  public static function dataProviderInvalid(): \Iterator {
+  public static function dataProviderInvalidValuesReportErrors(): \Iterator {
     yield 'non-numeric regression' => ['abc', NULL, NULL, '--max-regression'];
     yield 'negative regression' => ['-1', NULL, NULL, '--max-regression'];
     yield 'unknown new policy' => [NULL, 'skip', NULL, '--on-new-tasks'];

@@ -25,13 +25,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * The nightly counterpart to the free push gate. It never spends a token - it
  * reads two already-produced `results.json` files and applies policy: the
- * aggregate pass rate may not drop beyond `--max-regression`; a golden task must
+ * pass rate may not drop beyond `--max-regression`; a golden task must
  * keep passing regardless of the aggregate; a skill's minimal model may not
  * climb the ladder; and the task set may not drift beyond the configured
- * allow/warn/fail policy. Golden tasks are read from `eval.yaml` in `--dir` on a
+ * allow/warn/fail policy. Golden tasks come from `eval.yaml` in `--dir` on a
  * best-effort basis, so the command still works as a pure two-file comparison
  * when no repo is present. It renders in four formats and mirrors the tool exit
- * contract: `0` pass, `1` regression or golden failure, `2` configuration error.
+ * contract: `0` pass, `1` regression/golden failure, `2` configuration error.
  */
 class GateCommand extends Command {
 
