@@ -4,14 +4,131 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Traits;
 
+use AlexSkrypnyk\SkillTest\Config\Data;
+
 /**
  * Trait ResultsDocumentTrait.
  *
  * Builds results documents for the reporter unit tests, so each reporter test
  * shapes its input the same way instead of re-declaring skill, check, and llm
- * builders. Keys mirror the committed results schema.
+ * builders, and reads back the first skill's llm facts so grade and gate tests
+ * assert them the typed way rather than digging through nested mixed arrays.
+ * Keys mirror the committed results schema.
  */
 trait ResultsDocumentTrait {
+
+  /**
+   * Decodes a JSON string into an array, or an empty array when it is not one.
+   *
+   * @param string $json
+   *   The JSON to decode.
+   *
+   * @return array<mixed>
+   *   The decoded array, or an empty array.
+   */
+  protected function decodeArray(string $json): array {
+    $decoded = json_decode($json, TRUE);
+
+    return is_array($decoded) ? $decoded : [];
+  }
+
+  /**
+   * The first skill's first task's first model's first trial pass verdict.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return bool
+   *   The stored pass verdict.
+   */
+  protected function documentTrialPass(array $document): bool {
+    return (bool) Data::get($this->documentTrials($document)[0] ?? [], 'pass');
+  }
+
+  /**
+   * The first skill's first task's first model's pass rate.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return float|null
+   *   The pass rate, or NULL when absent.
+   */
+  protected function documentPassRate(array $document): ?float {
+    return Data::toFloatOrNull(Data::get($this->documentModels($document)[0] ?? [], 'pass_rate'));
+  }
+
+  /**
+   * The first skill's minimal-model verdict.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return string|null
+   *   The minimal model alias, or NULL.
+   */
+  protected function documentMinimalModel(array $document): ?string {
+    $skills = Data::toArrayList(Data::get($document, 'skills'));
+
+    return Data::toStringOrNull(Data::get($skills[0] ?? [], 'llm', 'verdict', 'minimal_model'));
+  }
+
+  /**
+   * The first skill's llm block.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return array<mixed>
+   *   The llm block.
+   */
+  protected function documentLlm(array $document): array {
+    $skills = Data::toArrayList(Data::get($document, 'skills'));
+
+    return Data::toArray(Data::get($skills[0] ?? [], 'llm'));
+  }
+
+  /**
+   * The failure total recorded in a document.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return int|null
+   *   The failure total, or NULL when absent.
+   */
+  protected function documentFailures(array $document): ?int {
+    return Data::toIntOrNull(Data::get($document, 'totals', 'failures'));
+  }
+
+  /**
+   * The first skill's first task's model entries.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return array<int, array<mixed>>
+   *   The model entries.
+   */
+  protected function documentModels(array $document): array {
+    $skills = Data::toArrayList(Data::get($document, 'skills'));
+    $tasks = Data::toArrayList(Data::get($skills[0] ?? [], 'llm', 'tasks'));
+
+    return Data::toArrayList(Data::get($tasks[0] ?? [], 'models'));
+  }
+
+  /**
+   * The first skill's first task's first model's trials.
+   *
+   * @param array<mixed> $document
+   *   The results document.
+   *
+   * @return array<int, array<mixed>>
+   *   The trial rows.
+   */
+  protected function documentTrials(array $document): array {
+    return Data::toArrayList(Data::get($this->documentModels($document)[0] ?? [], 'trials'));
+  }
 
   /**
    * Builds a results document with overridable totals and run metadata.
@@ -140,6 +257,44 @@ trait ResultsDocumentTrait {
     }
 
     return ['task' => $name, 'models' => [$entry]];
+  }
+
+  /**
+   * Builds one task carrying several ladder models.
+   *
+   * @param string $name
+   *   The task name.
+   * @param array<int, array<mixed>> $models
+   *   The model entries, in ladder order.
+   *
+   * @return array<string, mixed>
+   *   The task entry.
+   */
+  protected function multiModelTask(string $name, array $models): array {
+    return ['task' => $name, 'models' => $models];
+  }
+
+  /**
+   * Builds one model entry with its trials.
+   *
+   * @param string $alias
+   *   The model alias, reused (prefixed) as the model id.
+   * @param array<int, array<mixed>> $trials
+   *   The trial rows.
+   * @param float|null $pass_rate
+   *   The model pass rate, or NULL.
+   *
+   * @return array<string, mixed>
+   *   The model entry.
+   */
+  protected function modelEntry(string $alias, array $trials, ?float $pass_rate = NULL): array {
+    $entry = ['model' => 'claude-' . $alias, 'alias' => $alias, 'trials' => $trials];
+
+    if ($pass_rate !== NULL) {
+      $entry['pass_rate'] = $pass_rate;
+    }
+
+    return $entry;
   }
 
   /**

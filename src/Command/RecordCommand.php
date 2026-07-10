@@ -11,9 +11,7 @@ use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\RepoConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
-use AlexSkrypnyk\SkillTest\Contract\ContractChecker;
-use AlexSkrypnyk\SkillTest\Contract\CustomCheck;
-use AlexSkrypnyk\SkillTest\Contract\Transcript;
+use AlexSkrypnyk\SkillTest\Contract\TranscriptGrader;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
@@ -368,18 +366,7 @@ class RecordCommand extends Command {
    *   The graded checks, in assertion order.
    */
   protected function grade(string $root, LoadedConfig $loaded, LoadedSkill $skill, string $path, int $exit_code): array {
-    $transcript = Transcript::fromFile($path);
-    $checks = (new ContractChecker($loaded->repo->aliases))->check($transcript, $skill->effective->contract);
-
-    $custom = new CustomCheck($root);
-
-    foreach ($skill->effective->checks as $entry) {
-      $result = $custom->run($entry, $path, dirname($skill->file));
-
-      if ($result instanceof CheckResult) {
-        $checks[] = $result;
-      }
-    }
+    $checks = (new TranscriptGrader($root, $loaded->repo->aliases))->grade($path, $skill->effective->contract, $skill->effective->checks, dirname($skill->file));
 
     if ($exit_code !== 0) {
       array_unshift($checks, $this->agentFailure($exit_code));
