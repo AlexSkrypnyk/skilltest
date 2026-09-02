@@ -38,7 +38,7 @@ class VersionCommand extends Command {
       'build' => ['php' => PHP_VERSION, 'runtime' => Version::runtime()],
     ];
 
-    if ($input->getOption('json') === TRUE) {
+    if ((bool) $input->getOption('json')) {
       $output->writeln(json_encode($info, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
 
       return ExitCode::PASS;

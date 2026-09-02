@@ -358,7 +358,7 @@ final class GithubCommentReporter {
     foreach (Data::toArrayList(Data::get($task, 'models')) as $model) {
       $label = Data::toStringOrNull(Data::get($model, 'alias')) ?? Data::toStringOrNull(Data::get($model, 'model')) ?? '';
       $rate = Data::toFloatOrNull(Data::get($model, 'pass_rate'));
-      $rates[$label] = $rate === NULL ? '-' : round($rate * 100) . '%';
+      $rates[$label] = $rate === NULL ? '-' : ((int) round($rate * 100)) . '%';
     }
 
     return $rates;

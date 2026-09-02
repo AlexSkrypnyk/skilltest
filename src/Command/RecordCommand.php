@@ -136,7 +136,7 @@ class RecordCommand extends Command {
     $path = $this->fixturePath($skill);
     $existed = is_file($path);
 
-    if ($existed && !$input->getOption('force')) {
+    if ($existed && !(bool) $input->getOption('force')) {
       return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relativePath($root, $path))));
     }
 

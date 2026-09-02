@@ -45,8 +45,8 @@ class ValidateCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $is_json = $input->getOption('json') === TRUE;
-    $show_config = $input->getOption('show-config') === TRUE;
+    $is_json = (bool) $input->getOption('json');
+    $show_config = (bool) $input->getOption('show-config');
 
     try {
       $loaded = (new ConfigLoader($root))->load($this->cliOverrides($input));

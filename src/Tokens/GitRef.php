@@ -60,7 +60,7 @@ final class GitRef {
    */
   public function __construct(string $root, ?\Closure $runner = NULL, protected float $timeout = self::DEFAULT_TIMEOUT) {
     $this->root = rtrim($root, '/');
-    $this->runner = $runner ?? fn(string $command, string $cwd): array => (new ProcessRunner($this->timeout))->run($command, $cwd);
+    $this->runner = $runner ?? (new ProcessRunner($this->timeout))->run(...);
   }
 
   /**

@@ -94,7 +94,7 @@ class InitCommand extends Command {
     // @codeCoverageIgnoreEnd
     $manifest = SkillManifest::fromString($contents);
     $skill = $this->skillName($manifest, $dir);
-    $draft = $input->getOption('ai') === TRUE ? $this->draft($manifest, $output) : NULL;
+    $draft = (bool) $input->getOption('ai') ? $this->draft($manifest, $output) : NULL;
 
     $proposed = EvalScaffold::render($skill, $manifest, $draft);
     $target = $dir . '/' . self::EVAL_FILE;
