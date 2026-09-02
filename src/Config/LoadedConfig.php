@@ -7,10 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * The whole repository configuration after a successful load.
  *
- * Bundles the repo config (typed and raw) with every discovered, loaded skill,
- * ready for schema and coherence validation. A load that reaches this point has
- * already passed the hard gates (parse, schema major); everything left is a
- * finding, not a fatal error.
+ * Bundles the repo config (typed and raw) with every discovered skill, split by
+ * whether it loaded an `eval.yaml`, ready for schema and coherence validation.
+ * A load that reaches this point has already passed the hard gates (parse,
+ * schema major); everything left is a finding, not a fatal error.
  */
 final readonly class LoadedConfig {
 
@@ -24,10 +24,13 @@ final readonly class LoadedConfig {
    * @param string $repoFile
    *   The `skilltest.yml` path, or an empty string when absent.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skills
-   *   The discovered, loaded skills.
-   * @param string[] $skillsWithoutEval
-   *   The root-relative directories of discovered skills that have no
-   *   `eval.yaml`; the coverage gate names each one that is not excluded.
+   *   The discovered skills that loaded an `eval.yaml`. Everything that reads
+   *   an `eval.yaml` - the llm suite, grading, the transcript group - works
+   *   from this list alone.
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skillsWithoutEval
+   *   The discovered skills that have no `eval.yaml`, each carrying the
+   *   configuration folded from the repo defaults; the coverage gate names
+   *   each one that is not excluded.
    */
   public function __construct(
     public RepoConfig $repo,
@@ -36,5 +39,23 @@ final readonly class LoadedConfig {
     public array $skills,
     public array $skillsWithoutEval = [],
   ) {}
+
+  /**
+   * Returns every discovered skill, configured or not, in path order.
+   *
+   * The engines that read a skill's shipped files rather than its `eval.yaml`
+   * work from this list, so a skill cannot escape the structure and security
+   * groups by shipping no configuration.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill[]
+   *   The skills, sorted by directory so reports over them are deterministic.
+   */
+  public function allSkills(): array {
+    $all = array_merge($this->skills, $this->skillsWithoutEval);
+
+    usort($all, static fn(LoadedSkill $a, LoadedSkill $b): int => strcmp($a->effective->path, $b->effective->path));
+
+    return $all;
+  }
 
 }

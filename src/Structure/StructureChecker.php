@@ -16,17 +16,18 @@ use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 /**
  * The deterministic `structure` group: each skill's files are well-formed.
  *
- * Runs a fixed catalog of pre-baked checks against every loaded skill and its
- * `SKILL.md`, proving the frontmatter parses and is honest, the tool
+ * Runs a fixed catalog of pre-baked checks against every discovered skill and
+ * its `SKILL.md`, proving the frontmatter parses and is honest, the tool
  * declaration is safe, the body executes nothing before the model reads it,
  * the files it references exist, the commands it names are real, the document
  * fits its token budget, and its own `eval.yaml` is coherent, plus warn-only
  * quality advisories about the skill's shape. Every check is default-on and
  * produces a verdict for every skill; a skill may switch one off in
  * `eval.yaml` with a written reason, and that suppression is reported rather
- * than hidden. The one check that runs a process (`command-refs-resolve`)
- * does so through an injected runner, and a binary that cannot run is a hard
- * configuration error, never a silent pass.
+ * than hidden. A skill that ships no `eval.yaml` runs every check but
+ * `contract-coherent`, which has no file to judge. The one check that runs a
+ * process (`command-refs-resolve`) does so through an injected runner, and a
+ * binary that cannot run is a hard configuration error, never a silent pass.
  */
 final class StructureChecker {
 
@@ -195,7 +196,7 @@ final class StructureChecker {
   }
 
   /**
-   * Runs every structure check against every loaded skill.
+   * Runs every structure check against every discovered skill.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
    *   The loaded configuration.
@@ -211,7 +212,7 @@ final class StructureChecker {
     $coherence = $this->coherenceErrors($loaded_config);
     $results = [];
 
-    foreach ($loaded_config->skills as $skill) {
+    foreach ($loaded_config->allSkills() as $skill) {
       foreach ($this->checkSkill($skill, $catalog, $coherence) as $result) {
         $results[] = $result;
       }
@@ -282,7 +283,7 @@ final class StructureChecker {
    */
   protected function checkSkill(LoadedSkill $loaded_skill, ?CommandCatalog $catalog, array $coherence): array {
     $name = $loaded_skill->effective->skill;
-    $dir = dirname($loaded_skill->file);
+    $dir = $loaded_skill->dir;
     $skill_md = $dir . '/' . Discovery::MARKER;
     $file = $this->relativePath($skill_md);
     $document = SkillDocument::fromFile($skill_md);
@@ -290,7 +291,7 @@ final class StructureChecker {
 
     $results = [];
 
-    foreach ($this->plannedChecks($catalog) as $check_id) {
+    foreach (self::plannedChecks($catalog instanceof CommandCatalog, $loaded_skill->hasEval()) as $check_id) {
       $reason = $suppress[$check_id] ?? '';
 
       if ($reason !== '') {
@@ -308,20 +309,31 @@ final class StructureChecker {
   }
 
   /**
-   * The checks to run for a skill, dropping the disabled command-reference one.
+   * The checks that apply to one skill, given what is configured for it.
    *
-   * @param \AlexSkrypnyk\SkillTest\Structure\CommandCatalog|null $catalog
-   *   The command catalog, or NULL when the command-reference check is off.
+   * Shared with the run plan so `--list` names exactly the checks the run
+   * produces.
+   *
+   * @param bool $resolves_commands
+   *   Whether `commands.resolve` is configured for the repository.
+   * @param bool $has_eval
+   *   Whether the skill ships an `eval.yaml`.
    *
    * @return string[]
    *   The ordered check ids to run.
    */
-  protected function plannedChecks(?CommandCatalog $catalog): array {
-    if ($catalog instanceof CommandCatalog) {
-      return self::CHECKS;
+  public static function plannedChecks(bool $resolves_commands, bool $has_eval): array {
+    $skipped = [];
+
+    if (!$resolves_commands) {
+      $skipped[] = self::CHECK_COMMAND_REFS_RESOLVE;
     }
 
-    return array_values(array_filter(self::CHECKS, static fn(string $check): bool => $check !== self::CHECK_COMMAND_REFS_RESOLVE));
+    if (!$has_eval) {
+      $skipped[] = self::CHECK_CONTRACT_COHERENT;
+    }
+
+    return array_values(array_filter(self::CHECKS, static fn(string $check): bool => !in_array($check, $skipped, TRUE)));
   }
 
   /**

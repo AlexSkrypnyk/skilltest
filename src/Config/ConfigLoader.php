@@ -73,10 +73,12 @@ final readonly class ConfigLoader {
     $skills_without_eval = [];
 
     foreach ($discovery->skills() as $skill_dir) {
-      $eval_file = $this->root . '/' . $skill_dir . '/' . $repo->evalFile;
+      $absolute_dir = $this->root . '/' . $skill_dir;
+      $eval_file = $absolute_dir . '/' . $repo->evalFile;
 
       if (!is_file($eval_file)) {
-        $skills_without_eval[] = $skill_dir;
+        $effective = EffectiveConfig::resolve($repo, [], $cli, basename($skill_dir), $skill_dir);
+        $skills_without_eval[] = new LoadedSkill('', [], $effective, $absolute_dir);
 
         continue;
       }
@@ -84,7 +86,7 @@ final readonly class ConfigLoader {
       $eval_data = $this->parseFile($eval_file);
       $this->gateVersion($eval_data, $eval_file);
       $effective = EffectiveConfig::resolve($repo, $eval_data, $cli, basename($skill_dir), $skill_dir);
-      $skills[] = new LoadedSkill($eval_file, $eval_data, $effective);
+      $skills[] = new LoadedSkill($eval_file, $eval_data, $effective, $absolute_dir);
     }
 
     return new LoadedConfig($repo, $repo_data, $repo_file, $skills, $skills_without_eval);

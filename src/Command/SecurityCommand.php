@@ -76,7 +76,7 @@ class SecurityCommand extends Command {
     }
 
     $findings = (new SecurityScanner($root))->scan($loaded);
-    $skills = count($loaded->skills);
+    $skills = count($loaded->allSkills());
 
     if ($format === 'json') {
       $output->writeln($this->renderJson($findings, $skills));

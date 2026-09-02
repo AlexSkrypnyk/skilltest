@@ -20,8 +20,11 @@ use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
  * Drives the four group engines and the coverage gate under one selection:
  * groups the selection excludes never run, a check filter narrows every
  * group's output to the one id, and repo-level hooks run once regardless of
- * how many skills are selected. The engines' process hooks are injectable so
- * the orchestration is unit-testable without spawning a process.
+ * how many skills are selected. Every discovered skill gets a result row,
+ * whether or not it ships an `eval.yaml`, so nothing the structure and
+ * security engines produce is computed and then dropped. The engines' process
+ * hooks are injectable so the orchestration is unit-testable without spawning
+ * a process.
  */
 final readonly class RunSuite {
 
@@ -68,7 +71,7 @@ final readonly class RunSuite {
 
     $skills = [];
 
-    foreach ($loaded_config->skills as $skill) {
+    foreach ($loaded_config->allSkills() as $skill) {
       $name = $skill->effective->skill;
       $path = $skill->effective->path;
       [$transcript, $note] = $this->transcriptResults($loaded_config, $skill, $selection);

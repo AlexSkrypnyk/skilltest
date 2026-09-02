@@ -388,8 +388,8 @@ final class ConfigValidatorTest extends TestCase {
     $skills = [];
 
     foreach ($evals as $name => $eval) {
-      $file = $root . '/skills/' . $name . '/eval.yaml';
-      $skills[] = new LoadedSkill($file, $eval, EffectiveConfig::resolve($repo, $eval, [], $name, 'skills/' . $name));
+      $dir = $root . '/skills/' . $name;
+      $skills[] = new LoadedSkill($dir . '/eval.yaml', $eval, EffectiveConfig::resolve($repo, $eval, [], $name, 'skills/' . $name), $dir);
     }
 
     $repo_file = $repo_data === [] ? '' : $root . '/skilltest.yml';

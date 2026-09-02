@@ -12,6 +12,7 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
 use AlexSkrypnyk\SkillTest\Run\RunSuite;
 use AlexSkrypnyk\SkillTest\Run\SkillRunResult;
+use AlexSkrypnyk\SkillTest\Structure\StructureResult;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -40,7 +41,7 @@ final class RunSuiteTest extends TestCase {
 
     $report = $suite->run($this->config($root), RunSelection::create([], NULL, NULL));
 
-    $this->assertCount(2, $report->skills);
+    $this->assertCount(3, $report->skills);
 
     $alpha = $report->skills[0];
     $this->assertSame('alpha', $alpha->skill);
@@ -60,6 +61,13 @@ final class RunSuiteTest extends TestCase {
     $this->assertSame('security.curl-pipe-shell', $beta->security[0]->check);
     $this->assertSame(SkillRunResult::NOTE_NO_TRANSCRIPT, $beta->transcriptNote);
     $this->assertSame([], $beta->transcript);
+
+    $orphan = $report->skills[2];
+    $this->assertSame('orphan', $orphan->skill);
+    $this->assertCount(9, $orphan->structure);
+    $this->assertNotContains('structure.contract-coherent', array_map(static fn(StructureResult $result): string => $result->check, $orphan->structure));
+    $this->assertSame([], $orphan->security);
+    $this->assertSame(SkillRunResult::NOTE_NO_TRANSCRIPT, $orphan->transcriptNote);
 
     $this->assertCount(1, $report->hooks);
     $this->assertTrue($report->hooks[0]->pass);
@@ -217,7 +225,7 @@ final class RunSuiteTest extends TestCase {
       $repo_data,
       $root . '/skilltest.yml',
       [$this->skill($root, 'skills/alpha', $alpha_eval), $this->skill($root, 'skills/beta', [])],
-      ['skills/orphan'],
+      [$this->skillWithoutEval($root, 'skills/orphan')],
     );
   }
 
@@ -237,7 +245,24 @@ final class RunSuiteTest extends TestCase {
   protected function skill(string $root, string $dir, array $eval): LoadedSkill {
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], basename($dir), $dir);
 
-    return new LoadedSkill($root . '/' . $dir . '/eval.yaml', $eval, $effective);
+    return new LoadedSkill($root . '/' . $dir . '/eval.yaml', $eval, $effective, $root . '/' . $dir);
+  }
+
+  /**
+   * Builds a loaded skill for a directory that ships no `eval.yaml`.
+   *
+   * @param string $root
+   *   The repository root URL.
+   * @param string $dir
+   *   The skill directory, relative to the root.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
+   *   The loaded skill.
+   */
+  protected function skillWithoutEval(string $root, string $dir): LoadedSkill {
+    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
+
+    return new LoadedSkill('', [], $effective, $root . '/' . $dir);
   }
 
 }

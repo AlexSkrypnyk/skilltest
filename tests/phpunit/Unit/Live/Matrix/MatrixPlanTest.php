@@ -51,7 +51,7 @@ final class MatrixPlanTest extends TestCase {
 
   public function testNamelessTasksAreNotCounted(): void {
     $eval = ['llm' => ['models' => 'ladder', 'trials' => 3, 'tasks' => [['name' => 'invoked', 'prompt' => 'go'], ['prompt' => 'no name here']]]];
-    $skill = new LoadedSkill('skills/run/eval.yaml', $eval, EffectiveConfig::resolve(self::repo(), $eval, [], 'run', 'skills/run'));
+    $skill = new LoadedSkill('skills/run/eval.yaml', $eval, EffectiveConfig::resolve(self::repo(), $eval, [], 'run', 'skills/run'), 'skills/run');
 
     $plan = MatrixPlan::fromConfig(new LoadedConfig(self::repo(), [], '', [$skill]), []);
 
@@ -99,7 +99,7 @@ final class MatrixPlanTest extends TestCase {
     $eval = ['llm' => ['models' => 'ladder', 'trials' => $trials, 'tasks' => $declared]];
     $effective = EffectiveConfig::resolve(self::repo(), $eval, [], $name, 'skills/' . $name);
 
-    return new LoadedSkill('skills/' . $name . '/eval.yaml', $eval, $effective);
+    return new LoadedSkill('skills/' . $name . '/eval.yaml', $eval, $effective, 'skills/' . $name);
   }
 
   /**

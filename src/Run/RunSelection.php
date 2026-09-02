@@ -194,7 +194,7 @@ final readonly class RunSelection {
     }
 
     $skills = array_values(array_filter($loaded_config->skills, fn(LoadedSkill $skill): bool => $this->matchesGlobs($skill->effective->skill)));
-    $without_eval = array_values(array_filter($loaded_config->skillsWithoutEval, fn(string $dir): bool => $this->matchesGlobs(basename($dir))));
+    $without_eval = array_values(array_filter($loaded_config->skillsWithoutEval, fn(LoadedSkill $skill): bool => $this->matchesGlobs($skill->effective->skill)));
 
     return new LoadedConfig($loaded_config->repo, $loaded_config->repoData, $loaded_config->repoFile, $skills, $without_eval);
   }

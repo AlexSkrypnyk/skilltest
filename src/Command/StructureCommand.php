@@ -74,7 +74,7 @@ class StructureCommand extends Command {
       return $this->reportErrors($output, $format, [$message]);
     }
 
-    $skills = count($loaded->skills);
+    $skills = count($loaded->allSkills());
 
     if ($format === 'json') {
       $output->writeln($this->renderJson($results, $skills));

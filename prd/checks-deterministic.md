@@ -10,7 +10,7 @@ Suppression is explicit and visible: a skill's `eval.yaml` may disable a named c
 
 ## Group: `structure`
 
-The skill's files are well-formed, internally consistent, and honest about what they reference. Runs against `SKILL.md` and the skill directory.
+The skill's files are well-formed, internally consistent, and honest about what they reference. Runs against `SKILL.md` and the skill directory of every discovered skill; a skill that ships no `eval.yaml` runs every check except `structure.contract-coherent`, which has no file to judge.
 
 Pre-baked checks (default-on unless noted):
 
@@ -30,7 +30,7 @@ Pre-baked checks (default-on unless noted):
 
 ## Group: `security`
 
-Every file the skill ships (not just `SKILL.md` - bundled scripts, references, fixtures) is scanned for danger patterns. This is a static supply-chain scan, not a runtime boundary; it exists to catch malicious or careless skill content before a model ever reads it.
+Every file the skill ships (not just `SKILL.md` - bundled scripts, references, fixtures) is scanned for danger patterns, for every discovered skill whether or not it ships an `eval.yaml`. This is a static supply-chain scan, not a runtime boundary; it exists to catch malicious or careless skill content before a model ever reads it.
 
 The `baseline` pack is always on:
 

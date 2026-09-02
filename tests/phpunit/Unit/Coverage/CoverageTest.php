@@ -114,10 +114,27 @@ final class CoverageTest extends TestCase {
    *   The loaded skill.
    */
   protected function skill(string $root, string $dir, array $eval): LoadedSkill {
-    $file = $root . '/' . $dir . '/eval.yaml';
+    $absolute_dir = $root . '/' . $dir;
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], basename($dir), $dir);
 
-    return new LoadedSkill($file, $eval, $effective);
+    return new LoadedSkill($absolute_dir . '/eval.yaml', $eval, $effective, $absolute_dir);
+  }
+
+  /**
+   * Builds a loaded skill for a directory that ships no `eval.yaml`.
+   *
+   * @param string $root
+   *   The repository root URL.
+   * @param string $dir
+   *   The skill directory, relative to the root.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
+   *   The loaded skill.
+   */
+  protected function skillWithoutEval(string $root, string $dir): LoadedSkill {
+    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
+
+    return new LoadedSkill('', [], $effective, $root . '/' . $dir);
   }
 
   /**
@@ -138,8 +155,9 @@ final class CoverageTest extends TestCase {
   protected function config(string $root, array $skills, array $without_eval, array $repo_data = []): LoadedConfig {
     $repo = RepoConfig::fromArray($repo_data);
     $repo_file = $repo_data === [] ? '' : $root . '/skilltest.yml';
+    $orphans = array_map(fn(string $dir): LoadedSkill => $this->skillWithoutEval($root, $dir), $without_eval);
 
-    return new LoadedConfig($repo, $repo_data, $repo_file, $skills, $without_eval);
+    return new LoadedConfig($repo, $repo_data, $repo_file, $skills, $orphans);
   }
 
 }
