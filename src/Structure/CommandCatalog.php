@@ -98,9 +98,7 @@ final class CommandCatalog {
    *   When the binary cannot run or its output cannot be parsed.
    */
   public function firstTokens(): array {
-    if ($this->tokens === NULL) {
-      $this->tokens = $this->resolve();
-    }
+    $this->tokens ??= $this->resolve();
 
     return $this->tokens;
   }

@@ -78,7 +78,7 @@ class GateCommand extends Command {
 
     [$options, $errors] = GateOptions::parse($this->stringOption($input, 'max-regression'), $this->stringOption($input, 'on-new-tasks'), $this->stringOption($input, 'on-removed-tasks'));
 
-    if ($options === NULL) {
+    if (!$options instanceof GateOptions) {
       foreach ($errors as $error) {
         $stderr->writeln('ERROR ' . $error, OutputInterface::VERBOSITY_QUIET);
       }
