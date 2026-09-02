@@ -19,9 +19,9 @@ final readonly class JudgePrompt {
   /**
    * Builds the judge prompt.
    *
-   * @param string[] $criteria
+   * @param string[] $rubric
    *   The binary rubric criteria, in order.
-   * @param string $task_input
+   * @param string $task_prompt
    *   The prompt the skill under test was given.
    * @param string $evidence
    *   The trial evidence: the transcript's tool calls and final output.
@@ -29,11 +29,11 @@ final readonly class JudgePrompt {
    * @return string
    *   The assembled judge prompt.
    */
-  public static function build(array $criteria, string $task_input, string $evidence): string {
+  public static function build(array $rubric, string $task_prompt, string $evidence): string {
     $lines = [];
     $number = 0;
 
-    foreach ($criteria as $criterion) {
+    foreach ($rubric as $criterion) {
       $number++;
       $lines[] = sprintf('  %d. %s', $number, $criterion);
     }
@@ -46,7 +46,7 @@ final readonly class JudgePrompt {
       'RUBRIC (binary criteria):',
       implode("\n", $lines),
       'TASK INPUT:',
-      $task_input,
+      $task_prompt,
       'EVIDENCE:',
       $evidence,
       'Return JSON only, with no prose and no code fences:',
