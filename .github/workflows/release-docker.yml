@@ -15,25 +15,12 @@ permissions:
   contents: read
 
 jobs:
-  release-image:
-    name: Build and push ${{ matrix.name }}
+  prepare:
+    name: Resolve version
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: skilltest
-            dockerfile: .docker/Dockerfile.tool
-            versioned: true
-          - name: skilltest-agent
-            dockerfile: .docker/Dockerfile.agent
-            versioned: false
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_release: ${{ steps.version.outputs.is_release }}
     steps:
       - name: Resolve release version
         id: version
@@ -52,6 +39,28 @@ jobs:
             echo "is_release=false" >> "$GITHUB_OUTPUT"
           fi
 
+  release-image:
+    name: Build and push ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: skilltest
+            dockerfile: .docker/Dockerfile.tool
+            build_args: |
+              VERSION=${{ needs.prepare.outputs.version }}
+          - name: skilltest-agent
+            dockerfile: .docker/Dockerfile.agent
+            build_args: ''
+
+    steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
@@ -73,8 +82,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ steps.version.outputs.is_release == 'true' }}
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.is_release == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
@@ -84,5 +93,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{ matrix.versioned && format('VERSION={0}', steps.version.outputs.version) || '' }}
+          build-args: ${{ matrix.build_args }}
           provenance: false
