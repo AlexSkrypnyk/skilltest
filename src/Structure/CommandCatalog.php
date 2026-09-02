@@ -58,7 +58,7 @@ final class CommandCatalog {
    * @param string $root
    *   The repository root; the binary runs with this as its working directory.
    * @param string $binary
-   *   The binary as configured, e.g. `bin/harness` (relative to the root).
+   *   The binary as configured, e.g. `bin/broker` (relative to the root).
    * @param string[] $listArgs
    *   The arguments that make the binary print its command list.
    * @param \Closure|null $runner
@@ -82,7 +82,7 @@ final class CommandCatalog {
    * The reference token a skill uses to name the binary: its basename.
    *
    * @return string
-   *   The binary basename, e.g. `harness` for `bin/harness`.
+   *   The binary basename, e.g. `broker` for `bin/broker`.
    */
   public function binaryName(): string {
     return basename($this->binary);

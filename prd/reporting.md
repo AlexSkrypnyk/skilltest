@@ -13,12 +13,12 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
   "run": {"id": "st-20260708-1432", "started": "2026-07-08T14:32:00+00:00", "duration_ms": 84213, "command": "matrix", "environment": "docker"},
   "skills": [
     {
-      "skill": "run-harness-workflow",
-      "path": "skills/run-harness-workflow",
+      "skill": "run-broker-workflow",
+      "path": "skills/run-broker-workflow",
       "deterministic": {
         "structure": [{"check": "structure.frontmatter", "pass": true}],
         "security": [],
-        "transcript": [{"check": "contract.commands.required", "label": "harness drives the workflow", "pass": true, "evidence": "php bin/harness workflow start --terse"}]
+        "transcript": [{"check": "contract.commands.required", "label": "broker drives the workflow", "pass": true, "evidence": "php bin/broker workflow start --terse"}]
       },
       "llm": {
         "tasks": [

@@ -31,7 +31,7 @@ final class ConfigValidatorTest extends TestCase {
     ]);
 
     $repo_data = [
-      'aliases' => ['harness' => 'bin/harness'],
+      'aliases' => ['broker' => 'bin/broker'],
       'guards' => ['broker' => 'pack:gh-mutations'],
       'hooks' => [['script' => 'hooks/h.php', 'cases' => []]],
       'models' => ['aliases' => ['haiku' => 'claude-haiku'], 'ladder' => ['haiku'], 'default' => 'haiku', 'judge' => 'haiku'],

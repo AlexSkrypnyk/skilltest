@@ -177,7 +177,7 @@ final class StructureCommandTest extends TestCase {
   }
 
   public function testCommandRefsResolveCatchesUnknownSubcommandAgainstRealBinary(): void {
-    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\nRun `harness deploy` now.\n";
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\nRun `broker deploy` now.\n";
     $root = $this->realRepo(self::STUB_OK, $skill_md);
 
     $output = $this->runStructure(['--dir' => $root], 1);
@@ -187,7 +187,7 @@ final class StructureCommandTest extends TestCase {
   }
 
   public function testCommandRefsResolvePassesForRealSubcommand(): void {
-    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\nRun `harness build` now.\n";
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\nRun `broker build` now.\n";
     $root = $this->realRepo(self::STUB_OK, $skill_md);
 
     $output = $this->runStructure(['--dir' => $root], 0);
@@ -218,9 +218,9 @@ final class StructureCommandTest extends TestCase {
     $this->tempDir = dirname(__DIR__, 3) . '/.artifacts/tmp/structurecmd-' . getmypid() . '-' . uniqid();
     mkdir($this->tempDir . '/bin', 0777, TRUE);
     mkdir($this->tempDir . '/skills/foo', 0777, TRUE);
-    file_put_contents($this->tempDir . '/skilltest.yml', "version: \"1\"\ncommands:\n  resolve:\n    binary: bin/harness\n    list-args: [list, --json]\n");
-    file_put_contents($this->tempDir . '/bin/harness', $stub);
-    chmod($this->tempDir . '/bin/harness', 0755);
+    file_put_contents($this->tempDir . '/skilltest.yml', "version: \"1\"\ncommands:\n  resolve:\n    binary: bin/broker\n    list-args: [list, --json]\n");
+    file_put_contents($this->tempDir . '/bin/broker', $stub);
+    chmod($this->tempDir . '/bin/broker', 0755);
     file_put_contents($this->tempDir . '/skills/foo/SKILL.md', $skill_md);
     file_put_contents($this->tempDir . '/skills/foo/eval.yaml', "version: \"1\"\n");
 

@@ -32,8 +32,8 @@ final class GlobTest extends TestCase {
     yield 'empty set matches nothing' => ['invoked', [], FALSE];
     yield 'exact literal' => ['invoked', ['invoked'], TRUE];
     yield 'literal miss' => ['invoked', ['recorded'], FALSE];
-    yield 'star prefix' => ['run-harness', ['run-*'], TRUE];
-    yield 'star suffix' => ['harness-run', ['*-run'], TRUE];
+    yield 'star prefix' => ['run-broker', ['run-*'], TRUE];
+    yield 'star suffix' => ['broker-run', ['*-run'], TRUE];
     yield 'bare star matches all' => ['anything', ['*'], TRUE];
     yield 'question is single char' => ['ab', ['a?'], TRUE];
     yield 'question is not multi char' => ['abc', ['a?'], FALSE];

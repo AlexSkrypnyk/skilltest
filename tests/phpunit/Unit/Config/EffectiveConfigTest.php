@@ -101,8 +101,8 @@ final class EffectiveConfigTest extends TestCase {
       'skill' => 'custom-name',
       'contract' => [
         'tools' => ['allowed' => ['Bash', 'Skill'], 'required' => ['Skill'], 'forbidden' => []],
-        'commands' => ['required' => ['drives' => '\bharness\b'], 'forbidden' => ['raw git' => 'pack:git-mutations']],
-        'skills' => ['required' => ['harness:build'], 'forbidden' => []],
+        'commands' => ['required' => ['drives' => '\bbroker\b'], 'forbidden' => ['raw git' => 'pack:git-mutations']],
+        'skills' => ['required' => ['broker:build'], 'forbidden' => []],
       ],
       'security' => ['packs' => ['custom'], 'forbidden-tokens' => ['SECRET']],
       'deterministic' => ['transcript' => 'fixtures/transcript.jsonl'],
@@ -130,8 +130,8 @@ final class EffectiveConfigTest extends TestCase {
     $this->assertSame(['SECRET'], $config->security['forbidden-tokens']);
     $this->assertSame([
       'tools' => ['allowed' => ['Bash', 'Skill'], 'required' => ['Skill'], 'forbidden' => []],
-      'commands' => ['required' => ['drives' => '\bharness\b'], 'forbidden' => ['raw git' => 'pack:git-mutations', 'broker bypass' => 'pack:gh-mutations']],
-      'skills' => ['required' => ['harness:build'], 'forbidden' => []],
+      'commands' => ['required' => ['drives' => '\bbroker\b'], 'forbidden' => ['raw git' => 'pack:git-mutations', 'broker bypass' => 'pack:gh-mutations']],
+      'skills' => ['required' => ['broker:build'], 'forbidden' => []],
     ], $config->contract);
     $this->assertCount(1, $config->tasks);
     $this->assertCount(1, $config->checks);

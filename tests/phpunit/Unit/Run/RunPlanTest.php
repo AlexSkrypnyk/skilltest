@@ -59,7 +59,7 @@ final class RunPlanTest extends TestCase {
   }
 
   public function testCommandRefsCheckListedWhenResolveConfigured(): void {
-    $config = $this->config(['commands' => ['resolve' => ['binary' => 'bin/harness']]]);
+    $config = $this->config(['commands' => ['resolve' => ['binary' => 'bin/broker']]]);
 
     $plan = (new RunPlan($config, RunSelection::create([], 'structure', NULL)))->describe();
 
@@ -130,7 +130,7 @@ final class RunPlanTest extends TestCase {
       'contract' => [
         'tools' => ['required' => ['Bash'], 'forbidden' => ['WebFetch']],
         'commands' => [
-          'required' => ['builds the thing' => '\bharness\s+build\b'],
+          'required' => ['builds the thing' => '\bbroker\s+build\b'],
           'forbidden' => ['no pushes' => 'pack:git-mutations'],
         ],
         'skills' => ['required' => ['helper']],

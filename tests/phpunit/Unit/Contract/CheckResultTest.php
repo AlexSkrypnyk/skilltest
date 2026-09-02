@@ -17,12 +17,12 @@ use PHPUnit\Framework\TestCase;
 final class CheckResultTest extends TestCase {
 
   public function testPassFactoryHoldsFields(): void {
-    $result = CheckResult::pass('contract.commands.required', 'drives the workflow', 'harness workflow start', 'matched.');
+    $result = CheckResult::pass('contract.commands.required', 'drives the workflow', 'broker workflow start', 'matched.');
 
     $this->assertTrue($result->pass);
     $this->assertSame('contract.commands.required', $result->id);
     $this->assertSame('drives the workflow', $result->label);
-    $this->assertSame('harness workflow start', $result->evidence);
+    $this->assertSame('broker workflow start', $result->evidence);
     $this->assertSame('matched.', $result->message);
   }
 

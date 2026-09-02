@@ -67,26 +67,26 @@ final class ContractCheckerTest extends TestCase {
   }
 
   public function testRequiredCommandMatchesAfterAliasNormalisation(): void {
-    $contract = ['commands' => ['required' => ['drives workflow' => '\bharness\s+workflow\s+start\b']]];
-    $checker = new ContractChecker(['harness' => '(?:php\s+)?(?:\S*/)?bin/harness\b']);
+    $contract = ['commands' => ['required' => ['drives workflow' => '\bbroker\s+workflow\s+start\b']]];
+    $checker = new ContractChecker(['broker' => '(?:php\s+)?(?:\S*/)?bin/broker\b']);
 
-    $result = $this->only($checker->check($this->transcript(['php bin/harness workflow start']), $contract));
+    $result = $this->only($checker->check($this->transcript(['php bin/broker workflow start']), $contract));
 
     $this->assertSame('contract.commands.required', $result->id);
     $this->assertSame('drives workflow', $result->label);
     $this->assertTrue($result->pass);
-    $this->assertSame('harness workflow start', $result->evidence);
+    $this->assertSame('broker workflow start', $result->evidence);
   }
 
   public function testRequiredCommandNoMatchFailsWithPatternInMessage(): void {
-    $contract = ['commands' => ['required' => ['drives workflow' => '\bharness\s+workflow\s+start\b']]];
+    $contract = ['commands' => ['required' => ['drives workflow' => '\bbroker\s+workflow\s+start\b']]];
 
     $result = $this->only((new ContractChecker())->check($this->transcript(['ls']), $contract));
 
     $this->assertFalse($result->pass);
     $this->assertSame('', $result->evidence);
     $this->assertStringContainsString('drives workflow', $result->message);
-    $this->assertStringContainsString('\bharness\s+workflow\s+start\b', $result->message);
+    $this->assertStringContainsString('\bbroker\s+workflow\s+start\b', $result->message);
   }
 
   public function testForbiddenCommandMatchFailsWithOffendingEvidence(): void {
@@ -110,13 +110,13 @@ final class ContractCheckerTest extends TestCase {
   }
 
   public function testRequiredSkillPresentPasses(): void {
-    $contract = ['skills' => ['required' => ['harness:build-generic']]];
+    $contract = ['skills' => ['required' => ['broker:build-generic']]];
 
-    $result = $this->only((new ContractChecker())->check($this->transcript([], ['harness:build-generic']), $contract));
+    $result = $this->only((new ContractChecker())->check($this->transcript([], ['broker:build-generic']), $contract));
 
     $this->assertSame('contract.skills.required', $result->id);
     $this->assertTrue($result->pass);
-    $this->assertSame('harness:build-generic', $result->evidence);
+    $this->assertSame('broker:build-generic', $result->evidence);
   }
 
   public function testForbiddenSkillPresentFails(): void {

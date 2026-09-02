@@ -93,7 +93,7 @@ A recorded fixture that fails its own contract is written anyway (for inspection
 
 ### `skilltest validate` (P1)
 
-Schema-validates every `eval.yaml` and the repo `skilltest.yml`, then runs coherence checks: required and forbidden sets are disjoint, every referenced fixture and hook script exists, every pack name resolves, every model alias resolves, PCREs compile, and (when command resolution is configured) every `harness <sub>`-style reference in skill files resolves against the configured binary. Exit `2` on any violation. Free of network and tokens; part of the deterministic gate but also useful standalone in editor save-hooks.
+Schema-validates every `eval.yaml` and the repo `skilltest.yml`, then runs coherence checks: required and forbidden sets are disjoint, every referenced fixture and hook script exists, every pack name resolves, every model alias resolves, PCREs compile, and (when command resolution is configured) every `broker <sub>`-style reference in skill files resolves against the configured binary. Exit `2` on any violation. Free of network and tokens; part of the deterministic gate but also useful standalone in editor save-hooks.
 
 ### `skilltest init` (P2)
 

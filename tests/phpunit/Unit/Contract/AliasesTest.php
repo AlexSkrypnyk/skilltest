@@ -18,20 +18,20 @@ use PHPUnit\Framework\TestCase;
 final class AliasesTest extends TestCase {
 
   /**
-   * The reference harness alias from the config PRD.
+   * The reference broker alias from the config PRD.
    */
-  protected const array HARNESS_ALIAS = ['harness' => '(?:php\s+)?(?:\S*/)?bin/harness\b'];
+  protected const array BROKER_ALIAS = ['broker' => '(?:php\s+)?(?:\S*/)?bin/broker\b'];
 
   #[DataProvider('dataProviderAllInvocationFormsCollapseToCanonical')]
   public function testAllInvocationFormsCollapseToCanonical(string $command): void {
-    $this->assertSame('harness workflow start', Aliases::normalise($command, self::HARNESS_ALIAS));
+    $this->assertSame('broker workflow start', Aliases::normalise($command, self::BROKER_ALIAS));
   }
 
   public static function dataProviderAllInvocationFormsCollapseToCanonical(): \Iterator {
-    yield 'php prefix' => ['php bin/harness workflow start'];
-    yield 'relative path' => ['./bin/harness workflow start'];
-    yield 'nested path' => ['tools/bin/harness workflow start'];
-    yield 'bare canonical' => ['harness workflow start'];
+    yield 'php prefix' => ['php bin/broker workflow start'];
+    yield 'relative path' => ['./bin/broker workflow start'];
+    yield 'nested path' => ['tools/bin/broker workflow start'];
+    yield 'bare canonical' => ['broker workflow start'];
   }
 
   #[DataProvider('dataProviderNormalise')]
@@ -41,27 +41,27 @@ final class AliasesTest extends TestCase {
 
   public static function dataProviderNormalise(): \Iterator {
     yield 'no aliases is a passthrough' => ['git status', [], 'git status'];
-    yield 'unrelated command untouched' => ['git push', self::HARNESS_ALIAS, 'git push'];
+    yield 'unrelated command untouched' => ['git push', self::BROKER_ALIAS, 'git push'];
     yield 'multiple aliases both applied' => [
-      'php bin/harness x && node tools/cli.js y',
-      ['harness' => '(?:php\s+)?(?:\S*/)?bin/harness\b', 'cli' => '(?:node\s+)?\S*/cli\.js\b'],
-      'harness x && cli y',
+      'php bin/broker x && node tools/cli.js y',
+      ['broker' => '(?:php\s+)?(?:\S*/)?bin/broker\b', 'cli' => '(?:node\s+)?\S*/cli\.js\b'],
+      'broker x && cli y',
     ];
     yield 'repeated occurrence all replaced' => [
-      'bin/harness a; bin/harness b',
-      ['harness' => 'bin/harness\b'],
-      'harness a; harness b',
+      'bin/broker a; bin/broker b',
+      ['broker' => 'bin/broker\b'],
+      'broker a; broker b',
     ];
   }
 
   public function testNormaliseAllReindexesAndNormalisesEach(): void {
-    $commands = ['php bin/harness workflow start', 'git status'];
+    $commands = ['php bin/broker workflow start', 'git status'];
 
-    $this->assertSame(['harness workflow start', 'git status'], Aliases::normaliseAll($commands, self::HARNESS_ALIAS));
+    $this->assertSame(['broker workflow start', 'git status'], Aliases::normaliseAll($commands, self::BROKER_ALIAS));
   }
 
   public function testNormaliseAllOnEmptyListIsEmpty(): void {
-    $this->assertSame([], Aliases::normaliseAll([], self::HARNESS_ALIAS));
+    $this->assertSame([], Aliases::normaliseAll([], self::BROKER_ALIAS));
   }
 
 }

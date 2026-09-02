@@ -32,7 +32,7 @@ final class RunSuiteTest extends TestCase {
   /**
    * A transcript with one Bash command and one Skill invocation.
    */
-  protected const string TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"tool_use","name":"Skill","input":{"skill":"helper"}}' . "\n";
+  protected const string TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"tool_use","name":"Skill","input":{"skill":"helper"}}' . "\n";
 
   public function testFullSuiteAcrossGroupsAndGate(): void {
     $root = $this->repo();
@@ -51,7 +51,7 @@ final class RunSuiteTest extends TestCase {
     $ids = array_map(static fn(CheckResult $result): string => $result->id, $alpha->transcript);
     $this->assertSame(['contract.tools.required', 'contract.tools.forbidden', 'contract.commands.required', 'contract.commands.forbidden', 'check.board'], $ids);
     $this->assertTrue($alpha->transcript[0]->pass);
-    $this->assertSame('harness build', $alpha->transcript[2]->evidence);
+    $this->assertSame('broker build', $alpha->transcript[2]->evidence);
     $this->assertSame('custom ok', $alpha->transcript[4]->message);
 
     $beta = $report->skills[1];
@@ -188,7 +188,7 @@ final class RunSuiteTest extends TestCase {
       'contract' => [
         'tools' => ['required' => ['Bash'], 'forbidden' => ['WebFetch']],
         'commands' => [
-          'required' => ['builds the thing' => '\bharness\s+build\b'],
+          'required' => ['builds the thing' => '\bbroker\s+build\b'],
           'forbidden' => ['no pushes' => 'pack:git-mutations'],
         ],
       ],

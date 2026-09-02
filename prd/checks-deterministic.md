@@ -49,7 +49,7 @@ Findings are always errors, never warnings; a skill that trips the security grou
 
 Proves the repository's enforcement hooks actually enforce. For each hook declared in `skilltest.yml`, skilltest executes the real hook script with each crafted case's tool input on stdin (the runtime's PreToolUse protocol) and asserts the decision: `expect: block` requires the blocking exit code, `expect: allow` requires success. Cases live in config as data; adding an enforcement rule means adding a script and a handful of cases, no test code.
 
-This group is what makes "the harness is the enforcement boundary" testable: the deterministic suite fails when a hook stops blocking what it must block, before any model is involved.
+This group is what makes "the broker is the enforcement boundary" testable: the deterministic suite fails when a hook stops blocking what it must block, before any model is involved.
 
 ## Group: `transcript`
 
@@ -58,7 +58,7 @@ Asserts the skill's full contract against its recorded canonical transcript (`de
 Contract semantics (shared verbatim with the llm suite's `live` group):
 
 - `contract.tools.required` - each tool appears in the transcript at least once; `forbidden` - never.
-- `contract.commands.required` - each pattern matches at least one executed command, after alias normalisation (`aliases:` in repo config maps invocation forms to a canonical one, so `php bin/harness x`, `./bin/harness x`, and `harness x` all count as `harness x`); `forbidden` - no executed command matches.
+- `contract.commands.required` - each pattern matches at least one executed command, after alias normalisation (`aliases:` in repo config maps invocation forms to a canonical one, so `php bin/broker x`, `./bin/broker x`, and `broker x` all count as `broker x`); `forbidden` - no executed command matches.
 - `contract.skills.required` / `forbidden` - Skill-tool invocations by name.
 - Repo-level `guards:` are appended to every skill's forbidden commands, so no `eval.yaml` can forget the broker-bypass rule.
 

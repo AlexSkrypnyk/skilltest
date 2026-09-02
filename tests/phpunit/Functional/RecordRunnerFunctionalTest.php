@@ -29,7 +29,7 @@ final class RecordRunnerFunctionalTest extends TestCase {
   /**
    * A transcript the fake pool returns for a recorded run.
    */
-  protected const string TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n";
+  protected const string TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n";
 
   /**
    * The workspace base the runner assembles trials under.

@@ -39,7 +39,7 @@ final class MatrixCommandTest extends TestCase {
   /**
    * The stream a passing trial emits: on-contract, no forbidden command.
    */
-  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","num_turns":4,"total_cost_usd":0.02,"usage":{"input_tokens":200,"output_tokens":90}}' . "\n";
+  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","num_turns":4,"total_cost_usd":0.02,"usage":{"input_tokens":200,"output_tokens":90}}' . "\n";
 
   /**
    * The stream a failing trial emits: a forbidden push, no required build.
@@ -373,7 +373,7 @@ final class MatrixCommandTest extends TestCase {
 
     file_put_contents($this->tempDir . '/skilltest.yml', "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n    sonnet: claude-sonnet-5\n    opus: claude-opus-4-8\n  ladder: [haiku, sonnet, opus]\n  default: sonnet\n  judge: haiku\n");
 
-    $eval = "version: \"1\"\ncontract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bharness\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
+    $eval = "version: \"1\"\ncontract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bbroker\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
     if ($tasks) {
       $eval .= "llm:\n";
       if ($rubric) {

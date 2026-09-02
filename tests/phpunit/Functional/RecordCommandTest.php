@@ -43,7 +43,7 @@ final class RecordCommandTest extends TestCase {
   /**
    * The base contract every helper eval declares.
    */
-  protected const string CONTRACT = "contract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bharness\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
+  protected const string CONTRACT = "contract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bbroker\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
 
   /**
    * The default single-task llm block.
@@ -53,7 +53,7 @@ final class RecordCommandTest extends TestCase {
   /**
    * The stream-json a passing stub agent emits.
    */
-  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","num_turns":3,"total_cost_usd":0.01,"usage":{"input_tokens":100,"output_tokens":50}}' . "\n";
+  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","num_turns":3,"total_cost_usd":0.01,"usage":{"input_tokens":100,"output_tokens":50}}' . "\n";
 
   /**
    * The stream-json a contract-violating stub agent emits.
@@ -63,7 +63,7 @@ final class RecordCommandTest extends TestCase {
   /**
    * The stream-json a passing stub agent that also leaks a secret emits.
    */
-  protected const string LEAK_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","note":"token ' . self::SECRET . '"}' . "\n";
+  protected const string LEAK_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","note":"token ' . self::SECRET . '"}' . "\n";
 
   /**
    * The temporary repository root.
