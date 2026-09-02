@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Run\Report;
 
 use AlexSkrypnyk\SkillTest\Config\Data;
+use AlexSkrypnyk\SkillTest\Results\Report\MatrixGrid;
 
 /**
  * Renders a results document as a GitHub-flavoured-markdown PR comment block.
@@ -78,7 +79,7 @@ final readonly class GithubCommentReporter {
     $command = Data::toStringOrNull(Data::get($document, 'run', 'command')) ?? '';
     $environment = Data::toStringOrNull(Data::get($document, 'run', 'environment')) ?? '';
 
-    $verdict = $failures === 0 ? sprintf('✅ All %d checks passed', $checks) : sprintf('❌ %d of %d checks failed', $failures, $checks);
+    $verdict = $failures === 0 ? sprintf('✅ All %d check(s) passed', $checks) : sprintf('❌ %d of %d check(s) failed', $failures, $checks);
 
     return sprintf('%s - run `%s` (%s, %s)', $verdict, $id, $command, $environment);
   }
@@ -119,7 +120,7 @@ final readonly class GithubCommentReporter {
     $cost = Data::toFloatOrNull(Data::get($document, 'totals', 'cost_usd')) ?? 0.0;
 
     if ($cost > 0) {
-      $rows[] = ['Cost', sprintf('$%.2f', $cost)];
+      $rows[] = ['Cost', '$' . number_format($cost, 4)];
     }
 
     $lines = ['| Metric | Value |', '| --- | --- |'];
@@ -303,7 +304,7 @@ final readonly class GithubCommentReporter {
    *   The subsection lines.
    */
   protected function matrixSection(array $skill, array $tasks, string $name): array {
-    $columns = $this->modelColumns($tasks);
+    $columns = MatrixGrid::columns($tasks);
 
     $lines = ['', sprintf('#### Matrix: %s', $name), '', $this->verdict($skill), ''];
 
@@ -311,55 +312,11 @@ final readonly class GithubCommentReporter {
     $lines[] = '| --- |' . str_repeat(' --- |', count($columns));
 
     foreach ($tasks as $task) {
-      $rates = $this->passRates($task);
-      $cells = array_map(static fn(string $column): string => $rates[$column] ?? '-', $columns);
+      $cells = MatrixGrid::cells($task, $columns);
       $lines[] = sprintf('| %s | %s |', Data::toStringOrNull(Data::get($task, 'task')) ?? '', implode(' | ', $cells));
     }
 
     return $lines;
-  }
-
-  /**
-   * Collects the model columns across a skill's tasks, in first-seen order.
-   *
-   * @param array<int, array<mixed>> $tasks
-   *   The skill's llm tasks.
-   *
-   * @return string[]
-   *   The ordered, de-duplicated model column labels.
-   */
-  protected function modelColumns(array $tasks): array {
-    $columns = [];
-
-    foreach ($tasks as $task) {
-      foreach (Data::toArrayList(Data::get($task, 'models')) as $model) {
-        $label = Data::toStringOrNull(Data::get($model, 'alias')) ?? Data::toStringOrNull(Data::get($model, 'model')) ?? '';
-        $columns[$label] = $label;
-      }
-    }
-
-    return array_values($columns);
-  }
-
-  /**
-   * Maps each of a task's model columns to its rendered pass-rate cell.
-   *
-   * @param array<mixed> $task
-   *   One llm task entry.
-   *
-   * @return array<string, string>
-   *   The pass-rate cell keyed by model column label.
-   */
-  protected function passRates(array $task): array {
-    $rates = [];
-
-    foreach (Data::toArrayList(Data::get($task, 'models')) as $model) {
-      $label = Data::toStringOrNull(Data::get($model, 'alias')) ?? Data::toStringOrNull(Data::get($model, 'model')) ?? '';
-      $rate = Data::toFloatOrNull(Data::get($model, 'pass_rate'));
-      $rates[$label] = $rate === NULL ? '-' : ((int) round($rate * 100)) . '%';
-    }
-
-    return $rates;
   }
 
   /**
@@ -376,7 +333,7 @@ final readonly class GithubCommentReporter {
     $threshold = Data::toFloatOrNull(Data::get($skill, 'llm', 'verdict', 'threshold')) ?? 0.0;
     $trials = Data::toIntOrNull(Data::get($skill, 'llm', 'verdict', 'trials')) ?? 0;
 
-    return sprintf('Minimal model: **%s** (threshold %s, %d trials)', $minimal, rtrim(rtrim(sprintf('%.2f', $threshold), '0'), '.'), $trials);
+    return sprintf('Minimal model: **%s** (threshold %s, %d trial(s))', $minimal, number_format($threshold, 2), $trials);
   }
 
   /**
