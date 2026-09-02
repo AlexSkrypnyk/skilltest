@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Coverage;
 
-use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\RepoConfig;
 use AlexSkrypnyk\SkillTest\Coverage\Coverage;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
+use AlexSkrypnyk\SkillTest\Tests\Traits\SkillFixtureTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(Coverage::class)]
 final class CoverageTest extends TestCase {
+
+  use SkillFixtureTrait;
 
   public function testRowsSortedWithEveryStatus(): void {
     $root = vfsStream::setup('root', NULL, [
@@ -98,43 +100,6 @@ final class CoverageTest extends TestCase {
 
     $this->assertCount(1, $coverage->violations());
     $this->assertFalse($coverage->rows[0]->excluded);
-  }
-
-  /**
-   * Builds a loaded skill rooted at a directory with the given eval data.
-   *
-   * @param string $root
-   *   The repository root URL.
-   * @param string $dir
-   *   The skill directory, relative to the root.
-   * @param array<mixed> $eval
-   *   The parsed `eval.yaml`.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
-   *   The loaded skill.
-   */
-  protected function skill(string $root, string $dir, array $eval): LoadedSkill {
-    $absolute_dir = $root . '/' . $dir;
-    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], basename($dir), $dir);
-
-    return new LoadedSkill($absolute_dir . '/eval.yaml', $eval, $effective, $absolute_dir);
-  }
-
-  /**
-   * Builds a loaded skill for a directory that ships no `eval.yaml`.
-   *
-   * @param string $root
-   *   The repository root URL.
-   * @param string $dir
-   *   The skill directory, relative to the root.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
-   *   The loaded skill.
-   */
-  protected function skillWithoutEval(string $root, string $dir): LoadedSkill {
-    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
-
-    return new LoadedSkill('', [], $effective, $root . '/' . $dir);
   }
 
   /**

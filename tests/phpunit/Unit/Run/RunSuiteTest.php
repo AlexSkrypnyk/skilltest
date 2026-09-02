@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Run;
 
-use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
-use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\RepoConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Run\RunSelection;
 use AlexSkrypnyk\SkillTest\Run\RunSuite;
 use AlexSkrypnyk\SkillTest\Run\SkillRunResult;
 use AlexSkrypnyk\SkillTest\Structure\StructureResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\SkillFixtureTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +23,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(RunSuite::class)]
 final class RunSuiteTest extends TestCase {
+
+  use SkillFixtureTrait;
 
   /**
    * A well-formed SKILL.md body for a skill directory.
@@ -227,42 +228,6 @@ final class RunSuiteTest extends TestCase {
       [$this->skill($root, 'skills/alpha', $alpha_eval), $this->skill($root, 'skills/beta', [])],
       [$this->skillWithoutEval($root, 'skills/orphan')],
     );
-  }
-
-  /**
-   * Builds a loaded skill rooted at a directory with the given eval data.
-   *
-   * @param string $root
-   *   The repository root URL.
-   * @param string $dir
-   *   The skill directory, relative to the root.
-   * @param array<mixed> $eval
-   *   The parsed `eval.yaml`.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
-   *   The loaded skill.
-   */
-  protected function skill(string $root, string $dir, array $eval): LoadedSkill {
-    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], basename($dir), $dir);
-
-    return new LoadedSkill($root . '/' . $dir . '/eval.yaml', $eval, $effective, $root . '/' . $dir);
-  }
-
-  /**
-   * Builds a loaded skill for a directory that ships no `eval.yaml`.
-   *
-   * @param string $root
-   *   The repository root URL.
-   * @param string $dir
-   *   The skill directory, relative to the root.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
-   *   The loaded skill.
-   */
-  protected function skillWithoutEval(string $root, string $dir): LoadedSkill {
-    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
-
-    return new LoadedSkill('', [], $effective, $root . '/' . $dir);
   }
 
 }

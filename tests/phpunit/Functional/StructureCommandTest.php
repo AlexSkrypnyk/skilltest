@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\StructureCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -22,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class StructureCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
   use DirectoryCleanupTrait;
 
@@ -113,7 +115,7 @@ final class StructureCommandTest extends TestCase {
       ],
     ]);
 
-    $decoded = $this->decode($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 0));
+    $decoded = $this->decodeStdout($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 0));
 
     $this->assertTrue($decoded['ok']);
     $this->assertSame(['checks' => 19, 'skills' => 2, 'passed' => 19, 'failed' => 0, 'warned' => 0, 'suppressed' => 0], $decoded['summary']);
@@ -158,7 +160,7 @@ final class StructureCommandTest extends TestCase {
     $skill_md = "---\nname: wrong-name\ndescription: A clean well-formed skill for tests.\n---\n# Body\n";
     $root = vfsStream::setup('root', NULL, ['skills' => ['foo' => ['SKILL.md' => $skill_md, 'eval.yaml' => "version: \"1\"\n"]]]);
 
-    $decoded = $this->decode($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 1));
+    $decoded = $this->decodeStdout($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 1));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame(['checks' => 10, 'skills' => 1, 'passed' => 9, 'failed' => 1, 'warned' => 0, 'suppressed' => 0], $decoded['summary']);
@@ -197,7 +199,7 @@ final class StructureCommandTest extends TestCase {
   public function testConfigErrorEmitsJson(): void {
     $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "foo: [bad\n"]);
 
-    $decoded = $this->decode($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 2));
+    $decoded = $this->decodeStdout($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['results']);
@@ -278,25 +280,6 @@ final class StructureCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay();
-  }
-
-  /**
-   * Decodes a JSON command output.
-   *
-   * @param string $output
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
   /**

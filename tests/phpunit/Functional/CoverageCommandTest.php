@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\CoverageCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class CoverageCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
 
   /**
@@ -91,7 +93,7 @@ final class CoverageCommandTest extends TestCase {
       ],
     ]);
 
-    $decoded = $this->decode($this->runCoverage(['--dir' => $root->url(), '--format' => 'json'], 1));
+    $decoded = $this->decodeStdout($this->runCoverage(['--dir' => $root->url(), '--format' => 'json'], 1));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame(['total' => 2, 'covered' => 1, 'excluded' => 0, 'uncovered' => 1], $decoded['summary']);
@@ -161,7 +163,7 @@ final class CoverageCommandTest extends TestCase {
       'skills' => ['lonely' => ['SKILL.md' => 'x']],
     ]);
 
-    $decoded = $this->decode($this->runCoverage(['--dir' => $root->url(), '--format' => 'json'], 2));
+    $decoded = $this->decodeStdout($this->runCoverage(['--dir' => $root->url(), '--format' => 'json'], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
@@ -192,25 +194,6 @@ final class CoverageCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay();
-  }
-
-  /**
-   * Decodes a JSON command output.
-   *
-   * @param string $output
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
   /**

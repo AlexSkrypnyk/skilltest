@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\SkillTest\Live\EnvironmentInterface;
 use AlexSkrypnyk\SkillTest\Live\TrialWorkspace;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\GitFixtureTrait;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -27,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 abstract class EnvironmentTestCase extends TestCase {
 
   use DirectoryCleanupTrait;
+  use GitFixtureTrait;
 
   /**
    * The temporary base holding the repo root, source clone, and workspaces.
@@ -37,11 +39,6 @@ abstract class EnvironmentTestCase extends TestCase {
    * The repository root the skill and fixtures live under.
    */
   protected string $root;
-
-  /**
-   * The git clone used as a repo source.
-   */
-  protected string $source;
 
   /**
    * The base directory the environment assembles workspaces under.
@@ -151,37 +148,6 @@ abstract class EnvironmentTestCase extends TestCase {
       $environment->cleanup($workspace);
       $environment->teardown();
     }
-  }
-
-  /**
-   * Initialises the git source clone with one commit.
-   */
-  protected function initSource(): void {
-    mkdir($this->source, 0777, TRUE);
-    file_put_contents($this->source . '/hello.txt', 'hi');
-    $this->git('init', $this->source);
-    $this->git('config user.email test@example.com', $this->source);
-    $this->git('config user.name Test', $this->source);
-    $this->git('add -A', $this->source);
-    $this->git('commit -m seed', $this->source);
-  }
-
-  /**
-   * Runs a git command in a directory and returns its output.
-   *
-   * @param string $args
-   *   The git arguments.
-   * @param string $cwd
-   *   The working directory.
-   *
-   * @return string
-   *   The combined command output.
-   */
-  protected function git(string $args, string $cwd): string {
-    $output = [];
-    exec('git -C ' . escapeshellarg($cwd) . ' ' . $args . ' 2>&1', $output);
-
-    return implode("\n", $output);
   }
 
 }

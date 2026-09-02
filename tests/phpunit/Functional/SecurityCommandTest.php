@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\SecurityCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class SecurityCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
 
   /**
@@ -169,7 +171,7 @@ final class SecurityCommandTest extends TestCase {
       ],
     ]);
 
-    $decoded = $this->decode($this->runSecurity(['--dir' => $root->url(), '--format' => 'json'], 1));
+    $decoded = $this->decodeStdout($this->runSecurity(['--dir' => $root->url(), '--format' => 'json'], 1));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame(['findings' => 1, 'skills' => 1], $decoded['summary']);
@@ -221,7 +223,7 @@ final class SecurityCommandTest extends TestCase {
   public function testConfigErrorEmitsJson(): void {
     $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "foo: [bad\n"]);
 
-    $decoded = $this->decode($this->runSecurity(['--dir' => $root->url(), '--format' => 'json'], 2));
+    $decoded = $this->decodeStdout($this->runSecurity(['--dir' => $root->url(), '--format' => 'json'], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['findings']);
@@ -267,25 +269,6 @@ final class SecurityCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay();
-  }
-
-  /**
-   * Decodes a JSON command output.
-   *
-   * @param string $output
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
   /**

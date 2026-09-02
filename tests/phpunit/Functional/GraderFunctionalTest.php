@@ -79,7 +79,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testContractTighteningFlipsTrialToFailing(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::FAIL);
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl')]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -95,7 +95,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testCleanTranscriptStaysPassing(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::PASS);
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl')]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -107,7 +107,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testFailingTrialNewlyPasses(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::PASS);
-    $document = $this->document([$this->trial(1, FALSE, 'artifacts/t1.jsonl')]);
+    $document = $this->documentWithTrials([$this->trialRow(1, FALSE, 'artifacts/t1.jsonl')]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -119,7 +119,7 @@ final class GraderFunctionalTest extends TestCase {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::PASS);
     $contract = [['check' => 'live.agent', 'label' => 'agent run', 'pass' => FALSE, 'evidence' => '', 'message' => 'agent run exited with code 3.']];
-    $document = $this->document([$this->trial(1, FALSE, 'artifacts/t1.jsonl', $contract)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, FALSE, 'artifacts/t1.jsonl', $contract)]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -130,7 +130,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testUnconfiguredSkillWithTasksIsNoted(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::FAIL);
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl')], skill: 'ghost');
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')], skill: 'ghost');
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -150,7 +150,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testTrialWithoutTranscriptIsNoted(): void {
     $config = $this->config();
     $trial = ['trial' => 1, 'pass' => TRUE, 'contract' => [], 'judge' => []];
-    $document = $this->document([$trial]);
+    $document = $this->documentWithTrials([$trial]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -162,7 +162,7 @@ final class GraderFunctionalTest extends TestCase {
     $config = $this->config(rubric: TRUE);
     $this->artifact('t1.jsonl', self::PASS);
     $judge = [['criterion' => 1, 'pass' => FALSE, 'unknown' => FALSE]];
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl', [], $judge)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl', [], $judge)]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -174,7 +174,7 @@ final class GraderFunctionalTest extends TestCase {
     $this->artifact('t1.jsonl', self::PASS);
     $judge = new Judge('claude', fn(string $command, string $cwd): array => [0, '{"criteria":[{"id":1,"pass":false}],"reasoning":"no"}']);
     $stored = [['criterion' => 1, 'pass' => TRUE, 'unknown' => FALSE]];
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
 
     $result = (new Grader($this->tempDir, $judge))->rescore($document, $config, $this->runDir);
 
@@ -187,7 +187,7 @@ final class GraderFunctionalTest extends TestCase {
     $this->artifact('t1.jsonl', self::PASS);
     $judge = new Judge('claude', fn(string $command, string $cwd): array => [1, 'boom']);
     $stored = [['criterion' => 1, 'pass' => TRUE, 'unknown' => FALSE]];
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
 
     $result = (new Grader($this->tempDir, $judge))->rescore($document, $config, $this->runDir);
 
@@ -200,7 +200,7 @@ final class GraderFunctionalTest extends TestCase {
     $this->artifact('t1.jsonl', self::PASS);
     $judge = new Judge('claude', fn(string $command, string $cwd): array => [0, '{"criteria":[{"id":1,"pass":false}]}']);
     $stored = [['criterion' => 1, 'pass' => TRUE, 'unknown' => FALSE]];
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl', [], $stored)]);
 
     $result = (new Grader($this->tempDir, $judge))->rescore($document, $config, $this->runDir);
 
@@ -213,8 +213,8 @@ final class GraderFunctionalTest extends TestCase {
     $this->artifact('haiku.jsonl', self::FAIL);
     $this->artifact('sonnet.jsonl', self::PASS);
     $models = [
-      ['model' => 'claude-haiku', 'alias' => 'haiku', 'trials' => [$this->trial(1, TRUE, 'artifacts/haiku.jsonl')], 'pass_rate' => 1.0],
-      ['model' => 'claude-sonnet', 'alias' => 'sonnet', 'trials' => [$this->trial(1, TRUE, 'artifacts/sonnet.jsonl')], 'pass_rate' => 1.0],
+      ['model' => 'claude-haiku', 'alias' => 'haiku', 'trials' => [$this->trialRow(1, TRUE, 'artifacts/haiku.jsonl')], 'pass_rate' => 1.0],
+      ['model' => 'claude-sonnet', 'alias' => 'sonnet', 'trials' => [$this->trialRow(1, TRUE, 'artifacts/sonnet.jsonl')], 'pass_rate' => 1.0],
     ];
     $document = $this->documentWithModels($models, 'haiku');
 
@@ -227,7 +227,7 @@ final class GraderFunctionalTest extends TestCase {
     $config = $this->config();
     $absolute = $this->runDir . '/artifacts/abs.jsonl';
     file_put_contents($absolute, self::FAIL);
-    $document = $this->document([$this->trial(1, TRUE, $absolute)]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, $absolute)]);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
 
@@ -237,7 +237,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testTaskWithoutVerdictStillRescoresRates(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::FAIL);
-    $models = [['model' => 'claude-haiku-4-5', 'alias' => 'haiku', 'trials' => [$this->trial(1, TRUE, 'artifacts/t1.jsonl')], 'pass_rate' => 1.0]];
+    $models = [['model' => 'claude-haiku-4-5', 'alias' => 'haiku', 'trials' => [$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')], 'pass_rate' => 1.0]];
     $document = $this->documentWithModels($models, NULL, verdict: FALSE);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
@@ -249,7 +249,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testRecomputesFailuresAcrossDimensions(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::FAIL);
-    $models = [['model' => 'claude-haiku-4-5', 'alias' => 'haiku', 'trials' => [$this->trial(1, TRUE, 'artifacts/t1.jsonl')], 'pass_rate' => 1.0]];
+    $models = [['model' => 'claude-haiku-4-5', 'alias' => 'haiku', 'trials' => [$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')], 'pass_rate' => 1.0]];
     $document = $this->documentWithModels($models, 'haiku', deterministic: ['structure' => [['check' => 'structure.x', 'pass' => FALSE]], 'security' => [], 'transcript' => []]);
     $document['hooks'] = [['check' => 'hooks.h', 'pass' => FALSE]];
     $document['coverage'] = ['violations' => [['check' => 'coverage.eval-exists', 'pass' => FALSE]]];
@@ -275,7 +275,7 @@ final class GraderFunctionalTest extends TestCase {
     $this->artifact('t1.jsonl', self::PASS);
     $judge = new Judge('claude', fn(string $command, string $cwd): array => [0, '{"criteria":[{"id":1,"pass":false}]}']);
     $stored = [['criterion' => 1, 'pass' => TRUE, 'unknown' => FALSE]];
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl', [], $stored)], task: 'ghost-task');
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl', [], $stored)], task: 'ghost-task');
 
     $result = (new Grader($this->tempDir, $judge))->rescore($document, $config, $this->runDir);
 
@@ -298,7 +298,7 @@ final class GraderFunctionalTest extends TestCase {
   public function testMissingTotalsIsLeftAlone(): void {
     $config = $this->config();
     $this->artifact('t1.jsonl', self::PASS);
-    $document = $this->document([$this->trial(1, TRUE, 'artifacts/t1.jsonl')]);
+    $document = $this->documentWithTrials([$this->trialRow(1, TRUE, 'artifacts/t1.jsonl')]);
     unset($document['totals']);
 
     $result = (new Grader($this->tempDir))->rescore($document, $config, $this->runDir);
@@ -349,27 +349,6 @@ final class GraderFunctionalTest extends TestCase {
   }
 
   /**
-   * Builds a trial row.
-   *
-   * @param int $number
-   *   The trial number.
-   * @param bool $pass
-   *   The stored pass verdict.
-   * @param string $transcript
-   *   The transcript reference.
-   * @param array<int, array<mixed>> $contract
-   *   The stored contract rows.
-   * @param array<int, array<mixed>> $judge
-   *   The stored judge criteria.
-   *
-   * @return array<string, mixed>
-   *   The trial row.
-   */
-  protected function trial(int $number, bool $pass, string $transcript, array $contract = [], array $judge = []): array {
-    return ['trial' => $number, 'pass' => $pass, 'contract' => $contract, 'judge' => $judge, 'transcript' => $transcript];
-  }
-
-  /**
    * Builds a results document with one skill and one single-model task.
    *
    * @param array<int, array<mixed>> $trials
@@ -382,7 +361,7 @@ final class GraderFunctionalTest extends TestCase {
    * @return array<string, mixed>
    *   The document.
    */
-  protected function document(array $trials, string $skill = 'alpha', string $task = 'invoked'): array {
+  protected function documentWithTrials(array $trials, string $skill = 'alpha', string $task = 'invoked'): array {
     $models = [['model' => 'claude-haiku-4-5', 'alias' => 'haiku', 'trials' => $trials, 'pass_rate' => 1.0]];
 
     return $this->documentWithModels($models, 'haiku', $skill, $task);

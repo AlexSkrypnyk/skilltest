@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\JunitSchemaValidationTrait;
@@ -26,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class RunCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
   use ArrayPathTrait;
   use DirectoryCleanupTrait;
@@ -345,7 +347,7 @@ final class RunCommandTest extends TestCase {
   public function testListJsonEmitsThePlan(): void {
     $root = $this->realRepo();
 
-    $decoded = $this->decode($this->runRun(['--dir' => $root, '--list' => TRUE, '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runRun(['--dir' => $root, '--list' => TRUE, '--json' => TRUE], 0));
 
     $this->assertSame(['structure', 'security', 'hooks', 'transcript'], $this->path($decoded, 'plan', 'groups'));
     $this->assertTrue($this->path($decoded, 'plan', 'coverage'));
@@ -356,7 +358,7 @@ final class RunCommandTest extends TestCase {
   public function testJsonEmitsTheResultsDocumentAndNothingElse(): void {
     $root = $this->realRepo();
 
-    $decoded = $this->decode($this->runRun(['--dir' => $root, '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runRun(['--dir' => $root, '--json' => TRUE], 0));
 
     $this->assertSame('1', $decoded['version']);
     $this->assertSame('skilltest', $this->path($decoded, 'tool', 'name'));
@@ -383,7 +385,7 @@ final class RunCommandTest extends TestCase {
     $root = $this->realRepo();
     file_put_contents($root . '/skills/alpha/fixtures/t.jsonl', self::BROKEN_TRANSCRIPT);
 
-    $decoded = $this->decode($this->runRun(['--dir' => $root, '--json' => TRUE], 1));
+    $decoded = $this->decodeStdout($this->runRun(['--dir' => $root, '--json' => TRUE], 1));
 
     $forbidden = NULL;
 
@@ -406,7 +408,7 @@ final class RunCommandTest extends TestCase {
     $root = $this->realRepo();
     file_put_contents($root . '/skills/alpha/eval.yaml', "contract: [bad\n");
 
-    $decoded = $this->decode($this->runRun(['--dir' => $root, '--json' => TRUE], 2));
+    $decoded = $this->decodeStdout($this->runRun(['--dir' => $root, '--json' => TRUE], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
@@ -730,26 +732,6 @@ final class RunCommandTest extends TestCase {
     $fetcher = static fn(string $url): array => [200, json_encode(['tag_name' => '2.0.0'], JSON_THROW_ON_ERROR)];
 
     return new UpdateNotifier(new ReleaseClient($fetcher), [], '1.0.0', static fn(): int => 1000);
-  }
-
-  /**
-   * Decodes a JSON command standard output.
-   *
-   * @param string $output
-   *   The combined output; only stdout carries the JSON.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $stdout = $this->applicationGetTester()->getDisplay();
-    $decoded = json_decode(trim($stdout === '' ? $output : $stdout), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
 }

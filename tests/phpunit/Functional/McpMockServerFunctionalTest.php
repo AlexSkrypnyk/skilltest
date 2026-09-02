@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockServer;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\MemoryStreamTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 final class McpMockServerFunctionalTest extends TestCase {
 
   use ArrayPathTrait;
+  use MemoryStreamTrait;
 
   /**
    * A temporary directory the mock call log is written under.
@@ -217,32 +219,6 @@ final class McpMockServerFunctionalTest extends TestCase {
     }
 
     return $responses;
-  }
-
-  /**
-   * Opens an in-memory stream, optionally primed with content and rewound.
-   *
-   * @param string $contents
-   *   The content to write, then rewind to the start.
-   *
-   * @return resource
-   *   The stream.
-   */
-  protected function memoryStream(string $contents = '') {
-    $stream = fopen('php://memory', 'r+');
-
-    if ($stream === FALSE) {
-      // @codeCoverageIgnoreStart
-      $this->fail('Could not open an in-memory stream.');
-      // @codeCoverageIgnoreEnd
-    }
-
-    if ($contents !== '') {
-      fwrite($stream, $contents);
-      rewind($stream);
-    }
-
-    return $stream;
   }
 
   /**
