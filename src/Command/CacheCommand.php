@@ -24,6 +24,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CacheCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * The supported actions.
    */
@@ -58,32 +60,6 @@ class CacheCommand extends Command {
     $output->writeln(sprintf('cleared %d cached trial result(s).', $removed));
 
     return ExitCode::PASS;
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return rtrim($dir, '/');
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
 }

@@ -27,7 +27,7 @@ trait SharedCommandTrait {
     $dir = $input->getOption('dir');
 
     if (is_string($dir) && $dir !== '') {
-      return $dir;
+      return rtrim($dir, '/');
     }
 
     $cwd = getcwd();
