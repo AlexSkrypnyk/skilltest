@@ -30,11 +30,11 @@ Group names are plain words that state what is checked: `structure` (the skill f
 
 Naming alternatives considered: `static`/`replay`/`live` as a triad, and `gate`/`eval` as a pair. `deterministic`/`llm` wins because it names the property users actually care about in CI - can this flake and does it cost money - rather than the mechanism.
 
-## Feature sources
+## Feature traceability
 
-Features assessed from skillgrade and adopted as skilltest requirements:
+Assessed features adopted as skilltest requirements:
 
-| skillgrade feature | skilltest requirement | PRD | Priority |
+| Assessed feature | skilltest requirement | PRD | Priority |
 |---|---|---|---|
 | Per-skill `eval.yaml`, zero project setup | Same model; config schema | `config.md` | P1 |
 | Docker and local execution providers | `docker` and `host` environments | `environments.md` | P1 |
@@ -50,11 +50,6 @@ Features assessed from skillgrade and adopted as skilltest requirements:
 | With/without-skill baseline (Normalized Gain) | `--baseline` mode in llm suite | `checks-llm.md` | P2 |
 | Skill-trigger / discovery testing | Discovery tasks (prompt does not name the skill) | `checks-llm.md` | P2 |
 | Multi-agent executors (Gemini, Codex, OpenCode, ACP) | Out of scope for v1; adapter seam reserved | `README.md` non-goals | P3 |
-
-Features assessed from waza and adopted as skilltest requirements:
-
-| waza feature | skilltest requirement | PRD | Priority |
-|---|---|---|---|
 | Record a live run into a reusable task/fixture (`new task from-prompt`) | `skilltest record` | `cli.md`, `checks-llm.md` | P1 |
 | Multi-model runs, `compare`, `--recommend` | `matrix` group + minimal-model report + `skilltest compare` | `models.md` | P1 |
 | Skill-to-eval coverage grid + `--strict` | `skilltest coverage` + built-in coverage gate | `cli.md` | P1 |

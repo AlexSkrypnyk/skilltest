@@ -22,40 +22,51 @@ contract:
     allowed: [Bash, Skill]           # live runs are restricted to exactly these
     required: [Skill]                # must appear in the transcript
     forbidden: []                    # must never appear
-  commands:                          # label: pattern; the label names the behaviour, the pattern proves it
+  # label: pattern - the label names the behaviour, the pattern proves it.
+  commands:
     required:
       broker drives the workflow: '\bbroker\s+workflow\s+(start|next|status)\b'
     forbidden:
-      raw git mutations: pack:git-mutations      # pre-baked pattern pack, no regex needed
+      # A pre-baked pattern pack; no regex to write.
+      raw git mutations: pack:git-mutations
       raw gh mutations: pack:gh-mutations
-  skills:                            # Skill-tool invocations (sub-skills)
+  # Skill-tool invocations (sub-skills).
+  skills:
     required: [broker:build-generic]
     forbidden: []
 
 security:
-  packs: [baseline]                  # the baseline pack runs even when this block is omitted
-  forbidden-tokens: []               # extra skill-specific strings that must not appear in shipped files
+  # The baseline pack runs even when this block is omitted.
+  packs: [baseline]
+  # Extra skill-specific strings that must not appear in shipped files.
+  forbidden-tokens: []
 
 deterministic:
-  transcript: fixtures/transcript.jsonl   # recorded canonical run; created and refreshed by `skilltest record`
+  # Recorded canonical run; created and refreshed by `skilltest record`.
+  transcript: fixtures/transcript.jsonl
 
 llm:
   tasks:
     - name: invoked
       prompt: /broker:run-broker-workflow
-    - name: discovery                # P2: the prompt does not name the skill; it must trigger anyway
+    # P2: the prompt does not name the skill; it must trigger anyway.
+    - name: discovery
       prompt: "Continue the current feature ticket end to end."
       discovery: true
   max-turns: 8
   trials: 3
   threshold: 0.8                     # minimum pass rate per model
-  models: ladder                     # the repo ladder, or an explicit list of aliases/ids
+  models: ladder                     # the repo ladder, or a list of aliases/ids
   judge:
-    rubric:                          # binary criteria; each is judged pass/fail, never a holistic score
+    # Binary criteria; each is judged pass/fail, never a holistic score.
+    rubric:
       - Asks the broker for the next step rather than deciding the order itself.
-      - Invokes the configured skill for each judgement step and the binary for deterministic steps.
-      - Lets the broker own branch, board, and PR state instead of issuing raw git or gh.
-  checks: []                         # optional custom check scripts, run against each live transcript
+      - Invokes the configured skill for each judgement step and the binary for
+        deterministic steps.
+      - Lets the broker own branch, board, and PR state instead of issuing raw
+        git or gh.
+  # Optional custom check scripts, run against each live transcript.
+  checks: []
 ```
 
 Design rules encoded here:
@@ -73,20 +84,27 @@ version: "1"
 paths:
   skills: skills                     # where skill directories live (repeatable)
   eval-file: eval.yaml               # per-skill config filename
-  exclude: []                        # skill names exempt from the coverage gate (each requires a reason)
+  # Skill names exempt from the coverage gate; each requires a reason.
+  exclude: []
 
-aliases:                             # command normalisation applied before contract matching
-  broker: '(?:php\s+)?(?:\S*/)?bin/broker'   # `php bin/broker x`, `./bin/broker x` and `broker x` all match `broker x`
+# Command normalisation applied before contract matching. This one makes
+# `php bin/broker x`, `./bin/broker x` and `broker x` all match `broker x`.
+aliases:
+  broker: '(?:php\s+)?(?:\S*/)?bin/broker'
 
 commands:
+  # Optional; when set, `broker <sub>` references in skill files must resolve
+  # against the binary's real command list (structure group).
   resolve:
-    binary: bin/broker               # optional; when set, `broker <sub>` references in skill files must
-    list-args: [list, --json]        # resolve against the binary's real command list (structure group)
+    binary: bin/broker
+    list-args: [list, --json]
 
-guards:                              # appended to every skill's contract.commands.forbidden
+# Appended to every skill's contract.commands.forbidden.
+guards:
   broker bypass: pack:gh-mutations
 
-hooks:                              # enforcement hooks and their crafted cases (deterministic `hooks` group)
+# Enforcement hooks and their crafted cases (deterministic `hooks` group).
+hooks:
   - script: hooks/reject-gh-pr-create.php
     cases:
       - tool: Bash
@@ -106,7 +124,8 @@ models:
     haiku: claude-haiku-4-5
     sonnet: claude-sonnet-5
     opus: claude-opus-4-8
-  ladder: [haiku, sonnet, opus]      # ordered weakest to strongest; drives `skilltest matrix`
+  # Ordered weakest to strongest; drives `skilltest matrix`.
+  ladder: [haiku, sonnet, opus]
   default: sonnet
   judge: haiku                       # judging is cheap-model work by default
 
@@ -115,7 +134,8 @@ llm:
   docker:
     image: ghcr.io/alexskrypnyk/skilltest-agent:latest
     setup: ''                        # extra image-build commands
-  lifecycle:                         # external-state setup/teardown around llm work (see environments.md)
+  # External-state setup/teardown around llm work (see environments.md).
+  lifecycle:
     before-run: []
     before-task:
       - command: php playground/reset.php
@@ -124,7 +144,8 @@ llm:
     after-run: []
 
 report:
-  redact: true                       # secrets (env values) are redacted from persisted results
+  # Secrets (env values) are redacted from persisted results.
+  redact: true
 ```
 
 ## Precedence and overrides

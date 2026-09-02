@@ -10,7 +10,10 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
 {
   "version": "1",
   "tool": {"name": "skilltest", "version": "1.0.0"},
-  "run": {"id": "st-20260708-1432", "started": "2026-07-08T14:32:00+00:00", "duration_ms": 84213, "command": "matrix", "environment": "docker"},
+  "run": {
+    "id": "st-20260708-1432", "started": "2026-07-08T14:32:00+00:00",
+    "duration_ms": 84213, "command": "matrix", "environment": "docker"
+  },
   "skills": [
     {
       "skill": "run-broker-workflow",
@@ -18,7 +21,14 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
       "deterministic": {
         "structure": [{"check": "structure.frontmatter", "pass": true}],
         "security": [],
-        "transcript": [{"check": "contract.commands.required", "label": "broker drives the workflow", "pass": true, "evidence": "php bin/broker workflow start --terse"}]
+        "transcript": [
+          {
+            "check": "contract.commands.required",
+            "label": "broker drives the workflow",
+            "pass": true,
+            "evidence": "php bin/broker workflow start --terse"
+          }
+        ]
       },
       "llm": {
         "tasks": [
@@ -29,7 +39,16 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
                 "model": "claude-haiku-4-5",
                 "alias": "haiku",
                 "trials": [
-                  {"trial": 1, "pass": false, "contract": [], "judge": [{"criterion": 1, "pass": true}, {"criterion": 2, "pass": false}], "unknowns": 0, "duration_ms": 0, "turns": 0, "tokens": {"in": 0, "out": 0}, "cost_usd": 0.0, "transcript": "artifacts/haiku-1.jsonl"}
+                  {
+                    "trial": 1, "pass": false, "contract": [],
+                    "judge": [
+                      {"criterion": 1, "pass": true},
+                      {"criterion": 2, "pass": false}
+                    ],
+                    "unknowns": 0, "duration_ms": 0, "turns": 0,
+                    "tokens": {"in": 0, "out": 0}, "cost_usd": 0.0,
+                    "transcript": "artifacts/haiku-1.jsonl"
+                  }
                 ],
                 "pass_rate": 0.33
               }
@@ -40,9 +59,18 @@ Schema-versioned (`version: "1"`, same policy as the config files, migratable wi
       }
     }
   ],
-  "hooks": [{"check": "hooks.reject-gh-pr-create", "label": "blocks gh pr create", "pass": true, "evidence": "", "message": ""}],
+  "hooks": [
+    {
+      "check": "hooks.reject-gh-pr-create",
+      "label": "blocks gh pr create",
+      "pass": true, "evidence": "", "message": ""
+    }
+  ],
   "coverage": {"violations": []},
-  "totals": {"checks": 0, "failures": 0, "trials": 0, "tokens": {"in": 0, "out": 0}, "cost_usd": 0.0}
+  "totals": {
+    "checks": 0, "failures": 0, "trials": 0,
+    "tokens": {"in": 0, "out": 0}, "cost_usd": 0.0
+  }
 }
 ```
 

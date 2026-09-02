@@ -22,7 +22,8 @@ chmod +x skilltest.phar && mv skilltest.phar /usr/local/bin/skilltest
 # Docker (tool-in-docker: mount the repo, run the same commands)
 docker run --rm -v "$PWD":/work -w /work ghcr.io/alexskrypnyk/skilltest:latest
 
-# install script (detects OS/arch, verifies checksum, prefers the static binary when available)
+# install script (detects OS/arch, verifies checksum, prefers the static
+# binary when available)
 curl -fsSL https://raw.githubusercontent.com/alexskrypnyk/skilltest/main/install.sh | bash
 ```
 
@@ -47,7 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker run --rm -v "$PWD":/work -w /work ghcr.io/alexskrypnyk/skilltest:latest
+      - run: |
+          docker run --rm -v "$PWD":/work -w /work \
+            ghcr.io/alexskrypnyk/skilltest:latest
 ```
 
 Scheduled llm + matrix run with regression gate (spends tokens, nightly):
@@ -58,11 +61,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: curl -fsSL https://raw.githubusercontent.com/alexskrypnyk/skilltest/main/install.sh | bash
+      - run: |
+          base=https://raw.githubusercontent.com/alexskrypnyk/skilltest
+          curl -fsSL "$base/main/install.sh" | bash
       - run: skilltest matrix --output results.json
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      - run: skilltest gate --baseline .skilltest/baseline.json --current results.json --format github-actions
+      - run: |
+          skilltest gate --baseline .skilltest/baseline.json \
+            --current results.json --format github-actions
       - uses: actions/upload-artifact@v4
         with: {name: skilltest-results, path: results.json}
 ```

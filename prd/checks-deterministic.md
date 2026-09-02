@@ -77,7 +77,7 @@ Packs are versioned with the tool; a release note calls out pattern additions be
 
 ## Custom checks
 
-The escape hatch, adopted from skillgrade's grader contract: a check may be a script.
+The escape hatch: a check may be a script.
 
 ```yaml
 llm:
