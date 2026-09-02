@@ -16,9 +16,10 @@ use AlexSkrypnyk\SkillTest\Config\SkillFiles;
  * references, and fixtures - is scanned line by line for danger patterns before
  * any model reads it. The `baseline` pack is unconditional: it is not gated on
  * configuration, so nothing a skill declares can disable it or downgrade a
- * finding to a warning. The skill's own `eval.yaml` is the one file excluded -
- * it is the skilltest sidecar config, not shipped content, and it is where
- * forbidden tokens are declared, so scanning it would self-trigger.
+ * finding to a warning, and a skill that ships no `eval.yaml` is scanned like
+ * any other. The skill's own `eval.yaml` is the one file excluded - it is the
+ * skilltest sidecar config, not shipped content, and it is where forbidden
+ * tokens are declared, so scanning it would self-trigger.
  */
 final readonly class SecurityScanner {
 
@@ -81,7 +82,7 @@ final readonly class SecurityScanner {
   }
 
   /**
-   * Scans every loaded skill and returns the findings across all of them.
+   * Scans every discovered skill and returns the findings across all of them.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
    *   The loaded configuration.
@@ -92,7 +93,7 @@ final readonly class SecurityScanner {
   public function scan(LoadedConfig $loaded_config): array {
     $findings = [];
 
-    foreach ($loaded_config->skills as $skill) {
+    foreach ($loaded_config->allSkills() as $skill) {
       foreach ($this->scanSkill($skill) as $finding) {
         $findings[] = $finding;
       }
@@ -111,12 +112,11 @@ final readonly class SecurityScanner {
    *   The findings for this skill.
    */
   protected function scanSkill(LoadedSkill $loaded_skill): array {
-    $dir = dirname($loaded_skill->file);
     $tokens = Data::toStringList(Data::get($loaded_skill->effective->security, 'forbidden-tokens'));
     $findings = [];
 
-    foreach (SkillFiles::under($dir) as $absolute) {
-      if ($absolute === $loaded_skill->file) {
+    foreach (SkillFiles::under($loaded_skill->dir) as $absolute) {
+      if ($loaded_skill->hasEval() && $absolute === $loaded_skill->file) {
         continue;
       }
 

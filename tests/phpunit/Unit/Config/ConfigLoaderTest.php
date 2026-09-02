@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Config;
 
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
@@ -58,14 +59,54 @@ final class ConfigLoaderTest extends TestCase {
     $this->assertSame($root->url() . '/skilltest.yml', $loaded->repoFile);
     $this->assertSame(['haiku'], $loaded->repo->ladder);
     $this->assertCount(1, $loaded->skills);
-    $this->assertSame(['skills/bare'], $loaded->skillsWithoutEval);
+    $this->assertCount(1, $loaded->skillsWithoutEval);
 
     $skill = $loaded->skills[0];
     $this->assertInstanceOf(LoadedSkill::class, $skill);
     $this->assertSame($root->url() . '/skills/foo/eval.yaml', $skill->file);
+    $this->assertSame($root->url() . '/skills/foo', $skill->dir);
+    $this->assertTrue($skill->hasEval());
     $this->assertSame('foo', $skill->data['skill']);
     $this->assertSame('foo', $skill->effective->skill);
     $this->assertSame('skills/foo', $skill->effective->path);
+  }
+
+  public function testSkillWithoutEvalLoadsWithRepoDefaults(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skilltest.yml' => "version: \"1\"\nmodels:\n  ladder: [haiku]\n",
+      'skills' => ['bare' => ['SKILL.md' => 'x']],
+    ]);
+
+    $loaded = (new ConfigLoader($root->url()))->load();
+
+    $this->assertSame([], $loaded->skills);
+    $this->assertCount(1, $loaded->skillsWithoutEval);
+
+    $bare = $loaded->skillsWithoutEval[0];
+    $this->assertSame('', $bare->file);
+    $this->assertSame([], $bare->data);
+    $this->assertFalse($bare->hasEval());
+    $this->assertSame($root->url() . '/skills/bare', $bare->dir);
+    $this->assertSame('bare', $bare->effective->skill);
+    $this->assertSame('skills/bare', $bare->effective->path);
+    $this->assertSame(['haiku'], $bare->effective->models);
+    $this->assertSame([EffectiveConfig::BASELINE_PACK], $bare->effective->security['packs']);
+    $this->assertNull($bare->effective->transcript);
+  }
+
+  public function testAllSkillsMergesBothListsInPathOrder(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => [
+        'bare' => ['SKILL.md' => 'x'],
+        'foo' => ['SKILL.md' => 'x', 'eval.yaml' => "skill: foo\n"],
+        'zeta' => ['SKILL.md' => 'x'],
+      ],
+    ]);
+
+    $all = (new ConfigLoader($root->url()))->load()->allSkills();
+
+    $this->assertSame(['skills/bare', 'skills/foo', 'skills/zeta'], array_map(static fn(LoadedSkill $skill): string => $skill->effective->path, $all));
+    $this->assertSame([FALSE, TRUE, FALSE], array_map(static fn(LoadedSkill $skill): bool => $skill->hasEval(), $all));
   }
 
   public function testLoadWithoutRepoConfig(): void {

@@ -514,8 +514,7 @@ class RunCommand extends Command {
     }
 
     if ($selection->coverageGateRuns()) {
-      $subject = count($report->skills) + count($filtered->skillsWithoutEval);
-      $this->groupLine($output, 'repo', 'coverage', $report->coverage === [], $report->coverage === [] ? sprintf('%d skill(s)', $subject) : sprintf('%d violation(s)', count($report->coverage)), $quiet);
+      $this->groupLine($output, 'repo', 'coverage', $report->coverage === [], $report->coverage === [] ? sprintf('%d skill(s)', count($report->skills)) : sprintf('%d violation(s)', count($report->coverage)), $quiet);
       $this->failureLines($output, array_map(self::coverageLine(...), $report->coverage), $quiet);
     }
 
@@ -523,9 +522,8 @@ class RunCommand extends Command {
       $checks = $report->checks();
       $failures = $report->failures();
       $suppressed = $report->suppressed();
-      $skills = count($report->skills) + ($selection->coverageGateRuns() ? count($filtered->skillsWithoutEval) : 0);
       $output->writeln('');
-      $output->writeln(sprintf('%d check(s) across %d skill(s): %d passed, %d failed, %d suppressed.', $checks, $skills, $checks - $failures - $suppressed, $failures, $suppressed));
+      $output->writeln(sprintf('%d check(s) across %d skill(s): %d passed, %d failed, %d suppressed.', $checks, count($report->skills), $checks - $failures - $suppressed, $failures, $suppressed));
     }
   }
 

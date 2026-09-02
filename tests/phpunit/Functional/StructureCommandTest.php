@@ -88,6 +88,37 @@ final class StructureCommandTest extends TestCase {
     $this->assertStringContainsString('10 check(s) across 1 skill(s): 10 passed, 0 failed, 0 warned, 0 suppressed.', $output);
   }
 
+  public function testRepoWithNoEvalYamlAnywhereIsStillChecked(): void {
+    $skill_md = "---\nname: wrong-name\ndescription: A clean well-formed skill for tests.\n---\n# Body\n";
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => [
+        'alpha' => ['SKILL.md' => $skill_md],
+        'beta' => ['SKILL.md' => "---\nname: beta\ndescription: A clean well-formed skill for tests.\n---\n# Body\n"],
+      ],
+    ]);
+
+    $output = $this->runStructure(['--dir' => $root->url()], 1);
+
+    $this->assertStringContainsString('structure.name-matches-dir FAIL skills/alpha/SKILL.md:1', $output);
+    $this->assertStringContainsString('18 check(s) across 2 skill(s): 17 passed, 1 failed, 0 warned, 0 suppressed.', $output);
+  }
+
+  public function testCoherenceCheckIsOmittedOnlyForTheSkillWithoutAnEval(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => [
+        'bare' => ['SKILL.md' => "---\nname: bare\ndescription: A clean well-formed skill for tests.\n---\n# Body\n"],
+        'foo' => ['SKILL.md' => self::CLEAN_FOO, 'eval.yaml' => "version: \"1\"\n"],
+      ],
+    ]);
+
+    $decoded = $this->decode($this->runStructure(['--dir' => $root->url(), '--format' => 'json'], 0));
+
+    $this->assertTrue($decoded['ok']);
+    $this->assertSame(['checks' => 19, 'skills' => 2, 'passed' => 19, 'failed' => 0, 'warned' => 0, 'suppressed' => 0], $decoded['summary']);
+    $this->assertSame(['foo'], $this->skillsWithCheck($decoded, 'structure.contract-coherent'));
+    $this->assertSame(['bare', 'foo'], $this->skillsWithCheck($decoded, 'structure.frontmatter'));
+  }
+
   public function testWarningsAreListedButDoNotFailTheGate(): void {
     $eval = "version: \"1\"\nstructure:\n  params:\n    structure.token-budget:\n      warn-at: 5\n";
     $root = vfsStream::setup('root', NULL, ['skills' => ['foo' => ['SKILL.md' => self::CLEAN_FOO, 'eval.yaml' => $eval]]]);
@@ -287,6 +318,41 @@ final class StructureCommandTest extends TestCase {
     }
 
     $this->fail('No result for ' . $check);
+  }
+
+  /**
+   * Lists the skills a check produced a result for, in report order.
+   *
+   * @param array<mixed> $decoded
+   *   The decoded payload.
+   * @param string $check
+   *   The check id to look for.
+   *
+   * @return string[]
+   *   The skill names.
+   */
+  protected function skillsWithCheck(array $decoded, string $check): array {
+    $results = $decoded['results'] ?? NULL;
+    $skills = [];
+
+    foreach (is_array($results) ? $results : [] as $result) {
+      if (!is_array($result)) {
+        continue;
+      }
+      if (($result['check'] ?? NULL) !== $check) {
+        continue;
+      }
+
+      $skill = $result['skill'] ?? NULL;
+
+      if (!is_string($skill)) {
+        $this->fail('Expected a skill name on the ' . $check . ' result.');
+      }
+
+      $skills[] = $skill;
+    }
+
+    return $skills;
   }
 
   /**

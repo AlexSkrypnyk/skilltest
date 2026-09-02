@@ -130,7 +130,7 @@ final class RunSelectionTest extends TestCase {
 
     $this->assertCount(1, $filtered->skills);
     $this->assertSame('alpha', $filtered->skills[0]->effective->skill);
-    $this->assertSame(['skills/alpha-legacy'], $filtered->skillsWithoutEval);
+    $this->assertSame(['skills/alpha-legacy'], array_map(static fn(LoadedSkill $skill): string => $skill->effective->path, $filtered->skillsWithoutEval));
     $this->assertSame($config->repo, $filtered->repo);
   }
 
@@ -166,7 +166,22 @@ final class RunSelectionTest extends TestCase {
   protected function skill(string $dir): LoadedSkill {
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
 
-    return new LoadedSkill($dir . '/eval.yaml', [], $effective);
+    return new LoadedSkill($dir . '/eval.yaml', [], $effective, $dir);
+  }
+
+  /**
+   * Builds a loaded skill for a directory that ships no `eval.yaml`.
+   *
+   * @param string $dir
+   *   The skill directory, relative to the root.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
+   *   The loaded skill.
+   */
+  protected function skillWithoutEval(string $dir): LoadedSkill {
+    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
+
+    return new LoadedSkill('', [], $effective, $dir);
   }
 
   /**
@@ -181,7 +196,7 @@ final class RunSelectionTest extends TestCase {
    *   The loaded configuration.
    */
   protected function config(array $skills, array $without_eval): LoadedConfig {
-    return new LoadedConfig(RepoConfig::fromArray([]), [], '', $skills, $without_eval);
+    return new LoadedConfig(RepoConfig::fromArray([]), [], '', $skills, array_map($this->skillWithoutEval(...), $without_eval));
   }
 
 }

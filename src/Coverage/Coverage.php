@@ -87,11 +87,11 @@ final readonly class Coverage {
       );
     }
 
-    foreach ($config->skillsWithoutEval as $dir) {
-      $name = basename($dir);
+    foreach ($config->skillsWithoutEval as $skill) {
+      $name = $skill->effective->skill;
       $rows[] = new CoverageRow(
         $name,
-        $dir,
+        $skill->effective->path,
         FALSE,
         FALSE,
         0,

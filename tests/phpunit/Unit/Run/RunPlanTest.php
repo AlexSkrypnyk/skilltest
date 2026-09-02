@@ -58,6 +58,21 @@ final class RunPlanTest extends TestCase {
     $this->assertSame(['hooks.reject-push (2 case(s))'], $plan['hooks']);
   }
 
+  public function testSkillWithoutEvalIsPlannedWithoutTheCoherenceCheck(): void {
+    $config = new LoadedConfig(RepoConfig::fromArray([]), [], '', [$this->skill('skills/alpha', [])], [$this->skillWithoutEval('skills/orphan')]);
+
+    $plan = (new RunPlan($config, RunSelection::create([], NULL, NULL)))->describe();
+
+    $this->assertSame(['alpha', 'orphan'], array_column($plan['skills'], 'skill'));
+
+    $orphan = $plan['skills'][1]['groups'];
+    $this->assertContains('structure.frontmatter', $orphan['structure']);
+    $this->assertNotContains('structure.contract-coherent', $orphan['structure']);
+    $this->assertContains('structure.contract-coherent', $plan['skills'][0]['groups']['structure']);
+    $this->assertContains('security.curl-pipe-shell', $orphan['security']);
+    $this->assertSame(['(no transcript fixture declared)'], $orphan['transcript']);
+  }
+
   public function testCommandRefsCheckListedWhenResolveConfigured(): void {
     $config = $this->config(['commands' => ['resolve' => ['binary' => 'bin/broker']]]);
 
@@ -164,7 +179,22 @@ final class RunPlanTest extends TestCase {
   protected function skill(string $dir, array $eval): LoadedSkill {
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), $eval, [], basename($dir), $dir);
 
-    return new LoadedSkill($dir . '/eval.yaml', $eval, $effective);
+    return new LoadedSkill($dir . '/eval.yaml', $eval, $effective, $dir);
+  }
+
+  /**
+   * Builds a loaded skill for a directory that ships no `eval.yaml`.
+   *
+   * @param string $dir
+   *   The skill directory, relative to the root.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
+   *   The loaded skill.
+   */
+  protected function skillWithoutEval(string $dir): LoadedSkill {
+    $effective = EffectiveConfig::resolve(RepoConfig::fromArray([]), [], [], basename($dir), $dir);
+
+    return new LoadedSkill('', [], $effective, $dir);
   }
 
 }

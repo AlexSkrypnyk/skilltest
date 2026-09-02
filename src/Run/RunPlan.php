@@ -48,7 +48,7 @@ final readonly class RunPlan {
     return [
       'groups' => $groups,
       'coverage' => $this->selection->coverageGateRuns(),
-      'skills' => array_values(array_map($this->skillPlan(...), $this->loadedConfig->skills)),
+      'skills' => array_values(array_map($this->skillPlan(...), $this->loadedConfig->allSkills())),
       'hooks' => $this->selection->runs(RunSelection::GROUP_HOOKS) ? $this->hookLines() : [],
     ];
   }
@@ -83,9 +83,8 @@ final readonly class RunPlan {
   /**
    * Plans the structure check lines for one skill.
    *
-   * Mirrors the checker's own planning: the command-reference check is listed
-   * only when `commands.resolve` is configured, and a suppressed check is
-   * named with its written reason.
+   * Asks the checker which checks apply so the plan cannot drift from the run,
+   * and names a suppressed check with its written reason.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
    *   The loaded skill.
@@ -94,12 +93,7 @@ final readonly class RunPlan {
    *   The planned lines.
    */
   protected function structureLines(LoadedSkill $skill): array {
-    $checks = StructureChecker::CHECKS;
-
-    if ($this->loadedConfig->repo->commandResolve === []) {
-      $checks = array_values(array_filter($checks, static fn(string $check): bool => $check !== StructureChecker::CHECK_COMMAND_REFS_RESOLVE));
-    }
-
+    $checks = StructureChecker::plannedChecks($this->loadedConfig->repo->commandResolve !== [], $skill->hasEval());
     $suppress = Data::toStringMap(Data::get($skill->effective->structure, 'suppress'));
     $lines = [];
 

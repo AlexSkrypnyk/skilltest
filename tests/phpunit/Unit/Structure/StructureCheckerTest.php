@@ -417,7 +417,60 @@ final class StructureCheckerTest extends TestCase {
     $results = (new StructureChecker($root))->check(new LoadedConfig(RepoConfig::fromArray([]), [], '', $skills, []));
     $named = array_values(array_filter($results, static fn(StructureResult $result): bool => $result->check === StructureChecker::CHECK_FRONTMATTER));
 
-    $this->assertSame(['foo', 'bar'], array_map(static fn(StructureResult $result): string => $result->skill, $named));
+    $this->assertSame(['bar', 'foo'], array_map(static fn(StructureResult $result): string => $result->skill, $named));
+  }
+
+  public function testSkillWithoutEvalRunsEveryCheckButCoherence(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['bare' => ['SKILL.md' => "---\nname: bare\ndescription: A clean well-formed skill for tests.\n---\n# Body\n"]],
+    ])->url();
+
+    $config = new LoadedConfig(RepoConfig::fromArray([]), [], '', [], [$this->skillWithoutEval($root, 'skills/bare')]);
+    $results = (new StructureChecker($root))->check($config);
+
+    $this->assertSame([
+      StructureChecker::CHECK_FRONTMATTER,
+      StructureChecker::CHECK_NAME_MATCHES_DIR,
+      StructureChecker::CHECK_DESCRIPTION_LENGTH,
+      StructureChecker::CHECK_ALLOWED_TOOLS_DECLARED,
+      StructureChecker::CHECK_NO_UNRESTRICTED_BASH,
+      StructureChecker::CHECK_NO_PRE_MODEL_EXEC,
+      StructureChecker::CHECK_FILES_EXIST,
+      StructureChecker::CHECK_TOKEN_BUDGET,
+      StructureChecker::CHECK_ADVISORY,
+    ], array_map(static fn(StructureResult $result): string => $result->check, $results));
+
+    foreach ($results as $result) {
+      $this->assertSame(StructureResult::PASS, $result->status, $result->check . ': ' . $result->message);
+    }
+  }
+
+  public function testSkillWithoutEvalStillReportsCheckFailures(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['bare' => ['SKILL.md' => "no frontmatter here\n"]],
+    ])->url();
+
+    $config = new LoadedConfig(RepoConfig::fromArray([]), [], '', [], [$this->skillWithoutEval($root, 'skills/bare')]);
+    $results = (new StructureChecker($root))->check($config);
+    $frontmatter = $this->only($results, StructureChecker::CHECK_FRONTMATTER);
+
+    $this->assertSame(StructureResult::FAIL, $frontmatter->status);
+    $this->assertSame('bare', $frontmatter->skill);
+    $this->assertSame('skills/bare/SKILL.md', $frontmatter->file);
+  }
+
+  public function testCommandRefsCheckStillRunsWithoutAnEval(): void {
+    $root = vfsStream::setup('root', NULL, [
+      'skills' => ['bare' => ['SKILL.md' => "---\nname: bare\ndescription: A clean well-formed skill for tests.\n---\nRun `broker ghost` now.\n"]],
+    ])->url();
+
+    $repo = ['commands' => ['resolve' => ['binary' => 'bin/broker']]];
+    $config = new LoadedConfig(RepoConfig::fromArray($repo), $repo, $root . '/skilltest.yml', [], [$this->skillWithoutEval($root, 'skills/bare', $repo)]);
+    $results = (new StructureChecker($root, static fn(): array => [0, "build\n"]))->check($config);
+    $refs = $this->only($results, StructureChecker::CHECK_COMMAND_REFS_RESOLVE);
+
+    $this->assertSame(StructureResult::FAIL, $refs->status);
+    $this->assertStringContainsString("'ghost' is not a command", $refs->message);
   }
 
   /**
@@ -473,10 +526,29 @@ final class StructureCheckerTest extends TestCase {
    *   The loaded skill.
    */
   protected function skill(string $root, string $dir, array $eval, array $repo = []): LoadedSkill {
-    $file = $root . '/' . $dir . '/eval.yaml';
+    $absolute_dir = $root . '/' . $dir;
     $effective = EffectiveConfig::resolve(RepoConfig::fromArray($repo), $eval, [], basename($dir), $dir);
 
-    return new LoadedSkill($file, $eval, $effective);
+    return new LoadedSkill($absolute_dir . '/eval.yaml', $eval, $effective, $absolute_dir);
+  }
+
+  /**
+   * Builds a loaded skill for a directory that ships no `eval.yaml`.
+   *
+   * @param string $root
+   *   The repository root URL.
+   * @param string $dir
+   *   The skill directory, relative to the root.
+   * @param array<string, mixed> $repo
+   *   The repo config data.
+   *
+   * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill
+   *   The loaded skill.
+   */
+  protected function skillWithoutEval(string $root, string $dir, array $repo = []): LoadedSkill {
+    $effective = EffectiveConfig::resolve(RepoConfig::fromArray($repo), [], [], basename($dir), $dir);
+
+    return new LoadedSkill('', [], $effective, $root . '/' . $dir);
   }
 
   /**
