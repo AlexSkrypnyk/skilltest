@@ -9,13 +9,11 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * The one-shot `claude -p` prompt seam.
  *
- * A single, stubbable place to spend a model turn: `init --ai` drafts an
- * `eval.yaml` through it, and the same seam backs the live llm runner. The
- * prompt is passed to `claude -p` and the model's stdout is returned verbatim;
- * a non-zero exit (an unauthenticated or absent CLI, a timeout) yields NULL so
- * the caller can fall back rather than emit half a result. Process execution is
- * funnelled through one injectable runner so callers are testable without
- * spawning a process or holding real credentials.
+ * The prompt is passed to `claude -p` and the model's stdout is returned
+ * verbatim. A non-zero exit - an unauthenticated or absent CLI, or a timeout
+ * - yields NULL rather than a partial result. Process execution goes through
+ * one injectable runner, so a test needs neither a spawned process nor real
+ * credentials.
  */
 final readonly class PromptRunner {
 
@@ -62,9 +60,8 @@ final readonly class PromptRunner {
    *   The prompt handed to the agent.
    *
    * @return string|null
-   *   The captured stdout on success, or NULL when the agent exits non-zero
-   *   (including a timeout) so the caller can fall back to a deterministic
-   *   path.
+   *   The captured stdout on success, or NULL when the agent exits non-zero,
+   *   including a timeout.
    */
   public function run(string $prompt): ?string {
     $command = sprintf('%s -p %s', $this->binary, escapeshellarg($prompt));
