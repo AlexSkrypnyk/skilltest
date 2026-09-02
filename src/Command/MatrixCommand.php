@@ -160,9 +160,9 @@ class MatrixCommand extends Command {
     $stop_at_pass = (bool) $input->getOption('stop-at-pass');
 
     try {
-      $host = new HostEnvironment($root, $parallel, $this->timeout());
+      $runtime = new HostEnvironment($root, $parallel, $this->timeout());
       $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
-      $report = (new LlmSuite($root, $binary, $host, $lifecycle, $parallel, $this->timeout()))->run($filtered, $task_globs, $stop_at_pass);
+      $report = (new LlmSuite($root, $binary, $runtime, $lifecycle, $parallel, $this->timeout()))->run($filtered, $task_globs, $stop_at_pass);
     }
     catch (ConfigException $config_exception) {
       return $this->reportErrors($output, $stderr, $json, [$this->toMessage($config_exception)]);

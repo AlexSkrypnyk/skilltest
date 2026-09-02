@@ -134,7 +134,7 @@ class LlmCommand extends Command {
     try {
       if ($environment === 'docker') {
         $docker = new DockerEnvironment($root, $parallel, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map, keepWorkspaces: $keep);
-        $environment_impl = $docker;
+        $runtime = $docker;
         // The agent runs inside the container, so the suite invokes the
         // image's own `claude`. Lifecycle hooks share the trial's isolation;
         // a hook with `on-host` runs on the host instead.
@@ -142,14 +142,14 @@ class LlmCommand extends Command {
         $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr), containerRunner: $docker->hookRunner());
       }
       else {
-        $environment_impl = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: $keep);
+        $runtime = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: $keep);
         $binary = (string) $preflight->binary();
         $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
       }
 
-      $report = (new LlmSuite($root, $binary, $environment_impl, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
+      $report = (new LlmSuite($root, $binary, $runtime, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
 
-      foreach ($environment_impl->keptWorkspaces() as $path) {
+      foreach ($runtime->keptWorkspaces() as $path) {
         $stderr->writeln(sprintf('workspace preserved: %s', $path));
       }
     }
