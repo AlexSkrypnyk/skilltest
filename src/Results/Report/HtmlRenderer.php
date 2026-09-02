@@ -20,7 +20,7 @@ use AlexSkrypnyk\SkillTest\Results\Metrics;
  * Every value the document carries is escaped, so a skill name or a piece
  * of evidence can never break out of its cell.
  */
-final readonly class HtmlReport {
+final readonly class HtmlRenderer {
 
   /**
    * The inlined stylesheet, kept free of any external reference.
