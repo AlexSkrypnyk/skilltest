@@ -1,8 +1,15 @@
 #!/usr/bin/env php
 <?php
 
+/**
+ * @file
+ * Console entry point that locates the autoloader and boots the application.
+ */
+
+declare(strict_types=1);
+
 foreach ([$GLOBALS['_composer_autoload_path'] ?? NULL, __DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php'] as $file) {
-  if ($file && file_exists($file)) {
+  if (is_string($file) && file_exists($file)) {
     require_once $file;
     unset($file);
     break;
