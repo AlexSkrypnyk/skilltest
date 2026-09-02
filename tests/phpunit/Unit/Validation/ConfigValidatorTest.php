@@ -357,6 +357,31 @@ final class ConfigValidatorTest extends TestCase {
     yield 'non-integer' => [['instructions' => 'persona', 'max-followups' => 'lots']];
   }
 
+  #[DataProvider('dataProviderSuppressionRequiresReason')]
+  public function testSuppressionRequiresReason(mixed $reason): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['structure' => ['suppress' => ['structure.description-length' => $reason]]]]);
+
+    $rendered = $this->rendered($result->errors());
+    $this->assertContains($root . "/skills/foo/eval.yaml: structure.suppress.structure.description-length - suppression of 'structure.description-length' is missing a reason.", $rendered);
+  }
+
+  public static function dataProviderSuppressionRequiresReason(): \Iterator {
+    yield 'empty' => [''];
+    yield 'blank' => ['   '];
+    yield 'null' => [NULL];
+    yield 'non-string' => [1];
+  }
+
+  public function testSuppressionWithReasonPasses(): void {
+    $root = $this->root();
+
+    $result = $this->validate($root, [], ['foo' => ['structure' => ['suppress' => ['structure.description-length' => 'the description is deliberately terse.']]]]);
+
+    $this->assertFalse($result->hasErrors());
+  }
+
   /**
    * Sets up a virtual filesystem and returns its root URL.
    *
