@@ -74,6 +74,10 @@ class CoverageCommand extends Command {
 
     $result = (new ConfigValidator($root))->validate($loaded);
 
+    foreach ($result->warnings() as $warning) {
+      $this->stderr($output)->writeln('WARNING ' . $warning->render());
+    }
+
     if ($result->hasErrors()) {
       return $this->reportErrors($output, $format, $result->errors());
     }
