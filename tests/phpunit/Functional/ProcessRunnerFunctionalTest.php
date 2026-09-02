@@ -13,9 +13,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class ProcessRunnerFunctionalTest.
  *
- * Exercises the real process path of the shared runner: captured stdout, a
- * propagated non-zero exit, and termination of a script that outlives its
- * timeout.
+ * Exercises the real process path of the shared runner: captured stdout,
+ * non-zero exit propagation, discarded stderr, and timeout termination. A
+ * command that ignores termination is force-killed.
  */
 #[CoversClass(ProcessRunner::class)]
 #[Group('process')]
@@ -82,6 +82,34 @@ final class ProcessRunnerFunctionalTest extends TestCase {
     [$exit_code] = (new ProcessRunner(0.5))->run('php script.php', $this->workdir);
 
     $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
+  }
+
+  public function testDiscardsStderr(): void {
+    file_put_contents($this->workdir . '/noise.php', "<?php\nfwrite(STDERR, 'boom');\nfwrite(STDOUT, 'clean');\nexit(0);\n");
+
+    [$exit_code, $stdout] = (new ProcessRunner(5.0))->run($this->php('noise.php'), $this->workdir);
+
+    $this->assertSame(0, $exit_code);
+    $this->assertSame('clean', $stdout);
+  }
+
+  public function testForceKillsCommandThatIgnoresTermination(): void {
+    [$exit_code] = (new ProcessRunner(0.3))->run("trap '' TERM; sleep 30", $this->workdir);
+
+    $this->assertSame(ProcessRunner::TIMEOUT_EXIT, $exit_code);
+  }
+
+  /**
+   * Builds a command that runs a script under the current PHP interpreter.
+   *
+   * @param string $script
+   *   The script filename, relative to the working directory.
+   *
+   * @return string
+   *   The escaped command.
+   */
+  protected function php(string $script): string {
+    return escapeshellarg(PHP_BINARY) . ' ' . $script;
   }
 
 }
