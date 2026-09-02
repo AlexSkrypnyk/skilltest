@@ -37,7 +37,7 @@ Trials run in containers:
 - **Prepare once, run many**: the image plus skills plus fixtures common to all trials are baked once per run; each trial then starts a fresh container from the prepared image, so per-trial cost is container start, not image build.
 - **Credentials**: `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` are passed as container env explicitly; nothing else from the host environment crosses in. Results persisted from containerised runs are redacted like all results.
 - **Limits**: per-container CPU and memory limits are configurable (`llm.docker.cpus`, `memory-mb`), and the trial timeout kills the container, not just the process.
-- **No Docker-in-CI tax**: CI guidance is `host` on ephemeral runners and `docker` on developer machines - the same guidance skillgrade ships, because it is correct.
+- **No Docker-in-CI tax**: CI guidance is `host` on ephemeral runners and `docker` on developer machines.
 
 `docker` is the right default when running other people's skills (a skill is arbitrary instructions; the security group scans it statically, but isolation is the runtime defence), when trials must not touch the developer's real config, and when reproducibility across machines matters.
 

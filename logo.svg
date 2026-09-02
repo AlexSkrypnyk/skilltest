@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="skilltest" class="skilltest-logo">
+  <title>skilltest</title>
+  <style>
+    .skilltest-logo { --mark: #23262D; --badge: #52BE6E; --tick: #23262D; }
+    @media (prefers-color-scheme: dark) {
+      .skilltest-logo { --mark: #FFFFFF; --tick: #12151A; }
+    }
+    .skilltest-logo .mark { fill: var(--mark); }
+    .skilltest-logo .badge { fill: var(--badge); }
+    .skilltest-logo .tick { stroke: var(--tick); }
+  </style>
+  <mask id="badge-notch">
+    <rect width="256" height="256" fill="#fff"/>
+    <circle cx="183.7" cy="187.8" r="50.2" fill="#000"/>
+  </mask>
+  <g class="mark" fill="#23262D">
+    <path mask="url(#badge-notch)" d="M128 24Q135.5 120.5 232 128Q135.5 135.5 128 232Q120.5 135.5 24 128Q120.5 120.5 128 24Z"/>
+    <path d="M188.9 31.7Q190.5 52.8 211.6 54.4Q190.5 56 188.9 77.1Q187.3 56 166.2 54.4Q187.3 52.8 188.9 31.7Z"/>
+  </g>
+  <circle class="badge" cx="183.7" cy="187.8" r="44.2" fill="#52BE6E"/>
+  <path class="tick" d="M161.5 188 177.5 204.5 206.5 170.5" fill="none" stroke="#23262D" stroke-width="8.5" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

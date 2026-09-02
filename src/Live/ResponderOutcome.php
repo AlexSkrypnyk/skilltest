@@ -7,13 +7,13 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * How an interactive trial's conversation ended, recorded in the results.
  *
- * The trial-level counterpart to a per-turn {@see ResponderAction}: it is the
- * terminal state the conversation loop reached, and it travels into
- * `results.json` so a reader can tell a clean completion from the two failure
- * shapes the responder exists to surface. {@see Completed} and
- * {@see CapExhausted} both grade the final state; {@see Abstained} and
- * {@see Error} fail the trial with a responder check and never spend a judge
- * token on an incomplete run.
+ * The trial-level counterpart to a per-turn {@see ResponderAction}: the
+ * terminal state the conversation loop reached, written to `results.json` so a
+ * reader can tell a clean completion from the two responder failures.
+ *
+ * {@see Completed} and {@see CapExhausted} both grade the final state;
+ * {@see Abstained} and {@see Error} fail the trial with a responder check and
+ * never spend a judge token on an incomplete run.
  */
 enum ResponderOutcome: string {
 

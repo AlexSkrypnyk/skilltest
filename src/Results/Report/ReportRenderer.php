@@ -11,12 +11,13 @@ use AlexSkrypnyk\SkillTest\Results\Metrics;
 /**
  * Renders a saved results document as a terminal summary.
  *
- * The counterpart to the HTML report for a reader who just wants the shape of a
- * run at the command line: a status line, the headline totals, the ordered
- * failures (each with the evidence needed to act on it), and - when the run
- * carried llm results - the per-skill matrix grid with its minimal-model
- * verdict and the cost totals. Every number is read through `Metrics`, so the
- * summary never disagrees with what the run recorded.
+ * The terminal counterpart to the HTML report. It prints a status line, the
+ * headline totals, and the ordered failures, each with the evidence needed to
+ * act on it. A run that carried llm results also prints the per-skill matrix
+ * grid, its minimal-model verdict, and the cost totals.
+ *
+ * Every number is read through `Metrics`, so the summary never disagrees with
+ * what the run recorded.
  */
 final readonly class ReportRenderer {
 

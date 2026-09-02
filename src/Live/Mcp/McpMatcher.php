@@ -240,7 +240,7 @@ final class McpMatcher {
   }
 
   /**
-   * Converts a nested array to the object graph the schema validator wants.
+   * Converts a nested array to the object graph the schema validator requires.
    *
    * @param mixed $value
    *   The value to convert.

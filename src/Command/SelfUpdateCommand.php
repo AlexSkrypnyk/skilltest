@@ -15,17 +15,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
- * Self-update command.
+ * Replaces the installed executable with the latest verified release.
  *
- * Replaces the installed executable with the latest release after checking
- * its SHA-256 checksum against the published checksums file - a mismatch
- * refuses the swap and touches nothing, so a corrupt or tampered download can
- * never be installed. It runs only from an installed PHAR (a source checkout
- * has nothing to replace) and never runs implicitly. Confirmation is required
- * unless `--yes` is passed, so a scripted upgrade is explicit. The fetcher,
- * runtime form, target path, and current version are injected so the whole
- * flow - refuse, up-to-date, mismatch, confirm, swap - is tested without a
- * network or a real executable.
+ * The download's SHA-256 checksum is compared against the published checksums
+ * file, and a mismatch aborts the swap and leaves the executable unchanged, so
+ * a corrupt or tampered download can never be installed. The command runs only
+ * from an installed PHAR, because a source checkout has nothing to replace, and
+ * never runs implicitly. Confirmation is required unless `--yes` is passed, so
+ * a scripted upgrade is explicit.
+ *
+ * The fetcher, runtime form, target path, and current version are injected, so
+ * the whole flow - refuse, up-to-date, mismatch, confirm, swap - is tested
+ * without a network or a real executable.
  */
 class SelfUpdateCommand extends Command {
 

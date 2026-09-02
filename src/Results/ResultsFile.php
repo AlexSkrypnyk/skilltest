@@ -12,12 +12,12 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * Loads a saved `results.json` for consumption by compare, report, and gate.
  *
  * The read-only counterpart to the migrator's reader gate: it decodes the JSON,
- * narrows it to a mapping, and refuses a document whose schema major this tool
- * cannot read, pointing the caller at `skilltest migrate`. It never rewrites -
- * a stale-major file is a hard error here, because a consumer cannot reason
- * about a shape it does not understand. A same-major minor difference is read,
- * because unknown keys are permitted by policy and the accessors degrade
- * gracefully on a missing one.
+ * narrows it to a mapping, and rejects a document whose schema major this tool
+ * cannot read, pointing the caller at `skilltest migrate`. It never rewrites,
+ * so a stale-major file is a hard error here rather than a silent upgrade.
+ *
+ * A same-major minor difference is read, because unknown keys are permitted by
+ * policy and the accessors degrade gracefully on a missing one.
  */
 final readonly class ResultsFile {
 
@@ -63,7 +63,7 @@ final readonly class ResultsFile {
   }
 
   /**
-   * Refuses a document whose schema major this tool cannot read.
+   * Rejects a document whose schema major this tool cannot read.
    *
    * @param array<string, mixed> $document
    *   The decoded document.

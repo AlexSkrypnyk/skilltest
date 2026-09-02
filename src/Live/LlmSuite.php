@@ -26,19 +26,22 @@ use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
  *
  * For every selected skill, task, and model this assembles a fresh workspace
  * per trial, runs the skill headlessly, and grades the live transcript against
- * the identical contract the deterministic suite asserts - so one declaration
- * is enforced both from the recorded fixture on every push and behaviourally
- * from live runs. Trials for a model run through a bounded worker pool so
- * `--parallel` shortens wall-clock without changing the verdict, and every
- * workspace is torn down whether its trial passed, failed, or threw. A trial
- * passes only when every contract and custom check passes and the agent exited
- * cleanly within its timeout; a task passes on a model when its pass rate meets
- * the threshold, with no retries to mask a flaky skill. Trials run through an
- * injected {@see EnvironmentInterface} - where a trial runs and what it can
- * touch, never what passing means - and a {@see Lifecycle} brackets the run
- * and every trial with deterministic setup and teardown hooks; both, and the
- * check seam, are injectable so the whole orchestration is testable without a
- * real agent.
+ * the identical contract the deterministic suite asserts. One declaration is
+ * therefore enforced both from the recorded fixture on every push and
+ * behaviourally from live runs.
+ *
+ * Trials for a model run through a bounded worker pool, so `--parallel`
+ * shortens wall-clock without changing the verdict, and every workspace is torn
+ * down whether its trial passed, failed, or threw. A trial passes only when
+ * every contract and custom check passes and the agent exited cleanly within
+ * its timeout. A task passes on a model when its pass rate meets the threshold,
+ * with no retries to mask a flaky skill.
+ *
+ * Trials run through an injected {@see EnvironmentInterface}, which decides
+ * where a trial runs and what it can touch, never what passing means. A
+ * {@see Lifecycle} brackets the run and every trial with deterministic setup
+ * and teardown hooks. Both, and the check seam, are injectable so the whole
+ * orchestration is testable without a real agent.
  */
 final readonly class LlmSuite {
 
@@ -604,7 +607,7 @@ final readonly class LlmSuite {
    *
    * Each mocked server's log becomes an artifact keyed by its document-relative
    * path, and every unmatched or unknown call recorded in it folds in a failing
-   * check - so an agent that drifts onto an unmocked path fails the trial
+   * check. An agent that takes an unmocked path therefore fails the trial
    * deterministically, naming the tool and the closest fixture, regardless of
    * how the agent itself reacted to the mock's error.
    *
