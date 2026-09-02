@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
 use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\DockerConfig;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**

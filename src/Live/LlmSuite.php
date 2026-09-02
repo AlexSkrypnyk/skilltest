@@ -21,6 +21,7 @@ use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMock;
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
 use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
+use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 
 /**
  * Runs the live llm suite: workspaces, headless trials, and grading.

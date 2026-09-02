@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 
 /**
  * Runs trials directly on the host machine.
