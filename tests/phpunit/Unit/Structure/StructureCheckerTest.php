@@ -445,7 +445,7 @@ final class StructureCheckerTest extends TestCase {
     }
   }
 
-  public function testSkillWithoutEvalStillFailsAFailingCheck(): void {
+  public function testSkillWithoutEvalStillReportsCheckFailures(): void {
     $root = vfsStream::setup('root', NULL, [
       'skills' => ['bare' => ['SKILL.md' => "no frontmatter here\n"]],
     ])->url();
@@ -459,7 +459,7 @@ final class StructureCheckerTest extends TestCase {
     $this->assertSame('skills/bare/SKILL.md', $frontmatter->file);
   }
 
-  public function testCommandRefsCheckStillRunsForASkillWithoutEval(): void {
+  public function testCommandRefsCheckStillRunsWithoutAnEval(): void {
     $root = vfsStream::setup('root', NULL, [
       'skills' => ['bare' => ['SKILL.md' => "---\nname: bare\ndescription: A clean well-formed skill for tests.\n---\nRun `broker ghost` now.\n"]],
     ])->url();

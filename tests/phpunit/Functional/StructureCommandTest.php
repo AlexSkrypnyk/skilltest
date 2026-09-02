@@ -336,9 +336,20 @@ final class StructureCommandTest extends TestCase {
     $skills = [];
 
     foreach (is_array($results) ? $results : [] as $result) {
-      if (is_array($result) && ($result['check'] ?? NULL) === $check) {
-        $skills[] = (string) $result['skill'];
+      if (!is_array($result)) {
+        continue;
       }
+      if (($result['check'] ?? NULL) !== $check) {
+        continue;
+      }
+
+      $skill = $result['skill'] ?? NULL;
+
+      if (!is_string($skill)) {
+        $this->fail('Expected a skill name on the ' . $check . ' result.');
+      }
+
+      $skills[] = $skill;
     }
 
     return $skills;
