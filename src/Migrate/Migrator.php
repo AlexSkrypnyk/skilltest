@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Migrate;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
@@ -96,14 +97,14 @@ final readonly class Migrator {
    *   When the file cannot be read.
    */
   protected function read(string $file): string {
-    $contents = @file_get_contents($file);
-
+    try {
+      return File::read($file);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       throw new ConfigException('unable to read file.', $file);
     }
     // @codeCoverageIgnoreEnd
-    return $contents;
   }
 
   /**
@@ -222,7 +223,7 @@ final readonly class Migrator {
       ? json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_PRESERVE_ZERO_FRACTION) . "\n"
       : Yaml::dump($data, self::YAML_INLINE_DEPTH, 2);
 
-    file_put_contents($file, $encoded);
+    File::dump($file, $encoded);
   }
 
 }

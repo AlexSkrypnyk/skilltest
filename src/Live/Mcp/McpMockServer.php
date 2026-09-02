@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live\Mcp;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Version;
 
@@ -302,11 +303,7 @@ final class McpMockServer {
       return;
     }
 
-    $dir = dirname($path);
-
-    if (!is_dir($dir)) {
-      mkdir($dir, 0777, TRUE);
-    }
+    File::mkdir(dirname($path));
 
     file_put_contents($path, json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND);
   }

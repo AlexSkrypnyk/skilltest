@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 
@@ -95,14 +96,14 @@ final readonly class TrialCache {
       return NULL;
     }
 
-    $contents = @file_get_contents($file);
-
-    if ($contents === FALSE) {
-      // @codeCoverageIgnoreStart
-      return NULL;
-      // @codeCoverageIgnoreEnd
+    try {
+      $contents = File::read($file);
     }
-
+    // @codeCoverageIgnoreStart
+    catch (\Throwable) {
+      return NULL;
+    }
+    // @codeCoverageIgnoreEnd
     $rows = Data::toArrayList(json_decode($contents, TRUE));
     $trials = array_map(TrialResult::fromCache(...), $rows);
 
@@ -118,12 +119,17 @@ final readonly class TrialCache {
    *   The graded trials to cache.
    */
   public function put(string $key, array $trials): void {
-    if (!is_dir($this->dir)) {
-      @mkdir($this->dir, 0777, TRUE);
-    }
-
     $rows = array_map(static fn(TrialResult $trial): array => $trial->toCache(), $trials);
-    @file_put_contents($this->file($key), json_encode($rows, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+
+    try {
+      File::dump($this->file($key), json_encode($rows, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+    }
+    // @codeCoverageIgnoreStart
+    catch (\Throwable) {
+      // A cache write is best-effort: the trials are already graded, so a
+      // failure here costs a re-run, never a result.
+    }
+    // @codeCoverageIgnoreEnd
   }
 
   /**
@@ -137,7 +143,7 @@ final readonly class TrialCache {
 
     foreach (glob($this->dir . '/*.json') ?: [] as $file) {
       if (is_file($file)) {
-        unlink($file);
+        File::remove($file);
         $count++;
       }
     }

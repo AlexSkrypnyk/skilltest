@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Grade;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
@@ -268,7 +269,7 @@ final readonly class Grader {
       return $stored;
     }
 
-    $contents = is_file($path) ? (string) file_get_contents($path) : '';
+    $contents = is_file($path) ? File::read($path) : '';
     $model = $effective->modelAliases[$effective->judgeModel] ?? $effective->judgeModel;
 
     try {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Contract;
 
+use AlexSkrypnyk\File\File;
+
 /**
  * A parsed agent transcript: the ordered tool-use record of one headless run.
  *
@@ -75,9 +77,14 @@ final class Transcript {
       return new self('');
     }
 
-    $contents = file_get_contents($path);
-
-    return new self($contents === FALSE ? '' : $contents);
+    try {
+      return new self(File::read($path));
+    }
+    // @codeCoverageIgnoreStart
+    catch (\Throwable) {
+      return new self('');
+    }
+    // @codeCoverageIgnoreEnd
   }
 
   /**

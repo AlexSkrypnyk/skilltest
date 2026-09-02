@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Security;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
@@ -142,10 +143,11 @@ final readonly class SecurityScanner {
    *   The findings for this file.
    */
   protected function scanFile(string $absolute, string $relative, array $tokens): array {
-    $contents = @file_get_contents($absolute);
-
+    try {
+      $contents = File::read($absolute);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       return [];
     }
     // @codeCoverageIgnoreEnd

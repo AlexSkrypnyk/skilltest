@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live\Mcp;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
@@ -284,7 +285,7 @@ final readonly class McpMock {
       throw new ConfigException(sprintf("mcp-mocks response file '%s' for '%s/%s' was not found.", $file, $server, $tool), $config_file, self::POINTER);
     }
 
-    return (string) file_get_contents($path);
+    return File::read($path);
   }
 
   /**

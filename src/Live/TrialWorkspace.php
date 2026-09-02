@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
@@ -157,11 +158,11 @@ final class TrialWorkspace {
    *   When a declared fixture is missing or a repo worktree cannot be created.
    */
   public function assemble(): void {
-    $this->makeDir($this->path);
+    File::mkdir($this->path);
     $this->copyFixture();
     $this->materialiseRepos();
     $this->installSkill();
-    $this->makeDir($this->agentDir());
+    File::mkdir($this->agentDir());
   }
 
   /**
@@ -172,7 +173,7 @@ final class TrialWorkspace {
       ($this->git)('git worktree remove --force ' . escapeshellarg($dest), $source);
     }
 
-    self::removeTree($this->path);
+    File::rmdir($this->path);
 
     foreach ($this->worktrees as [$source]) {
       ($this->git)('git worktree prune', $source);
@@ -195,13 +196,13 @@ final class TrialWorkspace {
     $source = str_starts_with($fixture, '/') ? $fixture : $this->root . '/' . $this->skillPath . '/' . $fixture;
 
     if (is_dir($source)) {
-      self::copyTree($source, $this->path);
+      File::copy($source, $this->path, copy_empty_dirs: TRUE);
 
       return;
     }
 
     if (is_file($source)) {
-      copy($source, $this->path . '/' . basename($source));
+      File::copy($source, $this->path . '/' . basename($source));
 
       return;
     }
@@ -219,7 +220,7 @@ final class TrialWorkspace {
     foreach ($this->inputs['repos'] as $repo) {
       $source = str_starts_with($repo['source'], '/') ? $repo['source'] : $this->root . '/' . $repo['source'];
       $dest = $this->path . '/' . $repo['dest'];
-      $this->makeDir(dirname($dest));
+      File::mkdir(dirname($dest));
 
       $command = sprintf('git worktree add --detach %s %s', escapeshellarg($dest), escapeshellarg($repo['commit']));
       [$exit_code] = ($this->git)($command, $source);
@@ -238,7 +239,7 @@ final class TrialWorkspace {
    * Installs the skill under test into the workspace discovery path.
    */
   protected function installSkill(): void {
-    self::copyTree($this->root . '/' . $this->skillPath, $this->path . '/' . self::SKILLS_PATH . '/' . $this->skillName);
+    File::copy($this->root . '/' . $this->skillPath, $this->path . '/' . self::SKILLS_PATH . '/' . $this->skillName, copy_empty_dirs: TRUE);
   }
 
   /**
@@ -260,83 +261,6 @@ final class TrialWorkspace {
     if (str_starts_with($value, '/') || in_array('..', $segments, TRUE)) {
       throw new ConfigException(sprintf('%s must be a relative path without a ".." segment.', $label), $config_file, 'llm.tasks.inputs');
     }
-  }
-
-  /**
-   * Creates a directory and its parents when it does not already exist.
-   *
-   * @param string $dir
-   *   The directory to create.
-   */
-  protected function makeDir(string $dir): void {
-    if (!is_dir($dir)) {
-      mkdir($dir, 0777, TRUE);
-    }
-  }
-
-  /**
-   * Recursively copies a directory tree into a destination directory.
-   *
-   * @param string $source
-   *   The source directory.
-   * @param string $dest
-   *   The destination directory, created if absent.
-   */
-  protected static function copyTree(string $source, string $dest): void {
-    if (!is_dir($dest)) {
-      mkdir($dest, 0777, TRUE);
-    }
-
-    foreach (scandir($source) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $from = $source . '/' . $item;
-      $to = $dest . '/' . $item;
-
-      if (is_dir($from)) {
-        self::copyTree($from, $to);
-
-        continue;
-      }
-
-      copy($from, $to);
-    }
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected static function removeTree(string $dir): void {
-    if (!is_dir($dir)) {
-      return;
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        self::removeTree($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

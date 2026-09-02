@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Update;
 
+use AlexSkrypnyk\File\File;
+
 /**
  * The once-a-day, non-blocking "a newer release exists" notice.
  *
@@ -154,14 +156,14 @@ final readonly class UpdateNotifier {
       return NULL;
     }
 
-    $contents = @file_get_contents($file);
-
-    if ($contents === FALSE) {
-      // @codeCoverageIgnoreStart
-      return NULL;
-      // @codeCoverageIgnoreEnd
+    try {
+      $contents = File::read($file);
     }
-
+    // @codeCoverageIgnoreStart
+    catch (\Throwable) {
+      return NULL;
+    }
+    // @codeCoverageIgnoreEnd
     $decoded = json_decode($contents, TRUE);
 
     if (!is_array($decoded)) {
@@ -187,13 +189,15 @@ final readonly class UpdateNotifier {
    *   The record to persist.
    */
   protected function writeCache(string $file, array $record): void {
-    $dir = dirname($file);
-
-    if (!is_dir($dir)) {
-      @mkdir($dir, 0777, TRUE);
+    try {
+      File::dump($file, json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
     }
-
-    @file_put_contents($file, json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+    // @codeCoverageIgnoreStart
+    catch (\Throwable) {
+      // The notice is a convenience, so a cache write that fails costs one
+      // extra network read tomorrow rather than an error today.
+    }
+    // @codeCoverageIgnoreEnd
   }
 
   /**

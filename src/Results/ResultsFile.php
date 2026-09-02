@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Results;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
@@ -39,10 +40,11 @@ final readonly class ResultsFile {
       throw new ConfigException('results file not found.', $file);
     }
 
-    $contents = @file_get_contents($file);
-
+    try {
+      $contents = File::read($file);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       throw new ConfigException('unable to read results file.', $file);
     }
     // @codeCoverageIgnoreEnd

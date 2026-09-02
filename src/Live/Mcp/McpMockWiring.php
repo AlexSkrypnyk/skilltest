@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live\Mcp;
 
+use AlexSkrypnyk\File\File;
+
 /**
  * Materialises a task's MCP mocks into a trial workspace and reads their logs.
  *
@@ -49,11 +51,7 @@ final class McpMockWiring {
     }
 
     $mocks_dir = rtrim($workspace, '/') . '/' . self::MOCKS_DIR;
-
-    if (!is_dir($mocks_dir)) {
-      mkdir($mocks_dir, 0777, TRUE);
-    }
-
+    File::mkdir($mocks_dir);
     $config = [];
 
     foreach ($servers as $server) {
@@ -62,12 +60,12 @@ final class McpMockWiring {
       $log = $mocks_dir . '/' . $slug . '.log.jsonl';
       $definition = $mocks_dir . '/' . $slug . '.json';
 
-      file_put_contents($definition, self::encode(['server' => $name, 'log' => $log, 'tools' => $server['tools']]));
+      File::dump($definition, self::encode(['server' => $name, 'log' => $log, 'tools' => $server['tools']]));
       $config[$name] = ['command' => $command[0], 'args' => [$command[1], 'mcp-serve', $definition]];
     }
 
     $config_path = rtrim($workspace, '/') . '/' . self::MCP_CONFIG;
-    file_put_contents($config_path, self::encode(['mcpServers' => $config]));
+    File::dump($config_path, self::encode(['mcpServers' => $config]));
 
     return $config_path;
   }
@@ -93,7 +91,7 @@ final class McpMockWiring {
       $log = rtrim($workspace, '/') . '/' . self::MOCKS_DIR . '/' . self::slug($server['server']) . '.log.jsonl';
 
       if (is_file($log)) {
-        $logs[$server['server']] = (string) file_get_contents($log);
+        $logs[$server['server']] = File::read($log);
       }
     }
 
