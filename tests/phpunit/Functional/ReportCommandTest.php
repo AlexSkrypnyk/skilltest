@@ -105,13 +105,13 @@ final class ReportCommandTest extends TestCase {
     $this->assertStringContainsString('All 1 check(s) passed', $html);
   }
 
-  public function testMissingFileIsError(): void {
+  public function testMissingFileIsConfigError(): void {
     $output = $this->runReport(['file' => $this->root . '/absent.json'], 2);
 
     $this->assertStringContainsString('results file not found', $output);
   }
 
-  public function testEmptyFileArgumentIsError(): void {
+  public function testEmptyFileArgumentIsConfigError(): void {
     $output = $this->runReport(['file' => ''], 2);
 
     $this->assertStringContainsString('report expects a results file path', $output);

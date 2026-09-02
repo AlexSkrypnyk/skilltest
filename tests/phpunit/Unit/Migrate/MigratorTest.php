@@ -131,14 +131,14 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testMissingFileIsError(): void {
+  public function testMissingFileIsConfigError(): void {
     $this->expectException(ConfigException::class);
     $this->expectExceptionMessage('file not found');
 
     (new Migrator())->migrate($this->root . '/absent.yaml');
   }
 
-  public function testMalformedYamlIsError(): void {
+  public function testMalformedYamlIsConfigError(): void {
     $file = $this->write('eval.yaml', "version: \"1\"\n\tbad: indentation\n");
 
     $this->expectException(ConfigException::class);
@@ -147,7 +147,7 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testMalformedJsonIsError(): void {
+  public function testMalformedJsonIsConfigError(): void {
     $file = $this->write('results.json', '{not json');
 
     $this->expectException(ConfigException::class);
@@ -156,7 +156,7 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testNonMappingYamlIsError(): void {
+  public function testNonMappingYamlIsConfigError(): void {
     $file = $this->write('eval.yaml', "- one\n- two\n");
 
     $this->expectException(ConfigException::class);
@@ -165,7 +165,7 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testNonMappingJsonIsError(): void {
+  public function testNonMappingJsonIsConfigError(): void {
     $file = $this->write('results.json', '[1, 2, 3]');
 
     $this->expectException(ConfigException::class);
@@ -174,7 +174,7 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testNonScalarVersionIsError(): void {
+  public function testNonScalarVersionIsConfigError(): void {
     $file = $this->write('eval.yaml', "version:\n  major: 1\n");
 
     $this->expectException(ConfigException::class);
@@ -183,7 +183,7 @@ final class MigratorTest extends TestCase {
     (new Migrator())->migrate($file);
   }
 
-  public function testUnparseableVersionIsError(): void {
+  public function testUnparseableVersionIsConfigError(): void {
     $file = $this->write('eval.yaml', "version: \"not-a-version\"\n");
 
     $this->expectException(ConfigException::class);

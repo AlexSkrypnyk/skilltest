@@ -67,7 +67,7 @@ final class CacheCommandTest extends TestCase {
     $this->assertStringContainsString('cleared 0 cached trial result(s).', $output);
   }
 
-  public function testUnknownActionIsError(): void {
+  public function testUnknownActionIsConfigError(): void {
     $output = $this->runCache(['action' => 'purge', '--dir' => $this->tempDir], 2);
 
     $this->assertStringContainsString('unknown action; expected one of: clear', $output);

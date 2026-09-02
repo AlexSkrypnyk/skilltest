@@ -176,7 +176,7 @@ final class StructureCommandTest extends TestCase {
     $this->assertStringContainsString('structure.description-length', $output);
   }
 
-  public function testUnknownFormatIsError(): void {
+  public function testUnknownFormatIsConfigError(): void {
     $root = vfsStream::setup('root', NULL, ['skills' => []]);
 
     $output = $this->runStructure(['--dir' => $root->url(), '--format' => 'xml'], 2);

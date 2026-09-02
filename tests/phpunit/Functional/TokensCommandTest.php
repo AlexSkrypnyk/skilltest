@@ -136,7 +136,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString('(method: bpe).', $output);
   }
 
-  public function testCountVocabUnreadableIsError(): void {
+  public function testCountVocabUnreadableIsConfigError(): void {
     $root = $this->vfsRoot();
 
     $output = $this->runTokens(['action' => 'count', 'targets' => ['note.md'], '--dir' => $root, '--vocab' => 'absent.tiktoken'], 2);
@@ -160,7 +160,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString('1 file(s),', $output);
   }
 
-  public function testCountMissingPathIsError(): void {
+  public function testCountMissingPathIsConfigError(): void {
     $root = $this->vfsRoot();
 
     $output = $this->runTokens(['action' => 'count', 'targets' => ['nowhere.md'], '--dir' => $root], 2);
@@ -168,7 +168,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString("path 'nowhere.md' does not exist", $output);
   }
 
-  public function testCountWithoutPathsIsError(): void {
+  public function testCountWithoutPathsIsConfigError(): void {
     $root = $this->vfsRoot();
 
     $output = $this->runTokens(['action' => 'count', '--dir' => $root], 2);
@@ -287,7 +287,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertSame(['files' => 1, 'changed' => 1, 'new' => 0, 'violations' => 1], $decoded['summary']);
   }
 
-  public function testCompareExplicitUnknownRefIsError(): void {
+  public function testCompareExplicitUnknownRefIsConfigError(): void {
     $root = $this->gitRepo(['skills/foo/SKILL.md' => self::CLEAN_FOO, 'skills/foo/eval.yaml' => "version: \"1\"\n"]);
 
     $output = $this->runTokens(['action' => 'compare', 'targets' => ['bogus-ref'], '--dir' => $root], 2);
@@ -295,7 +295,7 @@ final class TokensCommandTest extends TestCase {
     $this->assertStringContainsString("git ref 'bogus-ref' does not resolve", $output);
   }
 
-  public function testCompareWithoutResolvableRefIsError(): void {
+  public function testCompareWithoutResolvableRefIsConfigError(): void {
     $this->tempDir = dirname(__DIR__, 3) . '/.artifacts/tmp/tokenscmd-' . getmypid() . '-' . uniqid();
     mkdir($this->tempDir . '/skills/foo', 0777, TRUE);
     file_put_contents($this->tempDir . '/skills/foo/SKILL.md', self::CLEAN_FOO);

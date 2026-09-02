@@ -67,7 +67,7 @@ final class MigrateCommandTest extends TestCase {
     $this->assertSame('1', $version);
   }
 
-  public function testNewerMajorFileIsError(): void {
+  public function testNewerMajorFileIsConfigError(): void {
     $file = $this->write('eval.yaml', "version: \"2\"\nskill: demo\n");
 
     $output = $this->runMigrate($file, 2);
@@ -75,13 +75,13 @@ final class MigrateCommandTest extends TestCase {
     $this->assertStringContainsString('newer than this tool supports', $output);
   }
 
-  public function testMissingFileIsError(): void {
+  public function testMissingFileIsConfigError(): void {
     $output = $this->runMigrate($this->root . '/absent.yaml', 2);
 
     $this->assertStringContainsString('file not found', $output);
   }
 
-  public function testEmptyFileArgumentIsError(): void {
+  public function testEmptyFileArgumentIsConfigError(): void {
     $output = $this->runMigrate('', 2);
 
     $this->assertStringContainsString('migrate expects a file path', $output);

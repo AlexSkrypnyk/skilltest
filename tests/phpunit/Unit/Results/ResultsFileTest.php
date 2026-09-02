@@ -70,14 +70,14 @@ final class ResultsFileTest extends TestCase {
     $this->assertSame([], ResultsFile::load($file));
   }
 
-  public function testMissingFileIsError(): void {
+  public function testMissingFileIsConfigError(): void {
     $this->expectException(ConfigException::class);
     $this->expectExceptionMessage('results file not found');
 
     ResultsFile::load($this->root . '/absent.json');
   }
 
-  public function testMalformedJsonIsError(): void {
+  public function testMalformedJsonIsConfigError(): void {
     $file = $this->write('results.json', '{not json');
 
     $this->expectException(ConfigException::class);
@@ -86,7 +86,7 @@ final class ResultsFileTest extends TestCase {
     ResultsFile::load($file);
   }
 
-  public function testNonMappingIsError(): void {
+  public function testNonMappingIsConfigError(): void {
     $file = $this->write('results.json', '[1, 2, 3]');
 
     $this->expectException(ConfigException::class);
@@ -95,7 +95,7 @@ final class ResultsFileTest extends TestCase {
     ResultsFile::load($file);
   }
 
-  public function testNonScalarVersionIsError(): void {
+  public function testNonScalarVersionIsConfigError(): void {
     $file = $this->write('results.json', '{"version": {"major": 1}}');
 
     $this->expectException(ConfigException::class);
@@ -104,7 +104,7 @@ final class ResultsFileTest extends TestCase {
     ResultsFile::load($file);
   }
 
-  public function testUnparseableVersionIsError(): void {
+  public function testUnparseableVersionIsConfigError(): void {
     $file = $this->write('results.json', '{"version": "not-a-version"}');
 
     $this->expectException(ConfigException::class);
