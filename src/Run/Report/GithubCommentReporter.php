@@ -23,7 +23,7 @@ final class GithubCommentReporter {
   /**
    * The deterministic groups scanned for failures, in per-skill order.
    */
-  protected const array GROUPS = ['structure', 'security', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * The note appended when the body is truncated to fit the comment limit.
@@ -146,7 +146,7 @@ final class GithubCommentReporter {
     foreach (Data::toArrayList(Data::get($document, 'skills')) as $skill) {
       $name = Data::toStringOrNull(Data::get($skill, 'skill')) ?? '';
 
-      foreach (self::GROUPS as $group) {
+      foreach (self::DETERMINISTIC_GROUPS as $group) {
         foreach (Data::toArrayList(Data::get($skill, 'deterministic', $group)) as $check) {
           $this->collect($failures, $check, $name . '.' . $group);
         }

@@ -53,7 +53,7 @@ final readonly class HtmlReport {
   /**
    * The deterministic groups drilled into per skill, in order.
    */
-  protected const array GROUPS = ['structure', 'security', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * Renders the results document as a complete HTML document.
@@ -251,7 +251,7 @@ final readonly class HtmlReport {
   protected function checkRows(array $skill): array {
     $rows = [];
 
-    foreach (self::GROUPS as $group) {
+    foreach (self::DETERMINISTIC_GROUPS as $group) {
       foreach (Data::toArrayList(Data::get($skill, 'deterministic', $group)) as $check) {
         $detail = Data::toStringOrNull(Data::get($check, 'message')) ?: (Data::toStringOrNull(Data::get($check, 'label')) ?? '');
         $evidence = Data::toStringOrNull(Data::get($check, 'evidence')) ?? '';

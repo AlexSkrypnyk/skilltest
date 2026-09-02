@@ -24,7 +24,7 @@ final class JUnitReporter {
   /**
    * The deterministic groups rendered, in the order they appear per skill.
    */
-  protected const array GROUPS = ['structure', 'security', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * Renders the results document as a JUnit XML string.
@@ -85,7 +85,7 @@ final class JUnitReporter {
   protected function skillCases(\DOMDocument $dom, array $skill, string $name): array {
     $cases = [];
 
-    foreach (self::GROUPS as $group) {
+    foreach (self::DETERMINISTIC_GROUPS as $group) {
       foreach ($this->checkCases($dom, Data::toArrayList(Data::get($skill, 'deterministic', $group)), $name . '.' . $group) as $case) {
         $cases[] = $case;
       }
