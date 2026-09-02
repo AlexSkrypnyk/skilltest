@@ -28,7 +28,6 @@ use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -49,6 +48,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * before any trial runs.
  */
 class RecordCommand extends Command {
+
+  use LiveOptionsTrait;
 
   /**
    * The fixture path used when a skill sets no `deterministic.transcript`.
@@ -83,7 +84,7 @@ class RecordCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $skill_name = $this->stringOption($input, 'skill');
 
@@ -180,28 +181,6 @@ class RecordCommand extends Command {
     }
 
     return $pass ? ExitCode::PASS : ExitCode::FAIL;
-  }
-
-  /**
-   * The process environment as a name-keyed string map.
-   *
-   * @return array<string, string>
-   *   The environment map.
-   */
-  protected function environmentMap(): array {
-    return getenv();
-  }
-
-  /**
-   * Resolves the per-trial timeout from the environment, or the default.
-   *
-   * @return float
-   *   The timeout in seconds.
-   */
-  protected function timeout(): float {
-    $value = getenv(LlmSuite::ENV_TIMEOUT);
-
-    return is_string($value) && is_numeric($value) ? (float) $value : LlmSuite::DEFAULT_TIMEOUT;
   }
 
   /**
@@ -429,21 +408,6 @@ class RecordCommand extends Command {
   }
 
   /**
-   * Renders one failed check as an indented line with its evidence.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $failure
-   *   The failed check.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function failureLine(CheckResult $failure): string {
-    $line = sprintf('  %s FAIL - %s', $failure->id, $failure->message);
-
-    return $failure->evidence === '' ? $line : sprintf('%s [%s]', $line, $failure->evidence);
-  }
-
-  /**
    * Reduces an absolute path under the root to a root-relative one.
    *
    * @param string $root
@@ -475,62 +439,6 @@ class RecordCommand extends Command {
     $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
 
     return ExitCode::CONFIG_ERROR;
-  }
-
-  /**
-   * Converts a thrown configuration error to a reportable message.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
-   *   The thrown error.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Validation\ValidationMessage
-   *   The equivalent validation message.
-   */
-  protected function toMessage(ConfigException $config_exception): ValidationMessage {
-    return ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
-  }
-
-  /**
-   * Reads a string option, returning NULL when it is absent or empty.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   * @param string $name
-   *   The option name.
-   *
-   * @return string|null
-   *   The option value, or NULL when it is unset or blank.
-   */
-  protected function stringOption(InputInterface $input, string $name): ?string {
-    $value = $input->getOption($name);
-
-    return is_string($value) && $value !== '' ? $value : NULL;
   }
 
 }

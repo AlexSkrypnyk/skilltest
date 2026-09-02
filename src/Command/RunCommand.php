@@ -34,7 +34,6 @@ use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -51,6 +50,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * nothing else.
  */
 class RunCommand extends Command {
+
+  use LiveOptionsTrait;
 
   /**
    * Constructs a RunCommand.
@@ -94,7 +95,7 @@ class RunCommand extends Command {
     $started = microtime(TRUE);
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $report_options = $this->reportOptions($input);
     $json = $report_options->json;
@@ -203,8 +204,7 @@ class RunCommand extends Command {
    *   The parsed reporting options, carrying any validation errors.
    */
   protected function reportOptions(InputInterface $input): ReportOptions {
-    $raw_reporters = $input->getOption('reporter');
-    $reporters = array_values(array_filter(is_array($raw_reporters) ? $raw_reporters : [], static fn(mixed $reporter): bool => is_string($reporter) && $reporter !== ''));
+    $reporters = $this->globs($input, 'reporter');
 
     return ReportOptions::parse(
       (bool) $input->getOption('json'),
@@ -310,56 +310,12 @@ class RunCommand extends Command {
    *   When the requested group or check is impossible.
    */
   protected function selection(InputInterface $input): RunSelection {
-    $raw_globs = $input->getOption('skill');
-    $globs = array_values(array_filter(is_array($raw_globs) ? $raw_globs : [], static fn(mixed $glob): bool => is_string($glob) && $glob !== ''));
+    $globs = $this->globs($input, 'skill');
 
     $group = $input->getOption('group');
     $check = $input->getOption('check');
 
     return RunSelection::create($globs, is_string($group) && $group !== '' ? $group : NULL, is_string($check) && $check !== '' ? $check : NULL);
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
-  }
-
-  /**
-   * Reads a string option, returning NULL when it is absent or empty.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   * @param string $name
-   *   The option name.
-   *
-   * @return string|null
-   *   The option value, or NULL when it is unset or blank.
-   */
-  protected function stringOption(InputInterface $input, string $name): ?string {
-    $value = $input->getOption($name);
-
-    return is_string($value) && $value !== '' ? $value : NULL;
   }
 
   /**
@@ -390,57 +346,6 @@ class RunCommand extends Command {
     if ($file !== NULL) {
       $stderr->writeln(sprintf('results written to %s', $writer->writeFile($document, $file)));
     }
-  }
-
-  /**
-   * Converts a thrown configuration error to a reportable message.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
-   *   The thrown error.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Validation\ValidationMessage
-   *   The equivalent validation message.
-   */
-  protected function toMessage(ConfigException $config_exception): ValidationMessage {
-    return ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
-  }
-
-  /**
-   * Reports configuration errors and returns exit 2.
-   *
-   * Human-readable errors are diagnostics, so they go to stderr; under
-   * `--json` the error document is the machine-readable result and goes to
-   * stdout. Both are forced past a quiet verbosity, because an unexplained
-   * exit 2 is not debuggable.
-   *
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   The standard output.
-   * @param \Symfony\Component\Console\Output\OutputInterface $stderr
-   *   The error output.
-   * @param bool $json
-   *   Whether the JSON output contract is in effect.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationMessage[] $errors
-   *   The errors to report.
-   *
-   * @return int
-   *   The config-error exit code.
-   */
-  protected function reportErrors(OutputInterface $output, OutputInterface $stderr, bool $json, array $errors): int {
-    if ($json) {
-      $payload = [
-        'ok' => FALSE,
-        'skills' => [],
-        'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $errors),
-      ];
-      $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
-    }
-    else {
-      foreach ($errors as $error) {
-        $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
-      }
-    }
-
-    return ExitCode::CONFIG_ERROR;
   }
 
   /**
@@ -637,19 +542,6 @@ class RunCommand extends Command {
    */
   protected static function coverageLine(CoverageRow $row): string {
     return sprintf('%s FAIL %s - %s', RunReport::COVERAGE_CHECK, $row->path, RunReport::coverageMessage($row));
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
 }
