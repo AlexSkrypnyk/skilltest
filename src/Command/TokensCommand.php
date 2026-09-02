@@ -36,7 +36,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class TokensCommand extends Command {
 
-  use SharedCommandTrait;
+  use ResultsCommandTrait;
 
   /**
    * The supported actions.
@@ -92,15 +92,15 @@ class TokensCommand extends Command {
     $sort = $input->getOption('sort');
 
     if (!is_string($action) || !in_array($action, self::ACTIONS, TRUE)) {
-      return $this->error($output, sprintf('unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
+      return $this->configError($this->stderr($output), sprintf('unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
     }
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      return $this->error($output, sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      return $this->configError($this->stderr($output), sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
     }
 
     if (!is_string($sort) || !in_array($sort, self::SORTS, TRUE)) {
-      return $this->error($output, sprintf('unknown sort; expected one of: %s.', implode(', ', self::SORTS)));
+      return $this->configError($this->stderr($output), sprintf('unknown sort; expected one of: %s.', implode(', ', self::SORTS)));
     }
 
     try {
@@ -109,7 +109,7 @@ class TokensCommand extends Command {
         : $this->runCompare($input, $output, $root, $format);
     }
     catch (ConfigException $config_exception) {
-      return $this->error($output, $config_exception->getMessage());
+      return $this->configError($this->stderr($output), $config_exception->getMessage());
     }
   }
 
@@ -137,7 +137,7 @@ class TokensCommand extends Command {
     $targets = $this->targets($input);
 
     if ($targets === []) {
-      return $this->error($output, 'tokens count expects at least one path.');
+      return $this->configError($this->stderr($output), 'tokens count expects at least one path.');
     }
 
     $counter = $this->counter($input, $root);
@@ -155,7 +155,7 @@ class TokensCommand extends Command {
       }
 
       if (!is_file($absolute)) {
-        return $this->error($output, sprintf("path '%s' does not exist.", $target));
+        return $this->configError($this->stderr($output), sprintf("path '%s' does not exist.", $target));
       }
 
       $rows[$this->relativePath($root, $absolute)] = $counter->count($this->contents($absolute));
@@ -169,7 +169,7 @@ class TokensCommand extends Command {
         'method' => $counter->method(),
         'files' => array_map(static fn(string $path): array => ['path' => $path, 'tokens' => $rows[$path]], array_keys($rows)),
         'total' => ['files' => count($rows), 'tokens' => array_sum($rows)],
-      ]));
+      ]), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::PASS;
     }
@@ -202,7 +202,7 @@ class TokensCommand extends Command {
     $targets = $this->targets($input);
 
     if (count($targets) > 1) {
-      return $this->error($output, 'tokens compare expects at most one ref.');
+      return $this->configError($this->stderr($output), 'tokens compare expects at most one ref.');
     }
 
     $threshold = $this->threshold($input);
@@ -225,7 +225,7 @@ class TokensCommand extends Command {
         'files' => array_map(static fn(TokenDelta $delta): array => $delta->toArray(), $deltas),
         'violations' => $violations,
         'summary' => $this->compareSummary($deltas, $violations),
-      ]));
+      ]), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderCompareTable($output, $deltas, $violations, $ref, $counter->method());
@@ -584,23 +584,6 @@ class TokensCommand extends Command {
     }
 
     return $rows;
-  }
-
-  /**
-   * Reports one error line and returns the config-error exit code.
-   *
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   The command output.
-   * @param string $message
-   *   The error message.
-   *
-   * @return int
-   *   The config-error exit code.
-   */
-  protected function error(OutputInterface $output, string $message): int {
-    $output->writeln('ERROR ' . $message);
-
-    return ExitCode::CONFIG_ERROR;
   }
 
   /**

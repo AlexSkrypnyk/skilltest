@@ -55,9 +55,10 @@ class SecurityCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
     $format = $input->getOption('format');
+    $stderr = $this->stderr($output);
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      $output->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -85,7 +86,7 @@ class SecurityCommand extends Command {
     $skills = count($loaded->allSkills());
 
     if ($format === 'json') {
-      $output->writeln($this->renderJson($findings, $skills));
+      $output->writeln($this->renderJson($findings, $skills), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderReport($output, $findings, $skills, $format);
@@ -108,17 +109,19 @@ class SecurityCommand extends Command {
    *   The config-error exit code.
    */
   protected function reportErrors(OutputInterface $output, string $format, array $errors): int {
+    $stderr = $this->stderr($output);
+
     if ($format === 'json') {
       $payload = [
         'ok' => FALSE,
         'findings' => [],
         'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $errors),
       ];
-      $output->writeln($this->encode($payload));
+      $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       foreach ($errors as $error) {
-        $output->writeln('ERROR ' . $error->render());
+        $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
       }
     }
 

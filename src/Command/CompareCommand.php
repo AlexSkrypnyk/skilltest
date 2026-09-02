@@ -124,19 +124,4 @@ class CompareCommand extends Command {
     return $files;
   }
 
-  /**
-   * Renders a configuration error with its file context when it has one.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
-   *   The error.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function errorLine(ConfigException $config_exception): string {
-    $file = $config_exception->configFile();
-
-    return $file === '' ? $config_exception->getMessage() : sprintf('%s: %s', $file, $config_exception->getMessage());
-  }
-
 }

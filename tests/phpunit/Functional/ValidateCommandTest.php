@@ -263,7 +263,7 @@ final class ValidateCommandTest extends TestCase {
 
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
-    return $this->applicationGetTester()->getDisplay();
+    return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
   }
 
   /**

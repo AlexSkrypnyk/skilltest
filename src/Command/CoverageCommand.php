@@ -56,9 +56,10 @@ class CoverageCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
     $format = $input->getOption('format');
+    $stderr = $this->stderr($output);
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      $output->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -85,7 +86,7 @@ class CoverageCommand extends Command {
     $coverage = new Coverage($loaded);
 
     if ($format === 'json') {
-      $output->writeln($this->renderJson($coverage));
+      $output->writeln($this->renderJson($coverage), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderTable($output, $coverage, $format);
@@ -108,17 +109,19 @@ class CoverageCommand extends Command {
    *   The config-error exit code.
    */
   protected function reportErrors(OutputInterface $output, string $format, array $errors): int {
+    $stderr = $this->stderr($output);
+
     if ($format === 'json') {
       $payload = [
         'ok' => FALSE,
         'skills' => [],
         'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $errors),
       ];
-      $output->writeln($this->encode($payload));
+      $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       foreach ($errors as $error) {
-        $output->writeln('ERROR ' . $error->render());
+        $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
       }
     }
 

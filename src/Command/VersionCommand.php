@@ -39,7 +39,7 @@ class VersionCommand extends Command {
     ];
 
     if ((bool) $input->getOption('json')) {
-      $output->writeln(json_encode($info, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+      $output->writeln(json_encode($info, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::PASS;
     }

@@ -135,10 +135,10 @@ class ValidateCommand extends Command {
     $message = ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
 
     if ($is_json) {
-      $output->writeln($this->encode(['ok' => FALSE, 'errors' => [$message->toArray()], 'warnings' => []]));
+      $output->writeln($this->encode(['ok' => FALSE, 'errors' => [$message->toArray()], 'warnings' => []]), OutputInterface::VERBOSITY_QUIET);
     }
     else {
-      $output->writeln('ERROR ' . $message->render());
+      $this->stderr($output)->writeln('ERROR ' . $message->render(), OutputInterface::VERBOSITY_QUIET);
     }
 
     return ExitCode::CONFIG_ERROR;
@@ -173,7 +173,7 @@ class ValidateCommand extends Command {
       $payload['config'] = $config;
     }
 
-    $output->writeln($this->encode($payload));
+    $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
   }
 
   /**

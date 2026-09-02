@@ -30,6 +30,8 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
  */
 class SelfUpdateCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * The fetcher passed to the release client.
    *
@@ -99,14 +101,16 @@ class SelfUpdateCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
+    $stderr = $this->stderr($output);
+
     if (($this->runtime)() !== 'phar') {
-      $output->writeln('ERROR self-update replaces an installed executable; you are running from source. Install a released PHAR or binary first.');
+      $stderr->writeln('ERROR self-update replaces an installed executable; you are running from source. Install a released PHAR or binary first.', OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
 
     if (!$this->isVersion($this->currentVersion)) {
-      $output->writeln(sprintf('ERROR cannot determine the current version (%s); reinstall from a release.', $this->currentVersion));
+      $stderr->writeln(sprintf('ERROR cannot determine the current version (%s); reinstall from a release.', $this->currentVersion), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -115,7 +119,7 @@ class SelfUpdateCommand extends Command {
     $tag = $client->latestTag();
 
     if ($tag === NULL) {
-      $output->writeln('ERROR could not determine the latest release; check your network and try again.');
+      $stderr->writeln('ERROR could not determine the latest release; check your network and try again.', OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::FAIL;
     }
@@ -145,11 +149,13 @@ class SelfUpdateCommand extends Command {
    *   The exit code.
    */
   protected function apply(InputInterface $input, OutputInterface $output, ReleaseClient $client, string $tag): int {
+    $stderr = $this->stderr($output);
+
     $phar = $client->download($client->pharUrl($tag));
     $checksums = $client->download($client->checksumsUrl($tag));
 
     if ($phar === NULL || $checksums === NULL) {
-      $output->writeln(sprintf('ERROR could not download the release assets for %s.', $tag));
+      $stderr->writeln(sprintf('ERROR could not download the release assets for %s.', $tag), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::FAIL;
     }
@@ -158,7 +164,7 @@ class SelfUpdateCommand extends Command {
     $actual = hash('sha256', $phar);
 
     if ($expected === NULL || !hash_equals($expected, $actual)) {
-      $output->writeln(sprintf('ERROR checksum verification failed for %s (expected %s, got %s); refusing to replace the executable.', ReleaseClient::PHAR_NAME, $expected ?? '<none>', $actual));
+      $stderr->writeln(sprintf('ERROR checksum verification failed for %s (expected %s, got %s); refusing to replace the executable.', ReleaseClient::PHAR_NAME, $expected ?? '<none>', $actual), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::FAIL;
     }
@@ -223,11 +229,13 @@ class SelfUpdateCommand extends Command {
    *   The exit code.
    */
   protected function swap(OutputInterface $output, string $target, string $phar, string $tag): int {
+    $stderr = $this->stderr($output);
+
     $temp = $target . '.' . getmypid() . '.new';
 
     if (@file_put_contents($temp, $phar) === FALSE) {
       // @codeCoverageIgnoreStart
-      $output->writeln(sprintf('ERROR could not write the new executable next to %s.', $target));
+      $stderr->writeln(sprintf('ERROR could not write the new executable next to %s.', $target), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::FAIL;
       // @codeCoverageIgnoreEnd

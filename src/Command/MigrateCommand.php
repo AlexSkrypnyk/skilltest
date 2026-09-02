@@ -23,6 +23,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class MigrateCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * {@inheritdoc}
    */
@@ -37,10 +39,12 @@ class MigrateCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
+    $stderr = $this->stderr($output);
+
     $file = $input->getArgument('file');
 
     if (!is_string($file) || $file === '') {
-      $output->writeln('ERROR migrate expects a file path.');
+      $stderr->writeln('ERROR migrate expects a file path.', OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -49,7 +53,7 @@ class MigrateCommand extends Command {
       $result = (new Migrator())->migrate($file);
     }
     catch (ConfigException $config_exception) {
-      $output->writeln('ERROR ' . $config_exception->getMessage());
+      $stderr->writeln('ERROR ' . $config_exception->getMessage(), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }

@@ -24,7 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CacheCommand extends Command {
 
-  use SharedCommandTrait;
+  use ResultsCommandTrait;
 
   /**
    * The supported actions.
@@ -49,9 +49,7 @@ class CacheCommand extends Command {
     $action = $input->getArgument('action');
 
     if (!is_string($action) || !in_array($action, self::ACTIONS, TRUE)) {
-      $output->writeln(sprintf('ERROR unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
-
-      return ExitCode::CONFIG_ERROR;
+      return $this->configError($this->stderr($output), sprintf('unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
     }
 
     $cache = new TrialCache($this->resolveRoot($input) . '/' . TrialCache::CACHE_DIR, Version::id());
