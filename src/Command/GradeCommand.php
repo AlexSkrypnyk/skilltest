@@ -25,18 +25,18 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `grade` command: re-grade offline, without executing an agent.
+ * The `grade` command.
  *
- * Grading is a pure function of a transcript and a contract, so it can be run
- * without the run that produced the transcript. Two modes serve two needs:
- * `--transcript <file> --skill <name>` asserts a skill's contract against any
- * transcript - the same verdict the deterministic transcript group reaches, on
- * any file; and `--results <file>` re-scores every trial in a saved run
- * against the current contract, so a tightened rule shows exactly which trials
- * it would now fail. Both are token-free; only `--judge` spends tokens, to
- * re-run the rubric against each trial's stored transcript. Exit codes mirror
- * the tool contract: `0` pass, `1` a failing check or re-scored verdict, `2` a
- * configuration error.
+ * Re-grades offline, without executing an agent: grading is a pure function
+ * of a transcript and a contract, so it can be run without the run that
+ * produced the transcript. `--transcript <file> --skill <name>` asserts a
+ * skill's contract against any transcript file, reaching the same verdict
+ * the deterministic transcript group reaches; `--results <file>` re-scores
+ * every trial in a saved run against the current contract, so a tightened
+ * rule shows which trials it would fail. Both are token-free; only `--judge`
+ * spends tokens, to re-run the rubric against each trial's stored
+ * transcript. Exit codes mirror the tool contract: `0` pass, `1` a failing
+ * check or re-scored verdict, `2` a configuration error.
  */
 class GradeCommand extends Command {
 
@@ -209,7 +209,7 @@ class GradeCommand extends Command {
       return $failing === 0 ? ExitCode::PASS : ExitCode::FAIL;
     }
 
-    $this->reportRescore($output, $result, $failing);
+    $this->renderRescore($output, $result, $failing);
 
     return $failing === 0 ? ExitCode::PASS : ExitCode::FAIL;
   }
@@ -224,7 +224,7 @@ class GradeCommand extends Command {
    * @param int $failing
    *   The number of failing task-on-model verdicts after re-scoring.
    */
-  protected function reportRescore(OutputInterface $output, RescoreResult $result, int $failing): void {
+  protected function renderRescore(OutputInterface $output, RescoreResult $result, int $failing): void {
     $output->writeln(sprintf('Re-scored %d trial(s): %d newly failing, %d newly passing.', $result->trialsRescored, $result->newlyFailing, $result->newlyPassing));
 
     foreach ($result->notes as $note) {
@@ -277,21 +277,6 @@ class GradeCommand extends Command {
   }
 
   /**
-   * Renders one failed check as an indented line with its evidence.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $failure
-   *   The failed check.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function failureLine(CheckResult $failure): string {
-    $line = sprintf('  %s FAIL - %s', $failure->id, $failure->message);
-
-    return $failure->evidence === '' ? $line : sprintf('%s [%s]', $line, $failure->evidence);
-  }
-
-  /**
    * Resolves the judge timeout from the environment, or the default.
    *
    * @return float
@@ -301,19 +286,6 @@ class GradeCommand extends Command {
     $value = getenv(LlmSuite::ENV_TIMEOUT);
 
     return is_string($value) && is_numeric($value) ? (float) $value : Judge::DEFAULT_TIMEOUT;
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
   /**

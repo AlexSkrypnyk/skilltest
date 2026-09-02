@@ -15,21 +15,23 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `report` command: render a saved results document.
+ * The `report` command.
  *
- * A renderer, not a gate: it reads one `results.json` and shows it, so it exits
- * 0 whatever the saved run said and only a bad argument or an unreadable or
- * incompatible file is a configuration error (exit 2). By default it prints a
- * terminal summary; `--html <file>` writes a single self-contained HTML report
- * instead (path reported to stderr, stdout left clean); `--interpret` adds a
- * plain-language reading of the numbers - to stdout for the terminal summary,
- * and embedded in the page for the HTML report.
+ * Renders a saved results document without gating: it reads one
+ * `results.json` and shows it, so it exits 0 whatever the saved run
+ * recorded, and only a bad argument or an unreadable or incompatible file is
+ * a configuration error (exit 2). By default it prints a terminal summary;
+ * `--html <file>` writes a single self-contained HTML report instead (path
+ * reported to stderr, stdout left clean); `--interpret` adds a
+ * plain-language reading of the numbers - to stdout for the terminal
+ * summary, and embedded in the page for the HTML report.
  */
 class ReportCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * {@inheritdoc}
@@ -47,7 +49,7 @@ class ReportCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $file = $input->getArgument('file');
 

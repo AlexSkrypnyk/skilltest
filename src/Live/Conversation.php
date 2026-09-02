@@ -22,8 +22,7 @@ final readonly class Conversation {
    * Constructs a Conversation.
    *
    * @param int $exitCode
-   *   The last agent turn's exit code; non-zero folds in the agent-failure
-   *   check.
+   *   The last agent turn's exit code.
    * @param string $transcript
    *   The accumulated stream-json transcript, with responder turns injected.
    * @param int $durationMs

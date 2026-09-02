@@ -9,16 +9,44 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Asserts a skill's declared contract against a transcript.
  *
- * Grades the world, not the words: it reads the tool-use events a transcript
- * records and answers the contract's questions - which tools, commands, and
- * sub-skills had to appear, and which must never. Bash commands are normalised
- * through the repo aliases first, so every invocation form of an aliased binary
- * collapses to one before matching. Every assertion becomes a
- * {@see CheckResult} carrying the evidence, so a failure is debuggable from the
- * report alone. No model is involved; the identical checker grades the recorded
- * deterministic fixture and every live llm trial.
+ * Reads the tool-use events a transcript records and asserts which tools,
+ * commands, and sub-skills had to appear, and which must never. Bash
+ * commands are normalised through the repo aliases first, so every
+ * invocation form of an aliased binary collapses to one before matching.
+ * Every assertion becomes a {@see CheckResult} carrying the evidence, so a
+ * failure is debuggable from the report alone. No model is involved.
  */
 final readonly class ContractChecker {
+
+  /**
+   * The check id for a tool the contract requires.
+   */
+  public const string CHECK_TOOLS_REQUIRED = 'contract.tools.required';
+
+  /**
+   * The check id for a tool the contract forbids.
+   */
+  public const string CHECK_TOOLS_FORBIDDEN = 'contract.tools.forbidden';
+
+  /**
+   * The check id for a command the contract requires.
+   */
+  public const string CHECK_COMMANDS_REQUIRED = 'contract.commands.required';
+
+  /**
+   * The check id for a command the contract forbids.
+   */
+  public const string CHECK_COMMANDS_FORBIDDEN = 'contract.commands.forbidden';
+
+  /**
+   * The check id for a sub-skill the contract requires.
+   */
+  public const string CHECK_SKILLS_REQUIRED = 'contract.skills.required';
+
+  /**
+   * The check id for a sub-skill the contract forbids.
+   */
+  public const string CHECK_SKILLS_FORBIDDEN = 'contract.skills.forbidden';
 
   /**
    * Constructs a ContractChecker.
@@ -52,26 +80,26 @@ final readonly class ContractChecker {
 
     $tool_names = $transcript->toolNames();
     foreach (Data::toStringList(Data::get($tools, 'required')) as $name) {
-      $results[] = $this->membership('contract.tools.required', 'tool', $name, $tool_names, TRUE);
+      $results[] = $this->membership(self::CHECK_TOOLS_REQUIRED, 'tool', $name, $tool_names, TRUE);
     }
     foreach (Data::toStringList(Data::get($tools, 'forbidden')) as $name) {
-      $results[] = $this->membership('contract.tools.forbidden', 'tool', $name, $tool_names, FALSE);
+      $results[] = $this->membership(self::CHECK_TOOLS_FORBIDDEN, 'tool', $name, $tool_names, FALSE);
     }
 
     $normalised = Aliases::normaliseAll($transcript->bashCommands(), $this->aliases);
     foreach (Data::toStringMap(Data::get($commands, 'required')) as $label => $pattern) {
-      $results[] = $this->command('contract.commands.required', (string) $label, $pattern, $normalised, TRUE);
+      $results[] = $this->command(self::CHECK_COMMANDS_REQUIRED, (string) $label, $pattern, $normalised, TRUE);
     }
     foreach (Data::toStringMap(Data::get($commands, 'forbidden')) as $label => $pattern) {
-      $results[] = $this->command('contract.commands.forbidden', (string) $label, $pattern, $normalised, FALSE);
+      $results[] = $this->command(self::CHECK_COMMANDS_FORBIDDEN, (string) $label, $pattern, $normalised, FALSE);
     }
 
     $skill_names = $transcript->skillInvocations();
     foreach (Data::toStringList(Data::get($skills, 'required')) as $name) {
-      $results[] = $this->membership('contract.skills.required', 'skill', $name, $skill_names, TRUE);
+      $results[] = $this->membership(self::CHECK_SKILLS_REQUIRED, 'skill', $name, $skill_names, TRUE);
     }
     foreach (Data::toStringList(Data::get($skills, 'forbidden')) as $name) {
-      $results[] = $this->membership('contract.skills.forbidden', 'skill', $name, $skill_names, FALSE);
+      $results[] = $this->membership(self::CHECK_SKILLS_FORBIDDEN, 'skill', $name, $skill_names, FALSE);
     }
 
     return $results;

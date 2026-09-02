@@ -162,7 +162,7 @@ Point that at a different base, and add project tooling on top, through `llm.doc
 
     docker run --rm -it ghcr.io/alexskrypnyk/skilltest-agent:latest bash
 
-`host` is the default environment and needs no image at all: trials use the machine's own `claude` binary and existing authentication. Use `docker` when running other people's skills, when trials must not touch your real config, or when reproducibility across machines matters. See [`prd/environments.md`](prd/environments.md).
+`host` is the default environment and needs no image at all: trials use the machine's own `claude` binary and existing authentication. Use `docker` when running other people's skills, when trials must not touch your real config, or when reproducibility across machines matters. See [`docs/environments.md`](docs/environments.md).
 
 ## CI recipes
 
@@ -204,19 +204,17 @@ CI guidance is `host` on ephemeral runners and `docker` on developer machines.
 
 ## Documentation
 
-The PRD set is the authoritative specification.
-
-| PRD | Contents |
+| Page | Contents |
 |-----|----------|
-| [`prd/README.md`](prd/README.md) | Vision, design principles, the two suites, feature traceability |
-| [`prd/cli.md`](prd/cli.md) | Commands, flags, exit codes, output contract |
-| [`prd/config.md`](prd/config.md) | `eval.yaml` and `skilltest.yml` schemas, discovery, versioning |
-| [`prd/checks-deterministic.md`](prd/checks-deterministic.md) | The deterministic suite: groups, check catalog, packs |
-| [`prd/checks-llm.md`](prd/checks-llm.md) | The llm suite: live runs, judge, trials, recording |
-| [`prd/models.md`](prd/models.md) | Multi-model matrix and the minimal-model report |
-| [`prd/environments.md`](prd/environments.md) | `host` and `docker` execution environments, lifecycle hooks |
-| [`prd/reporting.md`](prd/reporting.md) | Results schema, reporters, statistics, the regression gate |
-| [`prd/distribution.md`](prd/distribution.md) | PHAR, Docker image, static binary, CI recipes |
+| [`docs/README.md`](docs/README.md) | What skilltest is, why it works this way, the two suites |
+| [`docs/cli.md`](docs/cli.md) | Commands, flags, exit codes, output contract |
+| [`docs/config.md`](docs/config.md) | `eval.yaml` and `skilltest.yml` schemas, discovery, versioning |
+| [`docs/checks-deterministic.md`](docs/checks-deterministic.md) | The deterministic suite: groups, check catalog, packs |
+| [`docs/checks-llm.md`](docs/checks-llm.md) | The llm suite: live runs, judge, trials, recording |
+| [`docs/models.md`](docs/models.md) | Multi-model matrix and the minimal-model report |
+| [`docs/environments.md`](docs/environments.md) | `host` and `docker` execution environments, lifecycle hooks |
+| [`docs/reporting.md`](docs/reporting.md) | Results schema, reporters, statistics, the regression gate |
+| [`docs/distribution.md`](docs/distribution.md) | PHAR, Docker images, install script, self-update |
 
 ## Contributing
 

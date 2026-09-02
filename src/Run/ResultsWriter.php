@@ -9,9 +9,7 @@ use AlexSkrypnyk\File\File;
 /**
  * Persists a results document to disk, redacted, in either supported layout.
  *
- * `--output <file>` writes the document to one file; `--output-dir <dir>`
- * writes a timestamped run directory holding `results.json` alongside its
- * artifacts. Transcripts and other artifacts are written as separate files and
+ * Transcripts and other artifacts are written as separate files and
  * referenced from the JSON by relative path, never embedded. Every byte -
  * the document and each artifact - passes through the redactor before it is
  * written, so no persisted artifact carries an environment secret.

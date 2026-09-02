@@ -10,7 +10,7 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * A headless `claude -p --output-format stream-json` run ends with a `result`
  * event carrying the run's usage (`num_turns`, `usage.input_tokens`,
  * `usage.output_tokens`, `total_cost_usd`). This pulls those totals out of the
- * transcript so a trial's cost is a number in the report rather than a guess.
+ * transcript for the report.
  * The last `result` event wins - a run that streams several is summarised by
  * its final tally - and every field defaults to zero when a transcript carries
  * no usable result, so a truncated or timed-out transcript still yields a

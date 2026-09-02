@@ -183,8 +183,8 @@ final class Data {
   /**
    * Normalises a mapping into an array of string keys to string values.
    *
-   * Entries whose value is not a scalar are dropped, so nested structures do
-   * not leak into a label-to-pattern map.
+   * Entries whose value is not a scalar are dropped, so a nested structure
+   * never enters the map.
    *
    * @param mixed $value
    *   The value to normalise.
@@ -213,8 +213,7 @@ final class Data {
   /**
    * Normalises a value into a list of the arrays it contains.
    *
-   * Non-array items are dropped, so a mixed list yields only its mappings -
-   * the shape hooks, tasks, and checks all take.
+   * Non-array items are dropped, so a mixed list yields only its mappings.
    *
    * @param mixed $value
    *   The value to normalise.

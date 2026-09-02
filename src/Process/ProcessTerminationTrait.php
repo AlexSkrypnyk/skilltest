@@ -7,11 +7,9 @@ namespace AlexSkrypnyk\SkillTest\Process;
 /**
  * Shared wall-clock termination for the tool's child-process runners.
  *
- * Both the single-command runner and the concurrent pool enforce a timeout the
- * same way - a terminated command must not be able to hang the caller - so the
- * exit code they report on timeout, the grace period before escalation, and the
- * SIGTERM-then-SIGKILL routine live here once rather than drifting apart in two
- * copies.
+ * The single-command runner and the concurrent pool enforce a timeout the same
+ * way, so the exit code reported on timeout, the grace period before
+ * escalation, and the SIGTERM-then-SIGKILL routine are defined here once.
  */
 trait ProcessTerminationTrait {
 

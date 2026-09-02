@@ -11,15 +11,12 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * The real command list of the repo's configured `commands.resolve` binary.
  *
- * When a repo points `commands.resolve` at its CLI, the structure group can
- * hold skill documentation honest: every `<binary> <subcommand>` a skill names
- * must be a command the binary actually has. This runs the binary's list
- * command once, parses whatever shape it prints (a JSON array of names, a JSON
- * array of `{name}` objects, Symfony's `{commands:[...]}`, or a text list),
- * and exposes the first token of every known command name. A binary that cannot
- * run or whose output cannot be parsed is a hard error, never a silent skip -
- * the check would otherwise pass by doing nothing. The process call is injected
- * so the parsing is unit-testable without a real binary.
+ * Runs the binary's list command once and exposes the first token of every
+ * known command name. The output may be a JSON array of names, a JSON array
+ * of `{name}` objects, Symfony's `{commands:[...]}`, or a text list. A
+ * binary that cannot run or whose output cannot be parsed is a hard error;
+ * the check would otherwise pass by doing nothing. The process call is
+ * injected so the parsing is unit-testable without a real binary.
  */
 final class CommandCatalog {
 
@@ -214,12 +211,11 @@ final class CommandCatalog {
   /**
    * Extracts command names from a plain-text command list, one per line.
    *
-   * Only a line whose leading token is a command name standing alone or
-   * followed by a description gap counts: the token must be at end of line or
-   * separated from any description by two or more spaces. This keeps help
-   * headers like `Usage:`, `Available commands:`, and `Options` - which run a
-   * single space into their next word - from being read as commands. JSON
-   * output (the recommended `list` form) avoids this heuristic entirely.
+   * A line counts only when its leading token stands at end of line or is
+   * separated from any description by two or more spaces. Help headers like
+   * `Usage:`, `Available commands:`, and `Options` run a single space into
+   * their next word, so they are not read as commands. JSON output (the
+   * recommended `list` form) avoids this heuristic entirely.
    *
    * @param string $text
    *   The trimmed output.

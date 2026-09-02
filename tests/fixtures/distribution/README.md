@@ -1,6 +1,6 @@
 # Distribution smoke-test fixture
 
-A minimal repository directory mounted into the tool image so the distribution CI can exercise the container one-liners from `prd/distribution.md`:
+A minimal repository directory mounted into the tool image so the distribution CI can exercise the container one-liners from `docs/distribution.md`:
 
 ```bash
 docker run --rm -v "$PWD":/work -w /work ghcr.io/alexskrypnyk/skilltest:latest version

@@ -87,7 +87,7 @@ final class CompareCommandTest extends TestCase {
     $this->assertSame(['results', 'results#2'], $this->path($decoded, 'labels'));
   }
 
-  public function testFewerThanTwoFilesIsError(): void {
+  public function testFewerThanTwoFilesIsConfigError(): void {
     $only = $this->writeResults('only.json', $this->document());
 
     $output = $this->runCompare(['files' => [$only]], 2);
@@ -95,7 +95,7 @@ final class CompareCommandTest extends TestCase {
     $this->assertStringContainsString('at least two results files', $output);
   }
 
-  public function testMissingFileIsError(): void {
+  public function testMissingFileIsConfigError(): void {
     $present = $this->writeResults('present.json', $this->document());
 
     $output = $this->runCompare(['files' => [$present, $this->root . '/absent.json']], 2);
@@ -103,7 +103,7 @@ final class CompareCommandTest extends TestCase {
     $this->assertStringContainsString('results file not found', $output);
   }
 
-  public function testIncompatibleMajorIsError(): void {
+  public function testIncompatibleMajorIsConfigError(): void {
     $present = $this->writeResults('present.json', $this->document());
     $newer = $this->root . '/newer.json';
     file_put_contents($newer, '{"version": "2"}');
@@ -113,7 +113,7 @@ final class CompareCommandTest extends TestCase {
     $this->assertStringContainsString('skilltest migrate', $output);
   }
 
-  public function testUnknownFormatIsError(): void {
+  public function testUnknownFormatIsConfigError(): void {
     $before = $this->writeResults('before.json', $this->document());
     $after = $this->writeResults('after.json', $this->document());
 

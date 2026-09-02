@@ -18,9 +18,9 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * resolved to text (inline scalars as-is, structures as JSON, `response-file`
  * read from the skill directory). Every structural problem is a
  * {@see ConfigException} raised here, at parse time, so a malformed mock fails
- * the run with a pointer rather than a mock silently doing nothing - exactly
- * how `inputs:` and `repos:` are validated. The result is IO-free: writing
- * the server configs and the runtime wiring belongs to the workspace.
+ * the run with a pointer rather than a mock silently doing nothing. The
+ * result is IO-free: writing the server configs and the runtime wiring
+ * belongs to the workspace.
  */
 final readonly class McpMock {
 

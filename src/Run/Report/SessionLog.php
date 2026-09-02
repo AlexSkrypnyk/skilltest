@@ -15,7 +15,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * coverage gate, and closes with `run.finished`. Every event carries a
  * monotonic `seq` - the authoritative order - and a `ts`. The deterministic
  * suite runs synchronously and does not time each check, so intermediate
- * events carry the run's start timestamp and only the boundary events
+ * events carry the run's start timestamp. Only the boundary events
  * (`run.started`, `run.finished`) are stamped with the true start and end;
  * `seq` orders them regardless. The document handed here is already redacted,
  * so no event carries a secret value.

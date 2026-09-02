@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Ai\PromptRunner;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PromptRunner::class)]
 #[Group('ai')]
 final class PromptRunnerFunctionalTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A real working directory the fake binary lives in.
@@ -75,42 +78,6 @@ final class PromptRunnerFunctionalTest extends TestCase {
     file_put_contents($path, $body);
 
     return 'php ' . escapeshellarg($path);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        // @codeCoverageIgnoreStart
-        $this->remove($path);
-
-        continue;
-        // @codeCoverageIgnoreEnd
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

@@ -14,14 +14,14 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * Upgrades an `eval.yaml`, `skilltest.yml`, or `results.json` to this schema.
  *
- * The reader gate rejects any file whose major this tool cannot read, so a file
- * left behind at an older major is otherwise unusable; this is the one place
- * that reads such a file on purpose, transforms it to the current major, and
- * writes it back. A file already at the current major is a no-op reported as
- * such - migration never rewrites a file it did not have to. A file from a
- * newer major cannot be downgraded and is refused with a pointer to upgrade the
- * tool. The parse and serialise seam follows the file extension: JSON for
- * `results.json`, YAML for the two config files.
+ * Loaders reject any file whose major this tool cannot read, so an
+ * older-major file is otherwise unusable; this class reads such a file,
+ * transforms it to the current major, and writes it back. A file already at
+ * the current major is reported as a no-op and never rewritten.
+ *
+ * A file from a newer major cannot be downgraded and is refused with a
+ * pointer to upgrade the tool. Parsing and serialising follow the file
+ * extension: JSON for `results.json`, YAML for the two config files.
  */
 final readonly class Migrator {
 

@@ -7,10 +7,8 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * Resolves an executable by name on a PATH string.
  *
- * Both preflights find the tool they gate on the same way - the first
- * executable of that name across the PATH entries - so the scan lives here once
- * rather than drifting apart in two copies. The PATH is passed in explicitly so
- * the helper reads no ambient state and stays a pure lookup.
+ * The PATH is passed in explicitly so the helper reads no ambient state and
+ * stays a pure lookup.
  */
 trait BinaryOnPathTrait {
 

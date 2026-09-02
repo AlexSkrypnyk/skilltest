@@ -101,7 +101,7 @@ final class SecurityScannerTest extends TestCase {
     $findings = $this->scan($root, [$skill]);
 
     $this->assertCount(1, $findings);
-    $this->assertSame(SecurityScanner::FORBIDDEN_TOKEN_CHECK, $findings[0]->check);
+    $this->assertSame(SecurityScanner::CHECK_FORBIDDEN_TOKENS, $findings[0]->check);
     $this->assertSame('skills/foo/scripts/run.sh', $findings[0]->file);
     $this->assertSame(3, $findings[0]->line);
     $this->assertSame("forbidden token 'ACME_DEPLOY_KEY' appears in a shipped file", $findings[0]->description);

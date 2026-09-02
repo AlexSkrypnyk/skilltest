@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 
 use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(TrialCache::class)]
 #[Group('live')]
 final class TrialCacheTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * The temporary base holding the skill tree and the cache directory.
@@ -185,40 +188,6 @@ final class TrialCacheTest extends TestCase {
     $inputs ??= ['fixture' => 'fixtures/data.txt', 'repos' => [], 'workdir' => NULL];
 
     return (new TrialCache($this->cacheDir, $tool ?? '1.0.0'))->key('alpha', $entry, $model ?? 'claude-haiku-4-5', $this->skillDir, $inputs);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

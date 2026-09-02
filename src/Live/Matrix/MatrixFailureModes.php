@@ -11,8 +11,8 @@ use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 /**
  * Why a model failed a skill: the failed check ids and judge criteria, counted.
  *
- * A pass rate says a model failed; a failure-mode report says why, which is
- * what a skill author acts on. Across a failing model's trials it tallies each
+ * A pass rate records that a model failed; the failure modes record why.
+ * Across a failing model's trials it tallies each
  * failed contract check by its id and each blocking judge criterion by its
  * rubric text, so "stops calling the broker after two steps (2x)" and "judge:
  * decided the step order itself (2x)" replace a bare "0.33". Contract and judge

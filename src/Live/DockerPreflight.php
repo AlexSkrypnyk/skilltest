@@ -9,14 +9,13 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Decides whether a docker run can start: the CLI, a reachable daemon, creds.
  *
- * Unlike the host environment the agent binary ships inside the image, so the
- * host needs only the `docker` CLI (the `SKILLTEST_DOCKER` override or the
- * first `docker` on PATH) and a daemon that answers. Credentials still matter
- * because they are the one thing forwarded into the otherwise-sealed
- * container, and only an explicit env var crosses - a host `~/.claude` login
- * does not - so without an API key or OAuth token the run is a guaranteed,
- * expensive failure and the tool exits 2 before any container starts, with a
- * message naming the missing half.
+ * Unlike the host environment, the agent binary ships inside the image, so
+ * the host needs only the `docker` CLI (the `SKILLTEST_DOCKER` override or
+ * the first `docker` on PATH) and a daemon that answers. Credentials are the
+ * one thing forwarded into the otherwise-sealed container, and only an
+ * explicit env var crosses - a host `~/.claude` login does not. A run without
+ * an API key or OAuth token is a guaranteed, expensive failure, so it is
+ * blocked before any container starts.
  */
 final readonly class DockerPreflight {
 

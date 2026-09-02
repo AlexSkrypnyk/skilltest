@@ -11,12 +11,10 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * The parsed shape of a `SKILL.md`: its frontmatter and its body.
  *
- * `init` reads exactly what a scaffold needs from a skill file - the declared
- * name, the one-line description, and the allowed tools - and hands the body
- * on for optional AI drafting. Parsing is pure (string in, value out) so it is
- * exercised without touching the filesystem, and it degrades gracefully: a file
- * with no frontmatter, or with malformed frontmatter, still yields a manifest
- * whose body is the whole document.
+ * Parsing is pure (string in, value out), so it is exercised without
+ * touching the filesystem. It degrades gracefully: a file with no
+ * frontmatter, or with malformed frontmatter, still yields a manifest whose
+ * body is the whole document.
  */
 final readonly class SkillManifest {
 

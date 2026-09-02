@@ -7,19 +7,20 @@ namespace AlexSkrypnyk\SkillTest\Run;
 /**
  * Scrubs environment secret values out of persisted artifacts.
  *
- * Before any results file, transcript, or session log is written, the value of
- * every credential-bearing environment variable is replaced with a fixed
- * placeholder wherever it appears verbatim, so a token exported for an llm run
- * never lands on disk. Redaction is on by default; a disabled redactor carries
- * no secrets and passes text through untouched.
+ * The value of every credential-bearing environment variable is replaced
+ * with a fixed placeholder wherever it appears verbatim. A disabled
+ * redactor carries no secrets and passes text through untouched.
  *
  * A variable is treated as credential-bearing when its name contains a
  * delimited credential word (`API_KEY`, `*_TOKEN`, `*_SECRET`, `PASSWORD`,
- * `PASSPHRASE`, `CREDENTIALS`), which catches `ANTHROPIC_API_KEY` and
- * `CLAUDE_CODE_OAUTH_TOKEN` without matching incidental names like `MONKEY_ID`.
- * Redacting the value of every environment variable verbatim (`HOME`, `PATH`,
- * `LANG`) would corrupt legitimate content, so detection is scoped to the
- * credential-shaped names and to values long enough to be a real secret.
+ * `PASSPHRASE`, `CREDENTIALS`). That catches `ANTHROPIC_API_KEY` and
+ * `CLAUDE_CODE_OAUTH_TOKEN` without matching incidental names like
+ * `MONKEY_ID`.
+ *
+ * Redacting the value of every environment variable verbatim (`HOME`,
+ * `PATH`, `LANG`) would corrupt legitimate content. Detection is therefore
+ * scoped to credential-shaped names and to values long enough to be a real
+ * secret.
  */
 final readonly class Redactor {
 
@@ -110,8 +111,9 @@ final readonly class Redactor {
   /**
    * Recursively redacts every string leaf of a document.
    *
-   * Keys are structural and left intact; only string values are scrubbed, and
-   * nested arrays are walked so a secret cannot hide inside a sub-document.
+   * Keys are structural and left intact; only string values are scrubbed,
+   * and nested arrays are walked so a secret inside a sub-document is
+   * scrubbed too.
    *
    * @param array<mixed> $document
    *   The document to scrub.

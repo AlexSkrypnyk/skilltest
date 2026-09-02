@@ -7,11 +7,13 @@ namespace AlexSkrypnyk\SkillTest\Render;
 /**
  * Renders a header-and-rows grid as aligned text or as a GitHub markdown table.
  *
- * A reporting primitive shared by every grid the tool prints: the text form
- * pads each column to its widest cell and separates columns with two spaces,
- * trimming trailing space so a row carries no dangling whitespace; the markdown
- * form emits a valid GFM pipe table with the header underline and pipes escaped
- * inside cells. Both flatten newlines within a cell to a space, so an
+ * A reporting primitive shared by every grid the tool prints. The text form
+ * pads each column to its widest cell and separates columns with two
+ * spaces, trimming trailing space so a row carries no dangling whitespace.
+ * The markdown form emits a valid GFM pipe table with the header underline
+ * and pipes escaped inside cells.
+ *
+ * Both forms flatten newlines within a cell to a space, so an
  * author-controlled value can never split one logical row across lines.
  */
 final readonly class Table {

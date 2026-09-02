@@ -8,9 +8,9 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * Compiles the delimiter-less regular expressions used in contract patterns.
  *
  * Contract patterns are authored without delimiters so they read cleanly in
- * YAML; this helper wraps a pattern in a delimiter that does not occur in it
- * and reports whether it compiles, swallowing the warning PCRE emits on a bad
- * pattern so it never leaks into test output.
+ * YAML. This helper wraps a pattern in a delimiter that does not occur in it
+ * and reports whether it compiles; the warning PCRE emits on a bad pattern
+ * is suppressed so it does not surface in test output.
  */
 final class Pcre {
 

@@ -9,12 +9,10 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Shared grid arithmetic for one skill's task-by-model matrix.
  *
- * Both the terminal and HTML reports draw the same grid - the models a skill
- * ran across the top, the tasks down the side, a pass-rate in each cell - and
- * the same minimal-model verdict line beneath it. The column ordering, the
- * missing-cell dash, and the verdict wording live here once so the two
- * renderers cannot drift apart; each one only decides how to lay the values
- * out.
+ * The grid puts the models a skill ran across the top, the tasks down the
+ * side, and a pass rate in each cell, with the minimal-model verdict line
+ * beneath it. The column ordering, the missing-cell dash, and the verdict
+ * wording live here once, so every renderer draws the same grid.
  */
 final class MatrixGrid {
 

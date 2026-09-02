@@ -12,16 +12,15 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Assembles and tears down the fresh working directory one live trial runs in.
  *
- * A trial must run against a real, isolated checkout, not the developer's tree,
- * so each gets its own workspace built the same way every time: the task's
- * fixture is copied in, its declared repos are materialised as detached
- * `git worktree` checkouts (cheap, offline, sharing the source object store),
+ * A trial must run against a real, isolated checkout, not the developer's
+ * tree, so each gets its own workspace built the same way every time. The
+ * task's fixture is copied in; declared repos are materialised as detached
+ * `git worktree` checkouts (cheap, offline, sharing the source object store);
  * the skill under test is installed into the workspace discovery path so the
- * agent can find it, and the agent's start directory is resolved from the
+ * agent can find it; and the agent's start directory is resolved from the
  * task's `workdir`. Everything is removed afterwards - worktrees through
  * git's own bookkeeping, then the directory tree - so a run leaves no trace
- * and repeated trials never collide. The git seam is injectable so assembly is
- * testable without a real repository.
+ * and repeated trials never collide.
  */
 final class TrialWorkspace {
 

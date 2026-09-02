@@ -7,10 +7,8 @@ namespace AlexSkrypnyk\SkillTest\Gate;
 /**
  * Shared number formatting for gate findings and gate renderers.
  *
- * Both the engine (which bakes rates into a finding's sentence) and the
- * renderers (which print the rate line) format the same way, so the rule lives
- * once: at most one decimal place, with a trailing `.0` trimmed so a whole
- * number reads as `5`, not `5.0`.
+ * The rule lives once: at most one decimal place, with a trailing `.0`
+ * trimmed so a whole number reads as `5`, not `5.0`.
  */
 final class Format {
 

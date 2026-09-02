@@ -11,9 +11,10 @@ use AlexSkrypnyk\SkillTest\Config\Pcre;
  * Matches executed commands against a contract pattern position.
  *
  * A pattern position is either a hand-written delimiter-less regex or a
- * `pack:<name>` reference that expands to the pre-baked pattern set. Matching a
- * pack means matching any of its regexes, so this class flattens both forms to
- * one question: does any command match, and if so which one is the evidence.
+ * `pack:<name>` reference that expands to the pre-baked pattern set.
+ * Matching a pack means matching any of its regexes, so both forms reduce
+ * to one test: whether any command matches, and which command is the
+ * evidence.
  */
 final class Matcher {
 

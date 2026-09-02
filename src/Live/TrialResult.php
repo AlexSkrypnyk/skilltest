@@ -15,13 +15,12 @@ use AlexSkrypnyk\SkillTest\Judge\JudgeCriterion;
  * every contract and custom check it was graded against passed - a non-zero
  * agent exit, a timeout, a judge failure, or a responder failure is folded in
  * as a failing check so a broken run can never be a passing trial. When the
- * skill declares a rubric the judge's per-criterion verdict and the pinned
- * judge model travel with the trial too, and an interactive task records how
- * its conversation ended and how many follow-ups it took. The transcript is
- * carried verbatim (so it can be persisted as an artifact) alongside the
- * relative path the results document references it by, and the token, turn,
- * duration, and cost metrics make the price of the trial a number in the
- * report.
+ * skill declares a rubric, the judge's per-criterion verdict and the pinned
+ * judge model are carried with the trial too, and an interactive task records
+ * how its conversation ended and how many follow-ups it took. The transcript
+ * is carried verbatim (so it can be persisted as an artifact) alongside the
+ * relative path the results document references it by, together with the
+ * token, turn, duration, and cost metrics.
  */
 final readonly class TrialResult {
 

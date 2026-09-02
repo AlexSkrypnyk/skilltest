@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ProcessRunner::class)]
 #[Group('process')]
 final class ProcessRunnerTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A real working directory the scripts execute in.
@@ -98,38 +101,6 @@ final class ProcessRunnerTest extends TestCase {
    */
   protected function php(string $script): string {
     return escapeshellarg(PHP_BINARY) . ' ' . $script;
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      return;
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

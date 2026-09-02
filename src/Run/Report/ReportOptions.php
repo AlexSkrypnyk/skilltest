@@ -11,10 +11,9 @@ use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
  *
  * `--json`, `--format`, `--reporter`, `--session-log`/`--session-dir`, and the
  * `--output`/`--output-dir` persistence flags all shape what the run produces
- * beyond the human report. Collecting their parsing and validation here keeps
- * the command thin and lets an impossible combination - two stdout formats, an
- * unknown reporter, a session log with nowhere to write - fail as a config
- * error before the suite runs, with every problem reported at once.
+ * beyond the human report. An impossible combination - two stdout formats,
+ * an unknown reporter, a session log with nowhere to write - fails as a
+ * config error before the suite runs, with every problem reported at once.
  */
 final readonly class ReportOptions {
 
@@ -160,9 +159,8 @@ final readonly class ReportOptions {
    * Whether any output leaves the process as a redactable external artifact.
    *
    * The persisted results, a JUnit file, the session log, and the PR-bound
-   * github-comment all carry run detail off the machine, so a disabled
-   * redaction warning is owed whenever one of them is active; plain `--json`
-   * to stdout is a local debugging convenience and is excluded.
+   * github-comment all carry run detail off the machine; plain `--json` to
+   * stdout is a local debugging convenience and is excluded.
    *
    * @return bool
    *   TRUE when at least one external artifact is written or emitted.

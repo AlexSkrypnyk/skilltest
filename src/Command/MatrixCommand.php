@@ -23,23 +23,22 @@ use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `matrix` command: run the ladder and report the minimal model per skill.
+ * The `matrix` command.
  *
- * The multi-model answer machine. It runs the same live suite the `llm`
- * command runs, but across the whole model ladder weakest first, and renders
- * the model matrix: each skill's per-model grid, the minimal-model verdict
- * ("the smallest model whose pass rate meets the threshold"), the per-model
- * failure modes, the repo-level grid across skills, and the cost totals ending
- * with the per-run cost difference between the minimal model and the repo
- * default. Unlike `llm` it is a report, not a gate, so it exits 0 whatever the
- * verdicts; a configuration error still exits 2. `--stop-at-pass` climbs only
- * until the first supporting model, and `--estimate` prints the plan and its
- * rough price without running anything - so it needs neither credentials nor a
- * token to answer "how big is this run".
+ * Runs the same live suite the `llm` command runs, but across the whole
+ * model ladder weakest first, and renders the model matrix: each skill's
+ * per-model grid, the minimal-model verdict ("the smallest model whose pass
+ * rate meets the threshold"), the per-model failure modes, the repo-level
+ * grid across skills, and the cost totals ending with the per-run cost
+ * difference between the minimal model and the repo default. Unlike `llm` it
+ * is a report, not a gate, so it exits 0 whatever the verdicts; a
+ * configuration error still exits 2. `--stop-at-pass` climbs only until the
+ * first supporting model, and `--estimate` prints the plan and its rough
+ * price without running anything - so it needs neither credentials nor a
+ * token.
  */
 class MatrixCommand extends Command {
 
@@ -54,17 +53,6 @@ class MatrixCommand extends Command {
    * The default trials per model per task, applied when nothing else sets it.
    */
   protected const int DEFAULT_TRIALS = 3;
-
-  /**
-   * The input options folded into the CLI configuration overrides.
-   */
-  protected const array OVERRIDES = [
-    'models' => 'models',
-    'threshold' => 'threshold',
-    'trials' => 'trials',
-    'env' => 'env',
-    'judge-model' => 'judge-model',
-  ];
 
   /**
    * {@inheritdoc}
@@ -100,7 +88,7 @@ class MatrixCommand extends Command {
     $root = $this->resolveRoot($input);
     $json = (bool) $input->getOption('json');
     $format = $this->stringOption($input, 'format') ?? 'text';
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     if (!in_array($format, self::FORMATS, TRUE)) {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)))]);
@@ -136,7 +124,7 @@ class MatrixCommand extends Command {
 
     $task_globs = $this->globs($input, 'task');
 
-    // An estimate spends no tokens and needs no agent, so it answers before any
+    // An estimate spends no tokens and needs no agent, so it runs before any
     // preflight - the cost of a run can be sized without credentials.
     if ((bool) $input->getOption('estimate')) {
       $this->renderEstimate($output, MatrixPlan::fromConfig($filtered, $task_globs), $json);

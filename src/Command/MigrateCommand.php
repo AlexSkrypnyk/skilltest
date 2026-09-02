@@ -19,9 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * current schema and rewrites it when an older major requires it. A file
  * already at the current major is reported as current and left untouched; a
  * missing file, a malformed one, or a file from a newer major the tool cannot
- * read is a configuration error (exit 2). The rewrite is the only thing that
- * reads an unreadable-major file on purpose, so a repo carrying a stale config
- * has a supported path forward rather than a hard failure everywhere else.
+ * read is a configuration error (exit 2).
  */
 class MigrateCommand extends Command {
 

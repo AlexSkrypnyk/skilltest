@@ -7,12 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Tokens;
 /**
  * One file's token count now against its count at the compared ref.
  *
- * A comparison row carries the two counts and derives everything a report or
- * a gate needs from them: whether the file is new at the ref, the absolute
- * delta, and the growth percentage. Growth is undefined for a new file (there
- * is nothing to grow from) and for a file that was empty at the ref (any
- * growth from zero is unbounded), so `growthPct()` is NULL in both cases and
- * gating logic handles them explicitly instead of dividing by zero.
+ * A comparison row carries the two counts and derives the rest: whether the
+ * file is new at the ref, the absolute delta, and the growth percentage.
+ * Growth is undefined for a new file (there is nothing to grow from) and for
+ * a file that was empty at the ref (any growth from zero is unbounded), so
+ * `growthPct()` is NULL in both cases rather than dividing by zero.
  */
 final readonly class TokenDelta {
 

@@ -7,15 +7,17 @@ namespace AlexSkrypnyk\SkillTest\Run\Report;
 use AlexSkrypnyk\SkillTest\Config\Data;
 
 /**
- * Renders a results document as JUnit XML so any CI renders skilltest natively.
+ * Renders a results document as JUnit XML.
  *
  * One `<testsuite>` per skill carries a `<testcase>` for every deterministic
- * check (structure, security, transcript) and every llm trial, with the group
- * in the test case's `classname`; repo-level hooks and coverage violations
- * become their own suites. A failed check adds a `<failure>` whose message and
- * body carry the check id, label, and evidence, so a CI failure view is
- * debuggable without the original run. The document drives every number - the
- * reporter computes no verdicts of its own.
+ * check (structure, security, transcript) and every llm trial, with the
+ * group in the test case's `classname`; repo-level hooks and coverage
+ * violations become their own suites. A failed check adds a `<failure>`
+ * whose message and body carry the check id, label, and evidence, so a
+ * failure is debuggable without the original run.
+ *
+ * Every number comes from the document; the reporter computes no verdicts
+ * of its own.
  */
 final class JUnitReporter {
 
@@ -293,10 +295,11 @@ final class JUnitReporter {
   /**
    * Strips characters an XML 1.0 document may not contain.
    *
-   * Evidence lifted from a transcript can carry a control byte or an invalid
-   * UTF-8 sequence that would make the document malformed; the encoding is
-   * repaired first so a single bad byte cannot make the Unicode-aware filter
-   * drop the whole message, then the XML-illegal characters are removed.
+   * Evidence lifted from a transcript can carry a control byte or an
+   * invalid UTF-8 sequence that would make the document malformed. The
+   * encoding is repaired first, so a single bad byte cannot make the
+   * Unicode-aware filter drop the whole message; the XML-illegal characters
+   * are then removed.
    *
    * @param string $text
    *   The text to sanitise.

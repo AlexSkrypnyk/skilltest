@@ -13,12 +13,10 @@ use Symfony\Component\Yaml\Yaml;
  *
  * A skill document opens with a `---` fenced YAML block followed by the
  * markdown body. This value object splits the two once so every structure
- * check works from the same parse: the frontmatter as data (for the name and
- * description checks), the raw content (for line-scanned checks), and the body
- * with the line it starts on (so body-scoped checks report file line numbers,
- * not body-relative ones). Malformed or missing frontmatter is recorded as a
- * flag rather than thrown, because "the frontmatter does not parse" is itself a
- * check outcome.
+ * check works from the same parse. `$bodyStartLine` lets body-scoped checks
+ * report file line numbers, not body-relative ones. Malformed or missing
+ * frontmatter is recorded as a flag, not thrown, because "the frontmatter
+ * does not parse" is itself a check outcome.
  */
 final readonly class SkillDocument {
 
@@ -151,8 +149,8 @@ final readonly class SkillDocument {
       return NULL;
     }
 
-    // Frontmatter must be a mapping; a non-empty YAML sequence is not valid
-    // frontmatter, only a mapping (or an empty document) is.
+    // A non-empty YAML sequence is not valid frontmatter; only a mapping or
+    // an empty document is.
     if ($parsed !== [] && array_is_list($parsed)) {
       return NULL;
     }

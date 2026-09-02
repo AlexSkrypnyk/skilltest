@@ -8,8 +8,8 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * One task's outcome across every model it was run on.
  *
  * A task is the unit an author writes and a threshold gates: it passes only
- * when every model it ran on met the threshold, so a task that holds on the
- * strong model but not the weak one is not silently green. The per-model
+ * when every model it ran on met the threshold, so a task that passes on the
+ * strong model but not the weak one is still a failure. The per-model
  * breakdown is preserved for the report and the model-matrix verdict.
  */
 final readonly class TaskOutcome {

@@ -10,7 +10,7 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**
- * Runs each trial in its own container: strong isolation over the fastest loop.
+ * Runs each trial in its own container.
  *
  * Workspaces are assembled on the host exactly as the host environment
  * assembles them - the same {@see TrialWorkspace}, under the project's
@@ -18,21 +18,17 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * so what the agent sees and writes stays a real, inspectable directory while
  * the process itself is sealed off. Only the two credential variables are
  * forwarded in; nothing else from the host environment crosses the boundary.
- * The run image (a base image plus optional build steps) is prepared once so
- * per-trial cost is a container start, not an image build. Concurrency and the
- * wall-clock timeout are the same bounded {@see ProcessPool} the host uses;
- * because a killed `docker run` client need not stop its container, a timed-out
- * trial's container is force-removed by name and a label sweep at teardown
- * guarantees no container or image is left behind. The pool and the docker/git
- * seams are injectable so the whole environment is testable without a real
- * daemon.
+ *
+ * The run image (a base image plus optional build steps) is prepared once, so
+ * per-trial cost is a container start, not an image build. Concurrency and
+ * the wall-clock timeout are the same bounded {@see ProcessPool} the host
+ * uses. A killed `docker run` client need not stop its container, so a
+ * timed-out trial's container is force-removed by name, and a label sweep at
+ * teardown guarantees no container or image is left behind.
  */
 final class DockerEnvironment implements EnvironmentInterface {
 
-  /**
-   * The scratch directory, relative to the repo root, workspaces live under.
-   */
-  public const string WORKSPACE_DIR = '.skilltest/tmp';
+  use EnvironmentWorkspaceTrait;
 
   /**
    * The directory the workspace is mounted at inside every container.
@@ -40,7 +36,7 @@ final class DockerEnvironment implements EnvironmentInterface {
   public const string CONTAINER_WORKDIR = '/work';
 
   /**
-   * The label key stamped on every container so a run can find and remove its.
+   * The label key stamped on every container so a run finds its own.
    */
   public const string RUN_LABEL = 'skilltest.run';
 
@@ -50,23 +46,11 @@ final class DockerEnvironment implements EnvironmentInterface {
   public const float PREPARE_TIMEOUT = 600.0;
 
   /**
-   * Runs a pool of commands and returns each one's exit, stdout, and duration.
-   *
-   * @var \Closure(array<array-key, array{0: string, 1: string}>): array<array-key, array{0: int, 1: string, 2: int}>
-   */
-  protected \Closure $pool;
-
-  /**
    * Runs one docker admin command and returns its exit code and stdout.
    *
    * @var \Closure(string, string): array{0: int, 1: string}
    */
   protected \Closure $docker;
-
-  /**
-   * The base directory trial workspaces are assembled under.
-   */
-  protected string $workspaceBase;
 
   /**
    * The run identifier stamped on containers so teardown can sweep them.
@@ -82,13 +66,6 @@ final class DockerEnvironment implements EnvironmentInterface {
    * The image built for this run, or NULL when the base image is used as-is.
    */
   protected ?string $builtImage = NULL;
-
-  /**
-   * The paths of workspaces preserved because retention was requested.
-   *
-   * @var string[]
-   */
-  protected array $keptWorkspaces = [];
 
   /**
    * Constructs a DockerEnvironment.
@@ -164,26 +141,6 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    */
-  public function setup(string $skill, string $path, array $inputs): TrialWorkspace {
-    $workspace = new TrialWorkspace($this->workspaceBase . '/' . uniqid('ws-', TRUE), $this->root, $skill, $path, $inputs, $this->git);
-
-    // Assembly is transactional: a half-built workspace is removed here rather
-    // than left for a caller that never received the handle to clean up.
-    try {
-      $workspace->assemble();
-    }
-    catch (\Throwable $throwable) {
-      $workspace->cleanup();
-
-      throw $throwable;
-    }
-
-    return $workspace;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function exec(array $batch): array {
     $commands = [];
     $names = [];
@@ -211,22 +168,9 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    */
-  public function cleanup(TrialWorkspace $workspace): void {
-    if ($this->keepWorkspaces) {
-      $this->keptWorkspaces[] = $workspace->path();
-
-      return;
-    }
-
-    $workspace->cleanup();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function teardown(): void {
-    // Remove any container this run left behind (a timed-out client can orphan
-    // one), then the image built for this run, then the scratch area - but only
+    // A timed-out client can orphan a container, so leftovers are swept
+    // before the built image is removed. The scratch area is removed only
     // while it is empty, so a concurrent run and any retained workspaces are
     // never disturbed.
     $this->sweepContainers();
@@ -241,20 +185,10 @@ final class DockerEnvironment implements EnvironmentInterface {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function keptWorkspaces(): array {
-    return $this->keptWorkspaces;
-  }
-
-  /**
    * A runner that executes a lifecycle hook inside a container from the image.
    *
-   * A docker run's hooks default to the trial's isolation: the hook runs in a
-   * fresh container from the same run image, its working directory mounted in,
-   * with the same credentials forwarded. The `on-host` escape bypasses this by
-   * using the host runner instead, so a hook that must manage host-side state
-   * still can.
+   * The hook runs in a fresh container from the same run image, its working
+   * directory mounted in, with the same credentials a trial receives.
    *
    * @return \Closure(string, string): array{0: int, 1: string}
    *   A runner taking a command and working directory and returning
@@ -266,8 +200,8 @@ final class DockerEnvironment implements EnvironmentInterface {
       $result = ($this->docker)($this->hookCommand($name, $command, $cwd), $this->root);
 
       // A timed-out hook, like a timed-out trial, can outlive its killed
-      // client, so force-remove its container by name; the teardown label sweep
-      // is the backstop for anything this misses.
+      // client, so its container is force-removed by name; the teardown label
+      // sweep catches anything this misses.
       if ($result[0] === ProcessPool::TIMEOUT_EXIT) {
         ($this->docker)($this->binary . ' rm -f ' . escapeshellarg($name), $this->root);
       }
@@ -410,9 +344,9 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * Builds the `docker run` command that runs a lifecycle hook in a container.
    *
-   * The hook container carries the same name and run label as a trial's, so a
-   * timed-out hook is removable by name and the teardown sweep never leaves one
-   * behind to block the run image's removal.
+   * The hook container is named and labelled like a trial's, so a timed-out
+   * hook is removable by name and the teardown sweep never leaves one behind
+   * to block the run image's removal.
    *
    * @param string $name
    *   The container name, so a timed-out hook container can be removed by it.
@@ -507,9 +441,9 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * Resolves a failed trial's stdout into a diagnostic when it produced none.
    *
-   * A container's own output is its best diagnostic and is kept as-is; only if
-   * a failing trial produced nothing - a timed-out kill, or a container that
-   * died before printing - is a synthetic message substituted so the persisted
+   * A container's own output is its best diagnostic and is kept as-is. A
+   * failing trial that produced nothing - a timed-out kill, or a container
+   * that died before printing - gets a synthetic message, so the persisted
    * transcript still explains the failure.
    *
    * @param int $exit_code

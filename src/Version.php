@@ -40,10 +40,9 @@ final class Version {
   /**
    * Resolves the effective tool version.
    *
-   * Box replaces the placeholder textually in every file it ships, so the
-   * unreplaced marker is detected by its sigil: mentioning the placeholder
-   * literally here would get it replaced in the PHAR as well and break the
-   * detection.
+   * Box replaces the placeholder textually in every file it ships, so a
+   * literal mention here would be replaced as well and break the detection.
+   * The unreplaced marker is detected by its leading '@'.
    *
    * @param string|null $version
    *   The raw version to resolve, or NULL to use the compiled-in value.

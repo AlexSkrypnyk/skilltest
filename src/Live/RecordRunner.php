@@ -21,9 +21,7 @@ use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
  * {@see AgentCommand} invocation shape. The workspace is torn down whether the
  * run passed, failed, or threw. Grading is deliberately not done here: the
  * command grades the fixture it writes, so the verdict is asserted against the
- * file that ships, and custom checks run once rather than twice. The
- * environment seam is injectable so the orchestration is testable without a
- * real agent.
+ * file that ships, and custom checks run once rather than twice.
  */
 final readonly class RecordRunner {
 

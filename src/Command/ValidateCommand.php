@@ -27,6 +27,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 class ValidateCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * {@inheritdoc}
    */
@@ -45,8 +47,8 @@ class ValidateCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $is_json = $input->getOption('json') === TRUE;
-    $show_config = $input->getOption('show-config') === TRUE;
+    $is_json = (bool) $input->getOption('json');
+    $show_config = (bool) $input->getOption('show-config');
 
     try {
       $loaded = (new ConfigLoader($root))->load($this->cliOverrides($input));
@@ -59,10 +61,10 @@ class ValidateCommand extends Command {
     $uncovered = $this->warnUncovered($loaded, $result);
 
     if ($is_json) {
-      $this->writeJson($output, $loaded, $result, $show_config);
+      $this->renderJson($output, $loaded, $result, $show_config);
     }
     else {
-      $this->writeHuman($output, $loaded, $result, $show_config, $uncovered);
+      $this->renderHuman($output, $loaded, $result, $show_config, $uncovered);
     }
 
     return $result->hasErrors() ? ExitCode::CONFIG_ERROR : ExitCode::PASS;
@@ -71,16 +73,14 @@ class ValidateCommand extends Command {
   /**
    * Warns about every discovered skill that ships without an `eval.yaml`.
    *
-   * The command loads the whole repo, so it already knows which skill
-   * directories have no `eval.yaml`. Surfacing them keeps validate honest: an
-   * unconfigured repo no longer reports a clean "validated 0 skill(s)." while
-   * the coverage gate would fail that very same repo. The exclusion set is the
-   * coverage gate's own, so validate never disagrees with the gate about which
-   * holes are unexplained. These are warnings, not errors: the coverage gate
-   * owns the hard failure, and validate's config-error exit stays reserved for
-   * malformed or incoherent config.
+   * Without the warnings, an unconfigured repo would report a clean
+   * "validated 0 skill(s)." while the coverage gate fails the same repo. The
+   * exclusion set is the coverage gate's own, so validate and the gate agree
+   * on which uncovered skills are unexplained. These are warnings, not
+   * errors: the coverage gate owns the hard failure, and validate's
+   * config-error exit stays reserved for malformed or incoherent config.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append warnings to.
@@ -88,40 +88,14 @@ class ValidateCommand extends Command {
    * @return int
    *   The number of uncovered skills warned about.
    */
-  protected function warnUncovered(LoadedConfig $loaded_config, ValidationResult $validation_result): int {
-    $violations = (new Coverage($loaded_config))->violations();
+  protected function warnUncovered(LoadedConfig $loaded, ValidationResult $validation_result): int {
+    $violations = (new Coverage($loaded))->violations();
 
     foreach ($violations as $violation) {
       $validation_result->addWarning($violation->path, '', sprintf("skill '%s' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $violation->skill));
     }
 
     return count($violations);
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
   /**
@@ -175,14 +149,14 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
    * @param bool $show_config
    *   Whether to include the merged configuration.
    */
-  protected function writeJson(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config): void {
+  protected function renderJson(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config): void {
     $payload = [
       'ok' => !$validation_result->hasErrors(),
       'errors' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->errors()),
@@ -192,7 +166,7 @@ class ValidateCommand extends Command {
     if ($show_config) {
       $config = [];
 
-      foreach ($loaded_config->skills as $skill) {
+      foreach ($loaded->skills as $skill) {
         $config[$skill->effective->skill] = $skill->effective->toArray();
       }
 
@@ -207,7 +181,7 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
@@ -216,9 +190,9 @@ class ValidateCommand extends Command {
    * @param int $uncovered
    *   The number of discovered skills that have no `eval.yaml`.
    */
-  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
+  protected function renderHuman(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
     if ($show_config) {
-      foreach ($loaded_config->skills as $skill) {
+      foreach ($loaded->skills as $skill) {
         $output->writeln('# ' . $skill->effective->skill);
         $output->writeln(Yaml::dump($skill->effective->toArray(), 6, 2));
       }
@@ -239,25 +213,12 @@ class ValidateCommand extends Command {
     }
 
     if ($uncovered > 0) {
-      $output->writeln(sprintf('OK: validated %d skill(s); %d discovered skill(s) have no eval.yaml (see warnings).', count($loaded_config->skills), $uncovered));
+      $output->writeln(sprintf('OK: validated %d skill(s); %d discovered skill(s) have no eval.yaml (see warnings).', count($loaded->skills), $uncovered));
 
       return;
     }
 
-    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded_config->skills)));
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded->skills)));
   }
 
 }

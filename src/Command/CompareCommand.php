@@ -13,21 +13,21 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `compare` command: two or more results files, side by side.
+ * The `compare` command.
  *
- * Diagnosis, not policy: it loads each `results.json`, lines the runs up, and
- * shows the per-task, per-model, and aggregate deltas so a reader can see what
- * moved between two branches, two skill revisions, or two models. It never
- * decides whether a change is acceptable - that is `gate` - so it exits 0
- * whenever every file loaded, and only a bad argument or an unreadable or
- * incompatible file is a configuration error (exit 2). The first file is the
- * baseline every delta is measured against.
+ * Loads two or more `results.json` files and renders the per-task,
+ * per-model, and aggregate deltas between them. It never decides whether a
+ * change is acceptable - that is `gate` - so it exits 0 whenever every file
+ * loaded, and only a bad argument or an unreadable or incompatible file is a
+ * configuration error (exit 2). The first file is the baseline every delta
+ * is measured against.
  */
 class CompareCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * The supported output formats.
@@ -49,7 +49,7 @@ class CompareCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $raw = $input->getArgument('files');
     $paths = array_values(array_filter(is_array($raw) ? $raw : [], static fn(mixed $path): bool => is_string($path) && $path !== ''));
@@ -81,7 +81,7 @@ class CompareCommand extends Command {
     $comparison = Comparison::of($files);
 
     if ($format === 'json') {
-      $output->writeln(json_encode($comparison->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), OutputInterface::VERBOSITY_QUIET);
+      $output->writeln($this->encode($comparison->toArray()), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::PASS;
     }

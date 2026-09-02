@@ -139,7 +139,7 @@ final class CoverageCommandTest extends TestCase {
     $this->assertStringContainsString('needs \\| work later', $output);
   }
 
-  public function testUnknownFormatIsError(): void {
+  public function testUnknownFormatIsConfigError(): void {
     $root = vfsStream::setup('root', NULL, ['skills' => []]);
 
     $output = $this->runCoverage(['--dir' => $root->url(), '--format' => 'xml'], 2);

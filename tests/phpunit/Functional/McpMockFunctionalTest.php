@@ -12,14 +12,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Class McpMockTest.
+ * Class McpMockFunctionalTest.
  *
  * Functional test for parsing and normalising a task's `mcp-mocks:` block; it
  * reads real `response-file` fixtures from a temp skill directory, so it lives
  * with the file-system tests rather than the pure unit ones.
  */
 #[CoversClass(McpMock::class)]
-final class McpMockTest extends TestCase {
+final class McpMockFunctionalTest extends TestCase {
 
   use ArrayPathTrait;
 

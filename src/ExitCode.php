@@ -7,8 +7,7 @@ namespace AlexSkrypnyk\SkillTest;
 /**
  * The tool-wide exit code contract.
  *
- * Exit codes are a documented API: CI scripts rely on them, and changing
- * them is a breaking change.
+ * Exit codes are a documented API: changing a value is a breaking change.
  */
 final class ExitCode {
 

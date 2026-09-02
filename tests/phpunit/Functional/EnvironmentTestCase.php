@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Live\EnvironmentInterface;
 use AlexSkrypnyk\SkillTest\Live\TrialWorkspace;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -24,6 +25,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[Group('live')]
 abstract class EnvironmentTestCase extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * The temporary base holding the repo root, source clone, and workspaces.
@@ -179,40 +182,6 @@ abstract class EnvironmentTestCase extends TestCase {
     exec('git -C ' . escapeshellarg($cwd) . ' ' . $args . ' 2>&1', $output);
 
     return implode("\n", $output);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

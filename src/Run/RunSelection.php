@@ -14,8 +14,8 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * Selection is resolved once, up front, so an impossible request - an unknown
  * group, a check id no group owns, or a check that contradicts the requested
  * group - fails as a configuration error before anything runs. The check id's
- * prefix decides which group owns it, so `--check` alone is enough to narrow
- * the run to the one group that can produce it.
+ * prefix decides which group owns it, so a check id alone narrows the run
+ * to the one group that can produce it.
  */
 final readonly class RunSelection {
 

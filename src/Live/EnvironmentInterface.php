@@ -7,9 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * The seam a live run executes trials through.
  *
- * An environment decides where a trial runs and what it can touch - never what
- * passing means. The contract, checks, judge, and report are identical whatever
- * implements this; only the workspace location and command execution differ. A
+ * An environment decides where a trial runs and what it can touch, not what
+ * passing means. The contract, checks, judge, and report are identical
+ * whatever implements this; only the workspace location and command execution
+ * differ. A
  * run brackets its trials with one {@see prepare} and one {@see teardown};
  * every trial is a {@see setup} that builds its workspace, an {@see exec} that
  * runs its command in that workspace's context, and a {@see cleanup} that

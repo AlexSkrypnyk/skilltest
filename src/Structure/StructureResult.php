@@ -7,17 +7,15 @@ namespace AlexSkrypnyk\SkillTest\Structure;
 /**
  * One structure check's outcome for one skill.
  *
- * Unlike a security finding, which only ever records a failure, a structure
- * check reports a verdict for every skill it runs against: it passed, it
- * failed, it warned, or it was suppressed. A warning is advice, not a gate: it
- * is always listed like a failure but never fails the run, so warn-only checks
- * and warn thresholds are possible.
+ * A structure check reports a verdict for every skill it runs against: it
+ * passed, it failed, it warned, or it was suppressed. A warning is listed
+ * like a failure but never fails the run, so warn-only checks and warn
+ * thresholds are possible.
  *
- * Suppression is a first-class state. A skill's `eval.yaml` may switch a check
- * off with a written reason, and the result carries that reason so a report
- * can show the check as deliberately suppressed rather than silently absent.
- * Failures carry the offending file, line, and evidence so the report is
- * debuggable without re-running.
+ * A skill's `eval.yaml` may switch a check off with a written reason, and
+ * the result carries that reason so a report can show the check as
+ * suppressed instead of absent. Failures carry the offending file, line,
+ * and evidence so the report is debuggable without re-running.
  */
 final readonly class StructureResult {
 

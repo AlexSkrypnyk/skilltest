@@ -7,11 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Judge;
 /**
  * How a per-criterion abstention is treated when gating a trial.
  *
- * A judge may return `unknown` for a criterion when the evidence does not show
- * the answer. Strict runs (`fail`) treat that abstention as not-passed so an
- * unproven criterion blocks the trial; lenient runs (`ignore`) let it through
- * while the abstention is still reported. It is never silently a pass either
- * way - the difference is only whether an abstention blocks.
+ * A judge may return `unknown` for a criterion when the evidence does not
+ * show the answer. Strict runs (`fail`) treat that abstention as not-passed
+ * so an unproven criterion blocks the trial; lenient runs (`ignore`) let it
+ * through while the abstention is still reported.
  */
 enum UnknownPolicy: string {
 

@@ -7,9 +7,8 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * The effective, merged configuration for one skill.
  *
- * Produced by folding a skill's `eval.yaml` over the repo `skilltest.yml` over
- * built-in defaults, with CLI overrides on top. This is what `validate
- * --show-config` prints, so precedence is observable rather than a mystery.
+ * Produced by folding a skill's `eval.yaml` over the repo `skilltest.yml`
+ * over built-in defaults, with CLI overrides on top.
  */
 final readonly class EffectiveConfig {
 
@@ -136,9 +135,9 @@ final readonly class EffectiveConfig {
   /**
    * Resolves the judge model from the CLI, `models.judge`, or a fallback.
    *
-   * The default is the ladder's weakest model (or the repo default), never the
-   * execution model, so the judge stays a cheap, pinned model that does not
-   * follow `--models` upward.
+   * The default is the ladder's weakest model (or the repo default), never
+   * the execution model, so the judge stays a cheap, pinned model that a
+   * `--models` override does not change.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\RepoConfig $repo_config
    *   The repo configuration.

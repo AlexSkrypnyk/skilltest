@@ -12,11 +12,11 @@ use AlexSkrypnyk\SkillTest\Structure\StructureResult;
 /**
  * The whole deterministic run's outcome, ready for rendering and totals.
  *
- * Aggregates every per-skill group result with the repo-level hook results and
- * coverage-gate violations, and owns the arithmetic every renderer shares:
- * how many checks ran, how many failed, and how many were suppressed. The
- * machine-readable document is produced here too, so the JSON reporter never
- * computes its own truths.
+ * Aggregates every per-skill group result with the repo-level hook results
+ * and coverage-gate violations, and holds the arithmetic every renderer
+ * shares: how many checks ran, how many failed, and how many were
+ * suppressed. The machine-readable document is produced here too, so a
+ * consumer never computes its own figures.
  */
 final readonly class RunReport {
 
@@ -185,8 +185,6 @@ final readonly class RunReport {
 
   /**
    * Maps a contract, custom-check, or hook result to a document row.
-   *
-   * The stable id renders under the `check` key the results schema uses.
    *
    * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $result
    *   The check result.

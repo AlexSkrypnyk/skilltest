@@ -25,16 +25,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Tokens command.
  *
- * Token accounting so skill files stay small on purpose: `tokens count`
- * reports per-file counts for markdown files, and `tokens compare` diffs the
- * counts of every discovered skill's markdown files against a git ref so CI
- * can gate on skill bloat. Counts come from the same {@see TokenCounter} that
- * backs the `structure.token-budget` check - estimated by default, exact
- * byte-pair encoding when a vocabulary file is supplied. Growth beyond
- * `--threshold` or, under `--strict`, a file over its absolute limit fails
- * with exit 1; a bad action, path, ref, or vocabulary fails with exit 2.
+ * Provides token accounting: `tokens count` reports per-file counts for
+ * markdown files, and `tokens compare` diffs the counts of every discovered
+ * skill's markdown files against a git ref so growth in skill files can be
+ * gated. Counts come from the same {@see TokenCounter} that backs the
+ * `structure.token-budget` check - estimated by default, exact byte-pair
+ * encoding when a vocabulary file is supplied. Growth beyond `--threshold`
+ * or, under `--strict`, a file over its absolute limit fails with exit 1; a
+ * bad action, path, ref, or vocabulary fails with exit 2.
  */
 class TokensCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * The supported actions.
@@ -146,7 +148,7 @@ class TokensCommand extends Command {
 
       if (is_dir($absolute)) {
         foreach (SkillFiles::markdownUnder($absolute) as $file) {
-          $rows[$this->displayPath($root, $file)] = $counter->count($this->contents($file));
+          $rows[$this->relativePath($root, $file)] = $counter->count($this->contents($file));
         }
 
         continue;
@@ -156,7 +158,7 @@ class TokensCommand extends Command {
         return $this->error($output, sprintf("path '%s' does not exist.", $target));
       }
 
-      $rows[$this->displayPath($root, $absolute)] = $counter->count($this->contents($absolute));
+      $rows[$this->relativePath($root, $absolute)] = $counter->count($this->contents($absolute));
     }
 
     $rows = $this->sortRows($rows, $sort);
@@ -258,7 +260,7 @@ class TokensCommand extends Command {
       $marker = $dir . '/' . Discovery::MARKER;
 
       foreach (SkillFiles::markdownUnder($dir) as $file) {
-        $relative = $this->displayPath($root, $file);
+        $relative = $this->relativePath($root, $file);
         $ref_content = $git->contentAt($ref, $relative);
 
         $deltas[] = new TokenDelta($relative, $counter->count($this->contents($file)), $ref_content === NULL ? NULL : $counter->count($ref_content));
@@ -387,8 +389,8 @@ class TokensCommand extends Command {
   /**
    * Renders the compare rows, violations, and summary line.
    *
-   * Unchanged existing files are counted but not listed, so the report draws
-   * the eye to what moved: grown, shrunk, and new files, then violations.
+   * Unchanged existing files are counted but not listed; the listing holds
+   * grown, shrunk, and new files, then violations.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
@@ -536,7 +538,7 @@ class TokensCommand extends Command {
    * @return string
    *   The root-relative path, or the path unchanged.
    */
-  protected function displayPath(string $root, string $path): string {
+  protected function relativePath(string $root, string $path): string {
     $prefix = rtrim($root, '/') . '/';
 
     return str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path;
@@ -582,32 +584,6 @@ class TokensCommand extends Command {
     }
 
     return $rows;
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
   /**

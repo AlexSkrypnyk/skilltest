@@ -7,11 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Results;
 /**
  * One task's cross-model verdict as read back from a saved results document.
  *
- * A task is the unit gating and drift reason about: it carries the skill it
- * belongs to, the per-model pass verdict recomputed from the stored trials
- * against the skill's threshold (never the rounded display rate), and the
- * combined verdict a golden check consults - a task passes only when it ran
- * on at least one model and every model met the bar.
+ * Carries the owning skill and the per-model pass verdicts, recomputed from
+ * the stored trials against the skill's threshold rather than the rounded
+ * display rate. A task passes only when it ran on at least one model and
+ * every model met the threshold.
  */
 final readonly class TaskView {
 

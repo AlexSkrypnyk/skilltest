@@ -22,18 +22,17 @@ use AlexSkrypnyk\SkillTest\Results\ResultsDocument;
 /**
  * Re-scores a saved llm run against the current contract, offline.
  *
- * The engine behind `skilltest grade --results`. It walks every trial in a
- * saved document and re-asserts the current contract and custom checks against
- * the trial's own transcript - so a tightened contract turns a run that
- * passed into the failures it would now record, without executing a single
+ * Walks every trial in a saved document and re-asserts the current contract
+ * and custom checks against the trial's own transcript. A tightened contract
+ * thus surfaces the failures it would now record, without executing a single
  * agent. The runtime-only failures a transcript cannot reproduce (a non-zero
- * agent exit, a mock miss, a responder abstention) are preserved from the saved
- * verdict, so re-grading never resurrects a trial that failed for a reason the
- * offline evidence does not carry. The judge dimension is reused from the saved
- * verdict unless a judge is supplied, in which case each trial is re-judged
- * against the current rubric. After re-scoring, per-model pass rates, the
- * minimal-model verdict, and the failure total are all rebuilt so the document
- * stays internally consistent.
+ * agent exit, a mock miss, a responder abstention) are preserved from the
+ * saved verdict, so re-grading cannot pass a trial that failed for a reason
+ * the offline evidence does not carry. The judge dimension is reused from
+ * the saved verdict unless a judge is supplied, in which case each trial is
+ * re-judged against the current rubric. After re-scoring, per-model pass
+ * rates, the minimal-model verdict, and the failure total are all rebuilt so
+ * the document stays internally consistent.
  */
 final readonly class Grader {
 
@@ -336,7 +335,7 @@ final readonly class Grader {
     $first = Data::toArrayList(Data::get($tasks[0], 'models'));
 
     foreach ($first as $position => $model_entry) {
-      if ($this->positionSupports($tasks, $position, $threshold)) {
+      if ($this->modelPassesEveryTask($tasks, $position, $threshold)) {
         return ResultsDocument::modelAlias($model_entry);
       }
     }
@@ -357,7 +356,7 @@ final readonly class Grader {
    * @return bool
    *   TRUE when every task's model at that position met the threshold.
    */
-  protected function positionSupports(array $tasks, int $position, float $threshold): bool {
+  protected function modelPassesEveryTask(array $tasks, int $position, float $threshold): bool {
     foreach ($tasks as $task) {
       $models = Data::toArrayList(Data::get($task, 'models'));
       $model = $models[$position] ?? NULL;

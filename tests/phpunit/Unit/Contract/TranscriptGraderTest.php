@@ -30,7 +30,7 @@ final class TranscriptGraderTest extends TestCase {
   protected function setUp(): void {
     parent::setUp();
 
-    $dir = dirname(__DIR__, 3) . '/.artifacts/tmp/transcriptgrader-' . getmypid() . '-' . uniqid();
+    $dir = dirname(__DIR__, 4) . '/.artifacts/tmp/transcriptgrader-' . getmypid() . '-' . uniqid();
     mkdir($dir, 0777, TRUE);
     $this->transcript = $dir . '/transcript.jsonl';
     file_put_contents($this->transcript, '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n");

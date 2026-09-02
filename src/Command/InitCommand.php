@@ -20,13 +20,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Init command.
  *
- * Scaffolds a `validate`-passing `eval.yaml` next to a skill's `SKILL.md`. The
- * template mode needs no credentials; `--ai` additionally drafts tasks, command
- * patterns, and a rubric from the skill body through the one-shot prompt seam,
- * flagging low-confidence guesses for review and falling back to the template
- * when the model is unavailable. Apply is merge-safe: an existing file is never
- * clobbered without `--force`; instead the command prints a diff of what it
- * would have written and exits 1.
+ * Scaffolds a `validate`-passing `eval.yaml` next to a skill's `SKILL.md`.
+ * The template mode needs no credentials; `--ai` additionally drafts tasks,
+ * command patterns, and a rubric from the skill body through the one-shot
+ * prompt seam, flagging low-confidence guesses for review and falling back
+ * to the template when the model is unavailable. An existing file is never
+ * overwritten without `--force`; instead the command prints a diff of what
+ * it would have written and exits 1.
  */
 class InitCommand extends Command {
 
@@ -94,7 +94,7 @@ class InitCommand extends Command {
     // @codeCoverageIgnoreEnd
     $manifest = SkillManifest::fromString($contents);
     $skill = $this->skillName($manifest, $dir);
-    $draft = $input->getOption('ai') === TRUE ? $this->draft($manifest, $output) : NULL;
+    $draft = (bool) $input->getOption('ai') ? $this->draft($manifest, $output) : NULL;
 
     $proposed = EvalScaffold::render($skill, $manifest, $draft);
     $target = $dir . '/' . self::EVAL_FILE;

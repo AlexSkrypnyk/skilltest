@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Live;
 
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -15,6 +16,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(AgentPreflight::class)]
 final class AgentPreflightTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A real working directory holding fake binaries and a fake home.
@@ -100,40 +103,6 @@ final class AgentPreflightTest extends TestCase {
     $preflight = new AgentPreflight([AgentPreflight::ENV_AGENT => 'claude', 'ANTHROPIC_API_KEY' => '', 'CLAUDE_CODE_OAUTH_TOKEN' => '   ', 'HOME' => '']);
 
     $this->assertFalse($preflight->hasCredentials());
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

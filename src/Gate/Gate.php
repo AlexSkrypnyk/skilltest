@@ -10,12 +10,11 @@ use AlexSkrypnyk\SkillTest\Results\TaskView;
 /**
  * Compares a current run against a baseline and applies the gate policy.
  *
- * The policy engine behind `skilltest gate`. It answers four independent
- * questions and folds them into one verdict: did the aggregate pass rate drop
- * beyond tolerance; did a golden task stop passing (which fails the gate no
- * matter the aggregate); did a skill's minimal model climb the ladder (a cost
- * regression is a decision, not an accident); and did the task set drift, held
- * to the configured allow/warn/fail policy. It reads both runs through the same
+ * Four independent questions fold into one verdict: did the aggregate pass
+ * rate drop beyond tolerance; did a golden task stop passing (which fails
+ * the gate no matter the aggregate); did a skill's minimal model climb the
+ * ladder; and did the task set drift, held to the configured
+ * allow/warn/fail policy. It reads both runs through the same
  * {@see ResultsDocument} model, so the numbers it gates on are those every
  * report shows.
  */

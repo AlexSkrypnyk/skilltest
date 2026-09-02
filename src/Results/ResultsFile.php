@@ -10,15 +10,12 @@ use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
- * Loads a saved `results.json` for consumption by compare, report, and gate.
+ * Loads and validates a saved `results.json`.
  *
- * The read-only counterpart to the migrator's reader gate: it decodes the JSON,
- * narrows it to a mapping, and rejects a document whose schema major this tool
- * cannot read, pointing the caller at `skilltest migrate`. It never rewrites,
- * so a stale-major file is a hard error here rather than a silent upgrade.
- *
- * A same-major minor difference is read, because unknown keys are permitted by
- * policy and the accessors degrade gracefully on a missing one.
+ * Rejects a document whose schema major this tool cannot read and never
+ * rewrites, so a stale-major file is a hard error rather than a silent
+ * upgrade. A same-major minor difference is read: unknown keys are
+ * permitted and missing ones degrade gracefully in the accessors.
  */
 final readonly class ResultsFile {
 

@@ -8,20 +8,22 @@ use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Grade\Grader;
 use AlexSkrypnyk\SkillTest\Judge\Judge;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ResultsDocumentTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Class GraderTest.
+ * Class GraderFunctionalTest.
  *
  * Functional test for the offline re-score engine: contract re-evaluation from
  * saved transcripts, runtime-failure preservation, the minimal-model recompute,
  * and re-judging through an injected judge seam so no agent is spawned.
  */
 #[CoversClass(Grader::class)]
-final class GraderTest extends TestCase {
+final class GraderFunctionalTest extends TestCase {
 
+  use DirectoryCleanupTrait;
   use ResultsDocumentTrait;
 
   /**
@@ -440,40 +442,6 @@ final class GraderTest extends TestCase {
       'coverage' => ['violations' => []],
       'totals' => ['checks' => 1, 'failures' => 0, 'trials' => 1, 'tokens' => ['in' => 0, 'out' => 0], 'cost_usd' => 0.0],
     ];
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

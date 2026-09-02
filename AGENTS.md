@@ -6,7 +6,7 @@ code in this repository.
 
 ## Project Overview
 
-skilltest is a standalone test runner for AI agent skills - the `SKILL.md`-based skills used by Claude Code and compatible runtimes. It is a PHP CLI application (Symfony Console) distributed as a single executable, giving skill repositories a token-free deterministic CI-gate suite and an opt-in llm suite. The authoritative product specification is the PRD set in `prd/README.md`.
+skilltest is a standalone test runner for AI agent skills - the `SKILL.md`-based skills used by Claude Code and compatible runtimes. It is a PHP CLI application (Symfony Console) distributed as a single executable, giving skill repositories a token-free deterministic CI-gate suite and an opt-in llm suite. The user-facing documentation set is in `docs/README.md`.
 
 
 ## PHP Application Architecture

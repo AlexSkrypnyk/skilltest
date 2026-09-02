@@ -28,37 +28,24 @@ use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `llm` command: run skills live and gate on a pass-rate threshold.
+ * The `llm` command.
  *
- * The explicit, token-spending counterpart to the deterministic gate: for each
- * selected skill and task it runs the skill headlessly through Claude Code
- * `trials` times per model, asserts the same contract the deterministic suite
- * asserts against every live transcript, and fails when any model's pass rate
- * drops below the task threshold. It never runs implicitly - it needs an
- * authenticated agent and spends tokens - so a missing binary or credential,
- * or for docker an unreachable daemon, is a configuration error (exit 2)
- * before any trial runs. Results go to stdout; diagnostics to stderr; `--json`
- * emits the machine-readable document and `--output`/`--output-dir` persist it
- * with per-trial transcripts, redacted.
+ * Runs each selected skill and task headlessly through Claude Code `trials`
+ * times per model, asserts the same contract the deterministic suite asserts
+ * against every live transcript, and fails when any model's pass rate drops
+ * below the task threshold. It needs an authenticated agent and spends
+ * tokens, so a missing binary or credential, or for docker an unreachable
+ * daemon, is a configuration error (exit 2) before any trial runs. Results
+ * go to stdout; diagnostics to stderr; `--json` emits the machine-readable
+ * document and `--output`/`--output-dir` persist it with per-trial
+ * transcripts, redacted.
  */
 class LlmCommand extends Command {
 
   use LiveOptionsTrait;
-
-  /**
-   * The input options folded into the CLI configuration overrides.
-   */
-  protected const array OVERRIDES = [
-    'models' => 'models',
-    'threshold' => 'threshold',
-    'trials' => 'trials',
-    'env' => 'env',
-    'judge-model' => 'judge-model',
-  ];
 
   /**
    * {@inheritdoc}
@@ -93,7 +80,7 @@ class LlmCommand extends Command {
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
     $json = (bool) $input->getOption('json');
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $parallel_option = $this->stringOption($input, 'parallel');
     $parallel = $parallel_option === NULL ? 1 : $this->intOption($input, 'parallel');
@@ -127,9 +114,6 @@ class LlmCommand extends Command {
     $environment = $this->stringOption($input, 'env') ?? $loaded->repo->environment;
     $env_map = $this->environmentMap();
 
-    // The preflight is environment-specific: host needs an agent binary on the
-    // machine, docker needs the CLI and a reachable daemon; both need
-    // credentials. Either problem is a configuration error before any trial.
     $preflight = $environment === 'docker' ? new DockerPreflight($env_map, $root) : new AgentPreflight($env_map);
     $problem = $preflight->problem();
 
@@ -151,9 +135,9 @@ class LlmCommand extends Command {
       if ($environment === 'docker') {
         $docker = new DockerEnvironment($root, $parallel, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map, keepWorkspaces: $keep);
         $environment_impl = $docker;
-        // The agent runs inside the container, so the suite drives the image's
-        // own `claude`; lifecycle hooks share the trial's isolation unless a
-        // hook opts back onto the host with `on-host`.
+        // The agent runs inside the container, so the suite invokes the
+        // image's own `claude`. Lifecycle hooks share the trial's isolation;
+        // a hook with `on-host` runs on the host instead.
         $binary = AgentPreflight::DEFAULT_BINARY;
         $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr), containerRunner: $docker->hookRunner());
       }
@@ -206,9 +190,6 @@ class LlmCommand extends Command {
   /**
    * Builds the trial cache, or NULL when caching is off for this run.
    *
-   * Caching is opt-in: `--cache` turns it on and `--no-cache` forces it off, so
-   * a `--no-cache` always wins and the default is to run every trial live.
-   *
    * @param \Symfony\Component\Console\Input\InputInterface $input
    *   The command input.
    * @param string $root
@@ -228,8 +209,8 @@ class LlmCommand extends Command {
   /**
    * Renders the human report: a verdict line per task-model, then totals.
    *
-   * In quiet verbosity only failing verdicts and their failed trials print,
-   * so a green run is silent and a red run names exactly what failed.
+   * In quiet verbosity only failing verdicts and their failed trials print;
+   * a passing run prints nothing and a failing run lists each failure.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.

@@ -7,11 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * One skill's live outcome: its tasks and the minimal-model verdict over them.
  *
- * The verdict answers the cost question the matrix exists for - the weakest
- * model, in ladder order, on which every one of the skill's tasks still passes.
- * A skill with no such model reports a null verdict rather than pretending the
- * cheapest one works. The threshold and trial count travel with the verdict so
- * a reader knows the bar the answer was measured against.
+ * The verdict names the weakest model, in ladder order, on which every one of
+ * the skill's tasks passes; a skill with no such model reports a null
+ * verdict. The threshold and trial count are carried with the verdict, so a
+ * reader knows the bar it was measured against.
  */
 final readonly class SkillOutcome {
 

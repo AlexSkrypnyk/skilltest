@@ -9,14 +9,12 @@ use AlexSkrypnyk\SkillTest\Live\LlmReport;
 /**
  * The whole matrix run as a report: per-skill grids, the repo grid, and costs.
  *
- * Turns a live run into the multi-model answer machine's output: each skill's
- * grid and minimal-model verdict, the repo-level grid that answers "which of my
- * skills are Haiku-safe", and the cost totals that turn the price of the
- * exercise into a number. The repo grid's columns are the models that actually
- * ran, in first-seen (ladder) order, so a skill that stopped early or ran a
- * narrower model list simply leaves the unrun columns blank rather than forcing
- * a run it never made. The default model is carried so a skill's verdict can be
- * priced against it.
+ * Turns a live run into the matrix output: each skill's grid and
+ * minimal-model verdict, the repo-level grid across skills, and the cost
+ * totals. The repo grid's columns are the models that actually ran, in
+ * first-seen (ladder) order, so a skill that stopped early or ran a narrower
+ * model list leaves its unrun columns blank. The default model is carried so
+ * a skill's verdict can be priced against it.
  */
 final readonly class MatrixReport {
 

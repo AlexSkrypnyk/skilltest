@@ -9,11 +9,7 @@ namespace AlexSkrypnyk\SkillTest\Judge;
  *
  * Binary criteria are scored rather than a single holistic rating because N
  * independent yes/no judgements are far lower-variance than one integer. The
- * verdict passes only when no criterion blocks under the abstention policy, so
- * a trial is judged green only when every criterion is affirmed (with
- * abstentions counting for or against per the policy). The reasoning is carried
- * for the report; the per-criterion detail is what the results document
- * records.
+ * verdict passes only when no criterion blocks under the abstention policy.
  */
 final readonly class JudgeVerdict {
 

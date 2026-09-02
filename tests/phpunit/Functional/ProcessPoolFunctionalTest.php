@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ProcessPool::class)]
 #[Group('process')]
 final class ProcessPoolFunctionalTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A real working directory the commands execute in.
@@ -116,42 +119,6 @@ final class ProcessPoolFunctionalTest extends TestCase {
    */
   protected function sh(string $snippet): string {
     return 'sh -c ' . escapeshellarg($snippet);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        // @codeCoverageIgnoreStart
-        $this->remove($path);
-
-        continue;
-        // @codeCoverageIgnoreEnd
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

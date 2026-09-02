@@ -14,11 +14,10 @@ use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 /**
  * Enumerates the checks a selection would run, without running anything.
  *
- * The plan is the `--list` answer: it names every check id per group per
- * skill from configuration and the engines' published catalogs alone, so no
- * hook script, custom check, or `commands.resolve` binary ever executes while
- * planning. Suppressed structure checks are named as suppressed rather than
- * omitted, matching how reports treat suppression.
+ * Every check id per group per skill is named from configuration and the
+ * engines' published catalogs alone, so no hook script, custom check, or
+ * `commands.resolve` binary ever executes while planning. Suppressed
+ * structure checks are named as suppressed rather than omitted.
  */
 final readonly class RunPlan {
 
@@ -83,8 +82,9 @@ final readonly class RunPlan {
   /**
    * Plans the structure check lines for one skill.
    *
-   * Asks the checker which checks apply so the plan cannot drift from the run,
-   * and names a suppressed check with its written reason.
+   * The applicable checks come from `StructureChecker`, so the plan and the
+   * run list the same checks. A suppressed check is named with its written
+   * reason.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
    *   The loaded skill.
@@ -123,7 +123,7 @@ final readonly class RunPlan {
     $checks = array_map(static fn(array $pattern): string => $pattern[0], SecurityScanner::BASELINE_PATTERNS);
 
     if (Data::toStringList(Data::get($skill->effective->security, 'forbidden-tokens')) !== []) {
-      $checks[] = SecurityScanner::FORBIDDEN_TOKEN_CHECK;
+      $checks[] = SecurityScanner::CHECK_FORBIDDEN_TOKENS;
     }
 
     return array_values(array_filter($checks, $this->selection->matches(...)));

@@ -18,17 +18,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Structure command.
  *
- * Runs the deterministic `structure` group: pre-baked, default-on checks that
- * prove each skill's files are well-formed, internally consistent, and honest
- * about what they reference. Any failing check fails the gate with exit 1;
- * warnings (advisories and warn thresholds) are always listed but never
- * affect the exit code. A hard configuration error such as malformed YAML, or
- * a `commands.resolve` binary that cannot run, fails with exit 2. Coherence
- * of each skill's own `eval.yaml` surfaces as the per-skill
+ * Runs the deterministic `structure` group: built-in, default-on checks that
+ * verify each skill's files are well-formed, internally consistent, and
+ * accurate about what they reference. Any failing check fails the gate with
+ * exit 1; warnings (advisories and warn thresholds) are always listed but
+ * never affect the exit code. A hard configuration error such as malformed
+ * YAML, or a `commands.resolve` binary that cannot run, fails with exit 2.
+ * Coherence of each skill's own `eval.yaml` surfaces as the per-skill
  * `structure.contract-coherent` check rather than aborting the run, so one
  * incoherent skill does not mask the rest.
  */
 class StructureCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * The supported output formats.
@@ -84,32 +86,6 @@ class StructureCommand extends Command {
     }
 
     return $this->failed($results) ? ExitCode::FAIL : ExitCode::PASS;
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
   /**
@@ -302,19 +278,6 @@ class StructureCommand extends Command {
     $single_line = str_replace(["\r\n", "\r", "\n"], ' ', $value);
 
     return str_replace('|', '\\|', $single_line);
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
 }

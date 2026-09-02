@@ -7,20 +7,17 @@ namespace AlexSkrypnyk\SkillTest\Results;
 use AlexSkrypnyk\SkillTest\Config\Data;
 
 /**
- * The one place a saved results document is turned into numbers.
+ * Shared arithmetic over a saved results document.
  *
- * Compare (deltas), report (rendering), and interpret (the top failure) all
- * read a `results.json` the same way, so the arithmetic lives here once rather
- * than each consumer re-deriving a pass rate or re-walking the skill tree. The
- * aggregate figures come straight from the document's own `totals` and `run`
- * blocks - the renderers never recompute a truth the run already recorded - and
- * the per-model and per-task figures are folded from the raw trials so a
- * consumer sees the same rate the run measured.
+ * Consumers of a `results.json` read it through this class, so pass rates
+ * and skill-tree walks are derived once and identically. The aggregate
+ * figures are read from the document's own `totals` and `run` blocks; the
+ * per-model and per-task figures are folded from the raw trials, so they
+ * match the rate the run measured.
  *
- * Failure ordering is the tool's opinion about what a skill author fixes first:
- * a dangerous pattern before a malformed skill, a broken contract before a
- * soft llm verdict, so `interpret` can name a single "top failure"
- * deterministically.
+ * Failure ordering ranks what a skill author fixes first: security before
+ * structure, a broken contract before an llm verdict, so the top failure
+ * is deterministic.
  */
 final class Metrics {
 
@@ -32,7 +29,7 @@ final class Metrics {
   /**
    * The deterministic per-skill groups, in scan order.
    */
-  protected const array DETERMINISTIC_GROUPS = ['security', 'structure', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * The default threshold used when a document records no verdict threshold.
@@ -70,9 +67,10 @@ final class Metrics {
   /**
    * The per-model figures, folded from every trial that ran on each model.
    *
-   * Keyed by the model alias (falling back to the model id) so two runs of the
-   * same ladder line up column for column. The rate is recomputed from the raw
-   * trials rather than averaging the stored per-task rates, so it stays exact.
+   * Keyed by the model alias (falling back to the model id), so two runs of
+   * the same ladder produce the same keys. The rate is recomputed from the
+   * raw trials rather than averaging the stored per-task rates, so it stays
+   * exact.
    *
    * @param array<string, mixed> $document
    *   The results document.
@@ -110,8 +108,8 @@ final class Metrics {
   /**
    * The per-task-and-model pass rate, keyed `skill::task::alias`.
    *
-   * The stored rate is used verbatim so the figure a reader compares matches
-   * the one the report showed. Absent rates fall back to the trial fold.
+   * The stored rate is used verbatim, so the figure matches the reported
+   * one. Absent rates fall back to the trial fold.
    *
    * @param array<string, mixed> $document
    *   The results document.

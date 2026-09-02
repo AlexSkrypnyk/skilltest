@@ -28,27 +28,26 @@ use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `record` command: one live trial captured as the deterministic fixture.
+ * The `record` command.
  *
- * The bridge between the two suites. It runs a single live trial of one
- * skill's task, writes the transcript (redacted) to the skill's configured
- * `deterministic.transcript` path, then asserts the contract against the file
- * it wrote - so the verdict is graded from the fixture that ships, not the
- * live run, and "passes record" means "passes the deterministic transcript
- * gate". The workflow it serves is deliberate: change a skill, run
- * `skilltest record`, review the diff, commit. An existing fixture is never
- * clobbered without `--force`. A recording whose contract fails is still
- * written for inspection but exits 1, so a fixture that would poison the gate
- * is caught here rather than on the next push. Like the llm suite it spends
- * tokens and needs an authenticated agent, so a missing binary or credential,
- * or for docker an unreachable daemon, is a configuration error (exit 2)
- * before any trial runs.
+ * Runs a single live trial of one skill's task, writes the transcript
+ * (redacted) to the skill's configured `deterministic.transcript` path, then
+ * asserts the contract against the file it wrote - so the verdict is graded
+ * from the fixture that ships, not the live run, and a passing record is a
+ * fixture the deterministic transcript gate accepts. An existing fixture is
+ * never overwritten without `--force`. A recording whose contract fails is
+ * still written for inspection but exits 1, so a fixture that would fail the
+ * gate is caught here rather than on the next push. Like the llm suite it
+ * spends tokens and needs an authenticated agent, so a missing binary or
+ * credential, or for docker an unreachable daemon, is a configuration error
+ * (exit 2) before any trial runs.
  */
 class RecordCommand extends Command {
+
+  use LiveOptionsTrait;
 
   /**
    * The fixture path used when a skill sets no `deterministic.transcript`.
@@ -58,9 +57,9 @@ class RecordCommand extends Command {
   /**
    * The validation pointer of the "declared fixture is missing" error.
    *
-   * Recording is precisely what creates that fixture, so a not-yet-recorded
-   * fixture is the normal starting state and must never block the command that
-   * would produce it; every other validation error still does.
+   * Recording creates that fixture, so a missing fixture is the normal
+   * starting state and does not block the command; every other validation
+   * error still does.
    */
   protected const string FIXTURE_POINTER = 'deterministic.transcript';
 
@@ -83,7 +82,7 @@ class RecordCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $skill_name = $this->stringOption($input, 'skill');
 
@@ -114,7 +113,7 @@ class RecordCommand extends Command {
       return ExitCode::CONFIG_ERROR;
     }
 
-    $skill = $this->selectSkill($loaded, $skill_name);
+    $skill = $this->matchSkill($loaded, $skill_name);
 
     if (!$skill instanceof LoadedSkill) {
       return $this->reportError($stderr, ValidationMessage::error('', '', sprintf("no skill named '%s' with an %s was found.", $skill_name, $loaded->repo->evalFile)));
@@ -136,8 +135,8 @@ class RecordCommand extends Command {
     $path = $this->fixturePath($skill);
     $existed = is_file($path);
 
-    if ($existed && !$input->getOption('force')) {
-      return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relative($root, $path))));
+    if ($existed && !(bool) $input->getOption('force')) {
+      return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relativePath($root, $path))));
     }
 
     $environment = $skill->effective->environment;
@@ -153,7 +152,7 @@ class RecordCommand extends Command {
     try {
       if ($environment === 'docker') {
         $runtime = new DockerEnvironment($root, 1, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map);
-        // The agent runs inside the container, so record drives the image's
+        // The agent runs inside the container, so record invokes the image's
         // own `claude` rather than the host binary.
         $binary = AgentPreflight::DEFAULT_BINARY;
       }
@@ -173,35 +172,13 @@ class RecordCommand extends Command {
     $checks = $this->grade($root, $loaded, $skill, $path, $result->exitCode);
     $pass = array_reduce($checks, static fn(bool $carry, CheckResult $result): bool => $carry && $result->pass, TRUE);
 
-    $this->report($output, $skill, $entry['name'], $model_id, $this->relative($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
+    $this->renderReport($output, $skill, $entry['name'], $model_id, $this->relativePath($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
 
     if ($skill->effective->transcript === NULL) {
-      $stderr->writeln(sprintf("note: set 'deterministic.transcript: %s' in %s so the deterministic run consumes this fixture.", self::DEFAULT_FIXTURE, $this->relative($root, $skill->file)));
+      $stderr->writeln(sprintf("note: set 'deterministic.transcript: %s' in %s so the deterministic run consumes this fixture.", self::DEFAULT_FIXTURE, $this->relativePath($root, $skill->file)));
     }
 
     return $pass ? ExitCode::PASS : ExitCode::FAIL;
-  }
-
-  /**
-   * The process environment as a name-keyed string map.
-   *
-   * @return array<string, string>
-   *   The environment map.
-   */
-  protected function environmentMap(): array {
-    return getenv();
-  }
-
-  /**
-   * Resolves the per-trial timeout from the environment, or the default.
-   *
-   * @return float
-   *   The timeout in seconds.
-   */
-  protected function timeout(): float {
-    $value = getenv(LlmSuite::ENV_TIMEOUT);
-
-    return is_string($value) && is_numeric($value) ? (float) $value : LlmSuite::DEFAULT_TIMEOUT;
   }
 
   /**
@@ -215,7 +192,7 @@ class RecordCommand extends Command {
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill|null
    *   The matching skill, or NULL when none carries that name.
    */
-  protected function selectSkill(LoadedConfig $loaded, string $name): ?LoadedSkill {
+  protected function matchSkill(LoadedConfig $loaded, string $name): ?LoadedSkill {
     foreach ($loaded->skills as $skill) {
       if ($skill->effective->skill === $name) {
         return $skill;
@@ -296,9 +273,9 @@ class RecordCommand extends Command {
   /**
    * Resolves the absolute fixture path the transcript is written to.
    *
-   * The path is resolved exactly as the deterministic transcript group resolves
-   * it - relative to the skill directory - so the written file and the file the
-   * gate later reads are one and the same.
+   * The path is resolved exactly as the deterministic transcript group
+   * resolves it - relative to the skill directory - so the written file is
+   * the file the gate later reads.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
    *   The skill being recorded.
@@ -407,7 +384,7 @@ class RecordCommand extends Command {
    * @param bool $pass
    *   Whether every check passed.
    */
-  protected function report(OutputInterface $output, LoadedSkill $skill, string $task, string $model_id, string $path, bool $overwrote, array $checks, bool $pass): void {
+  protected function renderReport(OutputInterface $output, LoadedSkill $skill, string $task, string $model_id, string $path, bool $overwrote, array $checks, bool $pass): void {
     $output->writeln(sprintf("%s %s (skill '%s', task '%s', model '%s').", $overwrote ? 'Overwrote' : 'Recorded', $path, $skill->effective->skill, $task, $model_id));
 
     if ($pass) {
@@ -429,21 +406,6 @@ class RecordCommand extends Command {
   }
 
   /**
-   * Renders one failed check as an indented line with its evidence.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $failure
-   *   The failed check.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function failureLine(CheckResult $failure): string {
-    $line = sprintf('  %s FAIL - %s', $failure->id, $failure->message);
-
-    return $failure->evidence === '' ? $line : sprintf('%s [%s]', $line, $failure->evidence);
-  }
-
-  /**
    * Reduces an absolute path under the root to a root-relative one.
    *
    * @param string $root
@@ -454,7 +416,7 @@ class RecordCommand extends Command {
    * @return string
    *   The path relative to the root, or unchanged when it is outside the root.
    */
-  protected function relative(string $root, string $path): string {
+  protected function relativePath(string $root, string $path): string {
     $prefix = rtrim($root, '/') . '/';
 
     return str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path;
@@ -475,62 +437,6 @@ class RecordCommand extends Command {
     $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
 
     return ExitCode::CONFIG_ERROR;
-  }
-
-  /**
-   * Converts a thrown configuration error to a reportable message.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
-   *   The thrown error.
-   *
-   * @return \AlexSkrypnyk\SkillTest\Validation\ValidationMessage
-   *   The equivalent validation message.
-   */
-  protected function toMessage(ConfigException $config_exception): ValidationMessage {
-    return ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
-  }
-
-  /**
-   * Reads a string option, returning NULL when it is absent or empty.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   * @param string $name
-   *   The option name.
-   *
-   * @return string|null
-   *   The option value, or NULL when it is unset or blank.
-   */
-  protected function stringOption(InputInterface $input, string $name): ?string {
-    $value = $input->getOption($name);
-
-    return is_string($value) && $value !== '' ? $value : NULL;
   }
 
 }

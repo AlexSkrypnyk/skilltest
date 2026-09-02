@@ -7,12 +7,12 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * Matches a name against shell-style `*` and `?` globs.
  *
- * The one place the tool's selection glob is turned into a match, so skill and
- * task selection share exactly one wildcard dialect: `*` matches any run of
- * characters and `?` matches a single character, everything else is literal,
- * and a name matches when any glob in the set matches it. An empty glob set
- * matches nothing, so a caller that means "select all" tests for an empty set
- * before calling rather than passing one.
+ * The one place a selection glob is turned into a match, so skill and task
+ * selection share a single wildcard dialect: `*` matches any run of
+ * characters, `?` matches a single character, and everything else is
+ * literal. A name matches when any glob in the set matches it. An empty
+ * glob set matches nothing, so a caller that means "select all" tests for
+ * an empty set instead of passing one.
  */
 final readonly class Glob {
 

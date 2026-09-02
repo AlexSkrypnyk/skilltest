@@ -23,26 +23,23 @@ use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockWiring;
 use AlexSkrypnyk\SkillTest\Live\Mcp\SelfInvocation;
 
 /**
- * Runs the live llm suite: workspaces, headless trials, and the same contract.
+ * Runs the live llm suite: workspaces, headless trials, and grading.
  *
  * For every selected skill, task, and model this assembles a fresh workspace
  * per trial, runs the skill headlessly, and grades the live transcript against
- * the identical contract the deterministic suite asserts. One declaration is
- * therefore enforced both from the recorded fixture on every push and
- * behaviourally from live runs.
+ * the same contract the deterministic suite asserts.
  *
  * Trials for a model run through a bounded worker pool, so `--parallel`
- * shortens wall-clock without changing the verdict, and every workspace is torn
+ * shortens wall-clock without changing the verdict. Every workspace is torn
  * down whether its trial passed, failed, or threw. A trial passes only when
  * every contract and custom check passes and the agent exited cleanly within
- * its timeout. A task passes on a model when its pass rate meets the threshold,
- * with no retries to mask a flaky skill.
+ * its timeout. A task passes on a model when its pass rate meets the
+ * threshold, with no retries to mask a flaky skill.
  *
  * Trials run through an injected {@see EnvironmentInterface}, which decides
- * where a trial runs and what it can touch, never what passing means. A
+ * where a trial runs and what it can touch, not what passing means. A
  * {@see Lifecycle} brackets the run and every trial with deterministic setup
- * and teardown hooks. Both, and the check seam, are injectable so the whole
- * orchestration is testable without a real agent.
+ * and teardown hooks.
  */
 final readonly class LlmSuite {
 
@@ -202,14 +199,14 @@ final readonly class LlmSuite {
   /**
    * Runs every selected task of one skill across the ladder, model by model.
    *
-   * The ladder is climbed weakest first and every task runs on a model before
-   * the climb moves up, so a model's row across the whole skill is complete
-   * before the next model starts. In full-matrix mode every model runs and each
-   * task ends up with the full ladder; under `--stop-at-pass` the climb stops
-   * at the first model that passes every task, so the stronger rows above the
-   * minimal model are never paid for. Trials for a given task and model are
-   * independent, so the per-task model list is identical to a task-major run in
-   * full-matrix mode.
+   * The ladder is climbed weakest first, and every task runs on a model
+   * before the climb moves up, so a model's row across the whole skill is
+   * complete before the next model starts. In full-matrix mode every model
+   * runs and each task carries the full ladder; under `--stop-at-pass` the
+   * climb stops at the first model that passes every task, and the stronger
+   * rows above it never run. Trials for a given task and model are
+   * independent, so the per-task model list is identical to a task-major run
+   * in full-matrix mode.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $config
    *   The loaded configuration.
@@ -292,9 +289,9 @@ final readonly class LlmSuite {
     $model_id = $this->resolveModelId($token, $effective->modelAliases);
 
     // A cache hit replays the graded trials of an unchanged task-on-model
-    // without executing the agent; the key digests everything that could change
-    // the verdict, so any change to the task, skill, fixtures, model, or tool
-    // misses and re-runs live.
+    // without executing the agent. The key digests everything that could
+    // change the verdict, so any change to the task, skill, fixtures, model,
+    // or tool misses and re-runs live.
     $cache = $this->cache;
     $key = $cache?->key($effective->skill, $entry, $model_id, $this->root . '/' . $effective->path, $inputs);
 
@@ -355,10 +352,10 @@ final readonly class LlmSuite {
    *
    * A single-shot batch runs every trial's command at once through the
    * environment's process pool, so `--parallel` shortens wall-clock. An
-   * interactive batch drives each trial's conversation loop in turn - the loop
-   * is stateful and each turn feeds the next, so trials run sequentially - but
-   * every workspace is still assembled and torn down together, and grading is
-   * identical whichever shape produced the transcript.
+   * interactive batch drives each trial's conversation loop in turn, because
+   * the loop is stateful and each turn depends on the last. Either way every
+   * workspace is assembled and torn down together, and grading is identical
+   * for both batch kinds.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $config
    *   The loaded configuration.
@@ -440,8 +437,8 @@ final readonly class LlmSuite {
     $batch = [];
 
     foreach ($workspaces as $number => $workspace) {
-      // The MCP config path differs per workspace, so the command is finished
-      // here from the workspace the environment assembled the mocks into.
+      // The MCP config path differs per workspace, so each command is built
+      // from the workspace the environment assembled the mocks into.
       $mcp_config = $mock->isEmpty() ? NULL : McpMockWiring::write($workspace->path(), $mock->servers(), SelfInvocation::resolve());
       $batch[$number] = [$workspace, AgentCommand::build($this->binary, $entry['prompt'], $model_id, $max_turns, $allowed, $mcp_config)];
     }
@@ -563,8 +560,8 @@ final readonly class LlmSuite {
       $checks = array_merge($checks, $this->customChecks($effective, $stdout, $workspace));
     }
 
-    // An abstention or a responder error is an incomplete run, so the judge is
-    // not spent on it - the same treatment a non-zero agent exit gets.
+    // An abstention or a responder error is an incomplete run, so the judge
+    // does not run on it; the same applies to a non-zero agent exit.
     $judgeable = $conversation->exitCode === 0 && !$conversation->responderFailed();
     [$criteria, $judge_model, $judge_checks] = $this->judgeTrial($effective, $entry, $stdout, $judgeable);
     $checks = array_merge($checks, $judge_checks);
@@ -606,9 +603,9 @@ final readonly class LlmSuite {
   /**
    * Collects a trial's mock call logs and the failures they name.
    *
-   * Each mocked server's log becomes an artifact keyed by its document-relative
-   * path, and every unmatched or unknown call recorded in it folds in a failing
-   * check. An agent that takes an unmocked path therefore fails the trial
+   * Each mocked server's log becomes an artifact keyed by its
+   * document-relative path, and every unmatched or unknown call recorded in
+   * it adds a failing check. An agent call no fixture matches fails the trial
    * deterministically, naming the tool and the closest fixture, regardless of
    * how the agent itself reacted to the mock's error.
    *
@@ -694,14 +691,14 @@ final readonly class LlmSuite {
   /**
    * Scores a trial against its skill's rubric, when one is declared.
    *
-   * Runs only when the skill declares a rubric and the run is judgeable; a
-   * broken or incomplete run (a non-zero agent exit, an abstention, a responder
-   * failure) is already a failing trial with a partial transcript, so the judge
-   * is not spent on it, though the pinned model is still reported so a judged
-   * skill records one judge model across every trial. A judge failure (an
-   * unparseable verdict or a broken judge process) folds in a distinct failing
-   * check rather than a silent pass; a verdict that blocks under the abstention
-   * policy folds in a rubric check naming the tally.
+   * Runs only when the skill declares a rubric and the run is judgeable. A
+   * broken or incomplete run (a non-zero agent exit, an abstention, a
+   * responder failure) is already a failing trial with a partial transcript,
+   * so the judge does not run on it; the pinned model is still reported, so a
+   * judged skill records one judge model across every trial. A judge failure
+   * (an unparseable verdict or a broken judge process) adds a distinct
+   * failing check rather than a silent pass. A verdict that blocks under the
+   * abstention policy adds a rubric check naming the tally.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
    *   The skill's effective configuration.
@@ -782,7 +779,7 @@ final readonly class LlmSuite {
   }
 
   /**
-   * Builds the failing check that folds a broken agent run into the verdict.
+   * Builds the failing check recording a broken agent run.
    *
    * @param int $exit_code
    *   The agent process exit code.
@@ -799,11 +796,11 @@ final readonly class LlmSuite {
   }
 
   /**
-   * Builds the failing check that folds a responder failure into the verdict.
+   * Builds the failing check recording a responder failure.
    *
-   * An abstention says the persona brief was too vague to answer the skill; any
-   * other responder failure means the responder process broke or returned an
-   * unusable move. Either way the conversation never reached a state worth
+   * An abstention means the persona brief was too vague to answer the skill;
+   * any other responder failure means the responder process broke or returned
+   * an unusable move. Either way the conversation never reached a state worth
    * grading, so the trial fails on this check.
    *
    * @param \AlexSkrypnyk\SkillTest\Live\ResponderOutcome $outcome
@@ -843,7 +840,7 @@ final readonly class LlmSuite {
       $name = Data::toStringOrNull(Data::get($task, 'name'));
 
       // A missing name is a malformed task regardless of the selection, so
-      // it is rejected before the glob filter rather than silently skipped.
+      // it is rejected before the glob filter can skip it.
       if ($name === NULL || $name === '') {
         throw new ConfigException("an llm task requires a 'name'.", $config_file, 'llm.tasks');
       }

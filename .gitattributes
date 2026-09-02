@@ -8,7 +8,6 @@
 /.gitignore      export-ignore
 /install.sh      export-ignore
 /logo.png        export-ignore
-/prd             export-ignore
 /tests           export-ignore
 /phpcs.xml       export-ignore
 /phpstan.neon    export-ignore

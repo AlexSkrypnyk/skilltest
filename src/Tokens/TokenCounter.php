@@ -10,18 +10,17 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 /**
  * The one token counter behind every token-accounting feature.
  *
- * The `tokens` command and the `structure.token-budget` check must agree on
- * every count, so both go through this class. Two methods are supported: real
- * byte-pair encoding against a user-supplied tiktoken-format vocabulary, and a
- * documented estimation heuristic when no vocabulary is configured. The
- * estimator is the default on purpose - the deterministic suite runs with no
- * network and the distributed executable bundles no multi-megabyte vocabulary,
- * so exact counts are an explicit, offline opt-in (drop a vocabulary file in
- * the repository and point at it). Counts are pure functions of the text and
- * the vocabulary, so they are stable across runs and environments. A
- * configured vocabulary that cannot be read or parsed is a hard configuration
- * error, never a silent fall back to estimation - the two methods produce
- * different numbers, and a budget gate must not change scales quietly.
+ * Two methods are supported: real byte-pair encoding against a user-supplied
+ * tiktoken-format vocabulary, and a documented estimation heuristic when no
+ * vocabulary is configured. The estimator is the default: the deterministic
+ * suite runs with no network and the distributed executable bundles no
+ * multi-megabyte vocabulary, so exact counts are an explicit, offline opt-in
+ * via a vocabulary file in the repository. Counts are pure functions of the
+ * text and the vocabulary, so they are stable across runs and environments.
+ * A configured vocabulary that cannot be read or parsed is a hard
+ * configuration error rather than a fall back to estimation: the two methods
+ * produce different numbers, so a budget gate must not change scales
+ * silently.
  */
 final class TokenCounter {
 
@@ -39,8 +38,8 @@ final class TokenCounter {
    * Bytes per token assumed by the estimation heuristic.
    *
    * The widely used rule of thumb for English text and markup: one token per
-   * ~4 bytes. Estimates are documented as approximate; only the stability of
-   * the number matters for budget gating.
+   * ~4 bytes. Estimates are approximate; budget gating needs only a stable
+   * number.
    */
   public const int ESTIMATE_BYTES_PER_TOKEN = 4;
 
@@ -50,7 +49,7 @@ final class TokenCounter {
    * The cl100k-style splitter: contractions, letter runs with an optional
    * leading symbol, digit runs capped at three, symbol runs with an optional
    * leading space, and whitespace runs. Splitting first keeps merges inside
-   * word-like pieces, which is what makes BPE counts match tokenizer output.
+   * word-like pieces, so BPE counts match tokenizer output.
    */
   public const string SPLIT_PATTERN = "/(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+/u";
 

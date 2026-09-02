@@ -29,48 +29,18 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 trait LiveOptionsTrait {
 
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
-  }
+  use SharedCommandTrait;
 
   /**
-   * Reads a string option, returning NULL when it is absent or empty.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   * @param string $name
-   *   The option name.
-   *
-   * @return string|null
-   *   The option value, or NULL when it is unset or blank.
+   * The input options folded into the CLI configuration overrides.
    */
-  protected function stringOption(InputInterface $input, string $name): ?string {
-    $value = $input->getOption($name);
-
-    return is_string($value) && $value !== '' ? $value : NULL;
-  }
+  protected const array OVERRIDES = [
+    'models' => 'models',
+    'threshold' => 'threshold',
+    'trials' => 'trials',
+    'env' => 'env',
+    'judge-model' => 'judge-model',
+  ];
 
   /**
    * Reads an integer option, returning NULL when it is absent or non-numeric.
@@ -244,19 +214,6 @@ trait LiveOptionsTrait {
     }
 
     return ExitCode::CONFIG_ERROR;
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
 }
