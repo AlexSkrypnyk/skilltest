@@ -11,20 +11,18 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Runs the lifecycle hooks that bracket llm work with deterministic state.
  *
- * External state - boards, PRs, deployments, a shared test bed - is the hard
- * part of testing skills whose side effects are not filesystem-local. Hooks
- * give the suite four ordered seams to reset it: `before-run`/`after-run`
- * bracket the whole invocation, `before-task`/`after-task` bracket every trial.
- * A `before-*` hook that fails its acceptable `exit-codes` aborts the run with
- * a configuration error when it declares `error-on-fail`, so a broken setup can
- * never let a trial run against dirty state; every other failure warns and
- * continues, because a failed teardown must not mask the trial's own verdict.
- * Hook commands carry template variables (`{{ skill }}`, `{{ task }}`,
- * `{{ trial }}`, `{{ model }}`, `{{ workspace }}`, and `{{ vars.* }}` from a
- * task's inputs) substituted per call. Every hook is validated up front, so a
- * hook missing its command is caught before any trial rather than mid-run. The
- * process seam is injectable so the orchestration is testable without spawning
- * a process.
+ * Hooks give the suite four ordered seams to reset external state (boards,
+ * PRs, deployments, a shared test bed): `before-run`/`after-run` bracket the
+ * whole invocation, `before-task`/`after-task` bracket every trial. A
+ * `before-*` hook that fails its acceptable `exit-codes` aborts the run with
+ * a configuration error when it declares `error-on-fail`, so a broken setup
+ * can never let a trial run against dirty state. Every other failure warns
+ * and continues, because a failed teardown must not mask the trial's own
+ * verdict. Hook commands carry template variables (`{{ skill }}`,
+ * `{{ task }}`, `{{ trial }}`, `{{ model }}`, `{{ workspace }}`, and
+ * `{{ vars.* }}` from a task's inputs) substituted per call. Every hook is
+ * validated up front, so a hook missing its command is caught before any
+ * trial runs.
  */
 final class Lifecycle {
 
@@ -282,8 +280,8 @@ final class Lifecycle {
   /**
    * Substitutes `{{ name }}` template variables in a hook command.
    *
-   * An unknown variable substitutes to an empty string rather than being left
-   * as a literal brace expression a shell would mangle.
+   * An unknown variable substitutes to an empty string, because a shell would
+   * mangle a literal brace expression left in the command.
    *
    * @param string $command
    *   The raw hook command.

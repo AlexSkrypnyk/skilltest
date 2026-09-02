@@ -7,7 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Gate;
 /**
  * Renders a gate report in each of the gate's output formats.
  *
- * One report, four shapes: a terse `human` summary for a terminal, a `json`
+ * The four formats: a terse `human` summary for a terminal, a `json`
  * document for tooling, a `markdown` block for a PR comment, and
  * `github-actions` workflow annotations that surface each finding inline on the
  * diff. Every format reads the same {@see GateReport}, so the verdict and the

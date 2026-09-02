@@ -7,12 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * Builds the one-shot `claude -p` invocation that produces one responder move.
  *
- * Like the judge, the responder is a single-turn call and not an agent run, so
- * the command is deliberately minimal: the prompt drives it and the model is
- * pinned from the task's responder config (defaulting to the judge model), with
- * no stream-json, tool restriction, or turn cap. The binary is a command prefix
- * (`claude`, or `php /path/to/stub` in tests) used verbatim; the prompt and
- * model are shell-escaped.
+ * The responder is a single-turn call, not an agent run, so the command is
+ * minimal: the prompt drives it and the model is pinned from the task's
+ * responder config, with no stream-json, tool restriction, or turn cap. The
+ * binary is a command prefix (`claude`, or `php /path/to/stub` in tests) used
+ * verbatim; the prompt and model are shell-escaped.
  */
 final readonly class ResponderCommand {
 

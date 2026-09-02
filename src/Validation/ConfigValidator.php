@@ -187,8 +187,8 @@ final readonly class ConfigValidator {
    * A task is interactive precisely when it declares a `responder`, so the
    * block that makes it interactive must be well-formed: a mapping with
    * non-empty instructions and a follow-up cap of at least one. A plain
-   * single-prompt task declares no responder and is left untouched, which is
-   * how the two shapes stay mutually exclusive.
+   * single-prompt task declares no responder and is left untouched, so the
+   * two shapes stay mutually exclusive.
    *
    * @param array<mixed> $data
    *   The parsed `eval.yaml`.

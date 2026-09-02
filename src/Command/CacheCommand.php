@@ -16,11 +16,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Cache command.
  *
- * Manages the llm result cache the `llm --cache` run reads and writes under the
- * repo's `.skilltest/cache/`. Only `clear` exists: it removes every cached
- * trial result so the next `--cache` run re-executes from scratch, which is the
- * escape hatch when a cache should be discarded wholesale rather than
- * invalidated by a content change. An unknown action is a configuration error.
+ * Manages the llm result cache the `llm --cache` run reads and writes under
+ * the repo's `.skilltest/cache/`. The only action, `clear`, removes every
+ * cached trial result so the next `--cache` run re-executes from scratch; it
+ * discards the cache wholesale rather than through content-change
+ * invalidation.
  */
 class CacheCommand extends Command {
 

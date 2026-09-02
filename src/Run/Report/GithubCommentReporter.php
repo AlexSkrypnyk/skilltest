@@ -9,10 +9,8 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Renders a results document as a GitHub-flavoured-markdown PR comment block.
  *
- * A status line, a summary table, an expanded failure list, and - when the run
- * carried llm results - a per-skill matrix grid, sized to fit inside GitHub's
- * comment limit. When the body would overflow the limit it is truncated and a
- * note says so, so the comment always posts. Every number comes from the
+ * A body that would overflow GitHub's comment limit is truncated with a
+ * note appended, so the comment always posts. Every number comes from the
  * document; the reporter computes no verdicts of its own.
  */
 final class GithubCommentReporter {

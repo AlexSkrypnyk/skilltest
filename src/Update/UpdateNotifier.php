@@ -9,14 +9,13 @@ use AlexSkrypnyk\File\File;
 /**
  * The once-a-day, non-blocking "a newer release exists" notice.
  *
- * A convenience that must never get in the way: it is silent in CI and whenever
- * a flag or environment variable opts out, it never spends more than one
- * network read per day (the latest tag is cached under the tool's own scratch
- * area), and any failure to reach the network is swallowed into no notice at
- * all. It only ever returns a string to print; the caller decides where. The
- * clock and the release client are injected so every branch - fresh cache,
- * stale cache, unreachable network, newer, same - is exercised without a real
- * clock or network.
+ * The notice is silent in CI and whenever a flag or environment variable
+ * opts out. It spends at most one network read per day (the latest tag is
+ * cached under the tool's own scratch area), and any failure to reach the
+ * network yields no notice. It only ever returns a string to print; the
+ * caller decides where. The clock and the release client are injected so
+ * every branch - fresh cache, stale cache, unreachable network, newer,
+ * same - is exercised without a real clock or network.
  */
 final readonly class UpdateNotifier {
 

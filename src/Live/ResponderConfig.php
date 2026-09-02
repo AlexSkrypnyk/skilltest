@@ -10,14 +10,13 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 /**
  * One task's responder configuration, resolved from its `responder` block.
  *
- * A task is interactive precisely when it declares a `responder`; this parses
- * that block into the three facts the conversation loop needs - the persona the
- * responder plays, the follow-up cap, and the resolved model id - and returns
- * NULL for a plain single-prompt task so the two shapes never mix. The model
- * defaults to the judge model (itself the ladder's weakest, never the execution
- * model), so a persona costs a cheap model unless the task pins its own. The
- * same coherence `validate` reports is enforced here so a malformed block is a
- * configuration error rather than a confusing run.
+ * A task is interactive precisely when it declares a `responder`. This parses
+ * that block into the persona the responder plays, the follow-up cap, and the
+ * resolved model id, and returns NULL for a plain single-prompt task. The
+ * model defaults to the judge model, never the execution model, so a persona
+ * costs a cheap model unless the task pins its own. The same coherence
+ * `validate` reports is enforced here, so a malformed block is a
+ * configuration error, not a confusing run.
  */
 final readonly class ResponderConfig {
 

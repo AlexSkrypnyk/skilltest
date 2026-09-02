@@ -7,12 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Judge;
 /**
  * Builds the strict-evaluator prompt the judge scores a trial with.
  *
- * The prompt frames the model as a strict evaluator scoring only against the
- * rubric, numbers each binary criterion so the verdict can reference it by id,
- * and shows the task input and the trial evidence it must judge. It ends with
- * the exact JSON shape the verdict parser expects and an instruction to return
- * only that, with per-criterion abstention allowed - so the judge grades the
- * evidence rather than guessing when the evidence is silent.
+ * Each binary criterion is numbered so the verdict can reference it by id.
+ * The prompt ends with the exact JSON shape the verdict parser expects and
+ * an instruction to return only that, with per-criterion abstention allowed
+ * so the judge grades the evidence rather than guessing when the evidence
+ * does not show the answer.
  */
 final readonly class JudgePrompt {
 

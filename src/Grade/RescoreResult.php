@@ -7,12 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Grade;
 /**
  * The outcome of re-scoring a saved run: the new document and what moved.
  *
- * Carries the rebuilt results document alongside the counts that make a
- * re-grade legible: how many trials re-scored, and how many flipped in each
- * direction. A trial that newly fails is the signal a tightened contract or
- * rubric was looking for; a trial that newly passes says the run would clear a
- * loosened bar. The notes surface anything the re-grade could not do offline,
- * such as a skill no longer in the config.
+ * Carries the rebuilt results document and the re-grade counts: how many
+ * trials re-scored, and how many flipped in each direction. A trial that
+ * newly fails reflects a tightened contract or rubric; a trial that newly
+ * passes reflects a loosened one. The notes record anything the re-grade
+ * could not do offline, such as a skill no longer in the config.
  */
 final readonly class RescoreResult {
 

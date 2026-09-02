@@ -9,12 +9,11 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Turns a results document into one plain-language paragraph for the author.
  *
- * The numbers a run prints answer "what happened"; this answers "what do I do
- * now". A green run gets a one-sentence confirmation with the price when tokens
- * were spent. A red run names the single most important failure - the one
- * `Metrics` ranked first - and states a concrete next step for it, written for
- * the person who owns the skill rather than the person who owns the tool. It is
- * templated and reads only the document, so it never spends a token of its own.
+ * A passing run yields a one-sentence confirmation, plus the cost when
+ * tokens were spent. A failing run names the failure `Metrics` ranked first
+ * and a concrete next step, addressed to the skill author.
+ *
+ * The paragraph is templated from the document alone and costs no tokens.
  */
 final class Interpreter {
 
@@ -152,7 +151,7 @@ final class Interpreter {
   }
 
   /**
-   * The optional price note, present only when a run spent tokens.
+   * The optional cost note, present only when the run spent tokens.
    *
    * @param array<string, int|float> $aggregate
    *   The aggregate figures.

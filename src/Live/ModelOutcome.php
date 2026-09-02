@@ -7,9 +7,9 @@ namespace AlexSkrypnyk\SkillTest\Live;
 /**
  * One task's trials on one model, and the pass-rate verdict they produce.
  *
- * A model is graded honestly: its pass rate is the fraction of trials that
- * passed, with no retries to hide a flaky run, and it meets the bar only when
- * that rate reaches the task threshold. Both the raw rate (for gating, at full
+ * The pass rate is the fraction of trials that passed, with no retries to
+ * hide a flaky run, and the model passes only when that rate reaches the task
+ * threshold. Both the raw rate (for gating, at full
  * precision) and a rounded rate (for the report) are derived from the same
  * trials, so the number a reader sees and the number the gate uses never
  * diverge.

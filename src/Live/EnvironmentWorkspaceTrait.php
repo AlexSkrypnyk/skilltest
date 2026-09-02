@@ -40,8 +40,8 @@ trait EnvironmentWorkspaceTrait {
     $workspace = new TrialWorkspace($this->workspaceBase . '/' . uniqid('ws-', TRUE), $this->root, $skill, $path, $inputs, $this->git);
 
     // Assembly is transactional: a half-built workspace (a missing fixture, a
-    // failed worktree) is removed here rather than left for a caller that never
-    // received the handle to clean up.
+    // failed worktree) is removed here, because the caller never received the
+    // handle and cannot clean it up.
     try {
       $workspace->assemble();
     }

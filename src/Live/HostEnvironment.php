@@ -8,17 +8,15 @@ use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
- * Runs trials on the machine itself: the fastest loop, the weakest isolation.
+ * Runs trials directly on the host machine.
  *
- * Workspaces are assembled under the consumer project's `.skilltest/tmp/` - the
- * tool's own scratch area, never the system temp - and each trial's command
- * runs there through the host's own agent binary and credentials. Concurrency
- * is a bounded {@see ProcessPool}, so `--parallel` shortens wall-clock without
- * changing any verdict. The pool and the workspace git seam are injectable so
- * the whole environment is testable without a real agent or repository. The
- * agent runs with the host user's permissions, constrained by the contract and
- * the turn cap rather than an OS boundary - honest for development and for CI
- * runners that are already ephemeral sandboxes.
+ * Workspaces are assembled under the consumer project's `.skilltest/tmp/` -
+ * the tool's own scratch area, never the system temp - and each trial's
+ * command runs there through the host's own agent binary and credentials.
+ * Concurrency is a bounded {@see ProcessPool}, so `--parallel` shortens
+ * wall-clock without changing any verdict. The agent runs with the host
+ * user's permissions, constrained by the contract and the turn cap, not by an
+ * OS boundary.
  */
 final class HostEnvironment implements EnvironmentInterface {
 
@@ -91,7 +89,7 @@ final class HostEnvironment implements EnvironmentInterface {
    * {@inheritdoc}
    */
   public function teardown(): void {
-    // Remove the run's scratch area, but only once it is empty, so a concurrent
+    // The scratch area is removed only once it is empty, so a concurrent
     // run's workspaces under the same base - and any preserved by retention -
     // are never disturbed.
     if (is_dir($this->workspaceBase) && File::dirIsEmpty($this->workspaceBase)) {

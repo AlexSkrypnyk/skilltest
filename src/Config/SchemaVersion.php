@@ -7,9 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * A parsed configuration schema version in MAJOR.MINOR form.
  *
- * A missing version means the current version. Same-major minor differences
- * are readable (unknown keys are warned about, never fatal); a different major
- * is rejected by the loader with a pointer to the migrate command.
+ * A missing version means the current version.
  */
 final readonly class SchemaVersion implements \Stringable {
 

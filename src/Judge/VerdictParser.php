@@ -11,13 +11,13 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * Turns the raw text a judge returns into a structured verdict, defensively.
  *
  * A model told to "return JSON only" still wraps it in prose or markdown
- * fences, so parsing is hardened rather than a bare `json_decode`: the first
+ * fences, so parsing is hardened rather than a bare `json_decode`. The first
  * balanced JSON object is extracted from surrounding noise, code fences are
- * stripped, and every field is clamped to its expected type (ids to ints with a
- * positional fallback, `pass`/`unknown` to booleans). A per-criterion or
- * top-level `unknown` marks an abstention. Anything that cannot yield a usable
- * verdict - undecodable text, or an object with no criteria - is a judge
- * failure raised as a {@see JudgeException}, never a silent pass.
+ * stripped, and every field is clamped to its expected type (ids to ints
+ * with a positional fallback, `pass`/`unknown` to booleans). A per-criterion
+ * or top-level `unknown` marks an abstention. Anything that cannot yield a
+ * usable verdict - undecodable text, or an object with no criteria - is a
+ * judge failure raised as a {@see JudgeException}.
  */
 final readonly class VerdictParser {
 

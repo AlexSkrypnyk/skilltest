@@ -9,13 +9,13 @@ use AlexSkrypnyk\SkillTest\Results\Metrics;
 /**
  * Two or more results documents lined up side by side, with the deltas.
  *
- * Every figure is read through `Metrics`, so a comparison and a gate see the
- * same arithmetic - this is diagnosis (what moved between these runs), the gate
- * is policy (whether that move is allowed). The first document is the baseline;
- * each metric carries the value from every document in order plus a single
- * delta of the last document against the baseline. A metric absent from either
- * the baseline or the last document has a null delta rather than a fabricated
- * zero, so a task that only exists in one run never reads as "unchanged".
+ * Every figure is read through `Metrics`. The first document is the
+ * baseline; each metric carries the value from every document in order plus
+ * a single delta of the last document against the baseline.
+ *
+ * A metric absent from either the baseline or the last document has a null
+ * delta rather than a fabricated zero, so a task that only exists in one
+ * run never reads as "unchanged".
  */
 final readonly class Comparison {
 

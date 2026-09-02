@@ -14,17 +14,17 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The internal `mcp-serve` command: run one MCP mock over stdio.
+ * The internal `mcp-serve` command.
  *
  * Not a user-facing command - it is the process the per-trial MCP config
  * launches so the agent has a real stdio server to connect to. It reads the
- * server definition skilltest wrote for the trial, then hands stdin and stdout
- * to {@see McpMockServer}, which speaks the protocol until the agent
- * disconnects. Its own responsibility is narrow: fail with exit `2` when the
- * definition file is missing or is not a valid mock, otherwise serve. The
- * streams default to the real stdin and stdout but are constructor-injectable,
- * so the serve path is exercised in a test with in-memory streams rather than
- * the real stdin the loop would block on.
+ * server definition skilltest wrote for the trial, then hands stdin and
+ * stdout to {@see McpMockServer}, which serves the protocol until the agent
+ * disconnects. The command fails with exit `2` when the definition file is
+ * missing or is not a valid mock, and serves otherwise. The streams default
+ * to the real stdin and stdout but are constructor-injectable, so a test
+ * exercises the serve path with in-memory streams rather than the real stdin
+ * the loop would block on.
  */
 class McpServeCommand extends Command {
 

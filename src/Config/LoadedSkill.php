@@ -7,12 +7,14 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * One discovered skill after loading: its directory, raw data, merged config.
  *
- * A skill is a directory holding a `SKILL.md`; the `eval.yaml` beside it is an
- * optional sidecar, so a discovered skill that ships without one is still a
- * skill here, with an empty file path and a configuration folded from the repo
- * defaults alone. The raw parsed `eval.yaml` is kept next to the merged
- * {@see EffectiveConfig} so schema checks can inspect the keys as written while
- * coherence checks work from the normalised, merged view.
+ * A skill is a directory holding a `SKILL.md`; the `eval.yaml` beside it is
+ * an optional sidecar. A discovered skill without one is still a skill here,
+ * with an empty file path and a configuration folded from the repo defaults
+ * alone.
+ *
+ * The raw parsed `eval.yaml` is kept next to the merged
+ * {@see EffectiveConfig} so schema checks can inspect the keys as written
+ * while coherence checks work from the normalised, merged view.
  */
 final readonly class LoadedSkill {
 
@@ -20,7 +22,7 @@ final readonly class LoadedSkill {
    * Constructs a LoadedSkill.
    *
    * @param string $file
-   *   The `eval.yaml` path, or an empty string when the skill ships none.
+   *   The `eval.yaml` path, or an empty string when the skill has none.
    * @param array<mixed> $data
    *   The raw parsed `eval.yaml`.
    * @param \AlexSkrypnyk\SkillTest\Config\EffectiveConfig $effective
@@ -36,7 +38,7 @@ final readonly class LoadedSkill {
   ) {}
 
   /**
-   * Whether the skill ships an `eval.yaml`.
+   * Whether the skill has an `eval.yaml`.
    *
    * @return bool
    *   TRUE when an `eval.yaml` was loaded for this skill.

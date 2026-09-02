@@ -25,14 +25,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Tokens command.
  *
- * Token accounting so skill files stay small on purpose: `tokens count`
- * reports per-file counts for markdown files, and `tokens compare` diffs the
- * counts of every discovered skill's markdown files against a git ref so CI
- * can gate on skill bloat. Counts come from the same {@see TokenCounter} that
- * backs the `structure.token-budget` check - estimated by default, exact
- * byte-pair encoding when a vocabulary file is supplied. Growth beyond
- * `--threshold` or, under `--strict`, a file over its absolute limit fails
- * with exit 1; a bad action, path, ref, or vocabulary fails with exit 2.
+ * Provides token accounting: `tokens count` reports per-file counts for
+ * markdown files, and `tokens compare` diffs the counts of every discovered
+ * skill's markdown files against a git ref so growth in skill files can be
+ * gated. Counts come from the same {@see TokenCounter} that backs the
+ * `structure.token-budget` check - estimated by default, exact byte-pair
+ * encoding when a vocabulary file is supplied. Growth beyond `--threshold`
+ * or, under `--strict`, a file over its absolute limit fails with exit 1; a
+ * bad action, path, ref, or vocabulary fails with exit 2.
  */
 class TokensCommand extends Command {
 
@@ -389,8 +389,8 @@ class TokensCommand extends Command {
   /**
    * Renders the compare rows, violations, and summary line.
    *
-   * Unchanged existing files are counted but not listed, so the report draws
-   * the eye to what moved: grown, shrunk, and new files, then violations.
+   * Unchanged existing files are counted but not listed; the listing holds
+   * grown, shrunk, and new files, then violations.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.

@@ -31,21 +31,19 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `record` command: one live trial captured as the deterministic fixture.
+ * The `record` command.
  *
- * The bridge between the two suites. It runs a single live trial of one
- * skill's task, writes the transcript (redacted) to the skill's configured
- * `deterministic.transcript` path, then asserts the contract against the file
- * it wrote - so the verdict is graded from the fixture that ships, not the
- * live run, and "passes record" means "passes the deterministic transcript
- * gate". The workflow it serves is deliberate: change a skill, run
- * `skilltest record`, review the diff, commit. An existing fixture is never
- * clobbered without `--force`. A recording whose contract fails is still
- * written for inspection but exits 1, so a fixture that would poison the gate
- * is caught here rather than on the next push. Like the llm suite it spends
- * tokens and needs an authenticated agent, so a missing binary or credential,
- * or for docker an unreachable daemon, is a configuration error (exit 2)
- * before any trial runs.
+ * Runs a single live trial of one skill's task, writes the transcript
+ * (redacted) to the skill's configured `deterministic.transcript` path, then
+ * asserts the contract against the file it wrote - so the verdict is graded
+ * from the fixture that ships, not the live run, and a passing record is a
+ * fixture the deterministic transcript gate accepts. An existing fixture is
+ * never overwritten without `--force`. A recording whose contract fails is
+ * still written for inspection but exits 1, so a fixture that would fail the
+ * gate is caught here rather than on the next push. Like the llm suite it
+ * spends tokens and needs an authenticated agent, so a missing binary or
+ * credential, or for docker an unreachable daemon, is a configuration error
+ * (exit 2) before any trial runs.
  */
 class RecordCommand extends Command {
 
@@ -59,9 +57,9 @@ class RecordCommand extends Command {
   /**
    * The validation pointer of the "declared fixture is missing" error.
    *
-   * Recording is precisely what creates that fixture, so a not-yet-recorded
-   * fixture is the normal starting state and must never block the command that
-   * would produce it; every other validation error still does.
+   * Recording creates that fixture, so a missing fixture is the normal
+   * starting state and does not block the command; every other validation
+   * error still does.
    */
   protected const string FIXTURE_POINTER = 'deterministic.transcript';
 
@@ -154,7 +152,7 @@ class RecordCommand extends Command {
     try {
       if ($environment === 'docker') {
         $runtime = new DockerEnvironment($root, 1, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map);
-        // The agent runs inside the container, so record drives the image's
+        // The agent runs inside the container, so record invokes the image's
         // own `claude` rather than the host binary.
         $binary = AgentPreflight::DEFAULT_BINARY;
       }
@@ -275,9 +273,9 @@ class RecordCommand extends Command {
   /**
    * Resolves the absolute fixture path the transcript is written to.
    *
-   * The path is resolved exactly as the deterministic transcript group resolves
-   * it - relative to the skill directory - so the written file and the file the
-   * gate later reads are one and the same.
+   * The path is resolved exactly as the deterministic transcript group
+   * resolves it - relative to the skill directory - so the written file is
+   * the file the gate later reads.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $skill
    *   The skill being recorded.

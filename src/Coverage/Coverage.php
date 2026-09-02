@@ -12,8 +12,9 @@ use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
  *
  * Cross-references every discovered skill - those that loaded an `eval.yaml`
  * and those that did not - against the repo's exclusions, so the grid names
- * every skill exactly once and the gate can name each unexplained hole. The
- * rows are computed once at construction and shared by every accessor.
+ * every skill exactly once and the gate can name each uncovered,
+ * non-excluded skill. The rows are computed once at construction and shared
+ * by every accessor.
  */
 final readonly class Coverage {
 

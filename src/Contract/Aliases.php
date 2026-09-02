@@ -11,9 +11,9 @@ use AlexSkrypnyk\SkillTest\Config\Pcre;
  *
  * Repo config `aliases:` maps a canonical name to a delimiter-less pattern;
  * each occurrence of the pattern in a command is rewritten to the canonical
- * name so that every invocation form collapses to one. This is what makes
+ * name so that every invocation form collapses to one. The forms
  * `php bin/broker workflow start`, `./bin/broker workflow start`, and
- * `broker workflow start` all satisfy a single `broker workflow start`
+ * `broker workflow start` then all satisfy a single `broker workflow start`
  * contract pattern.
  */
 final class Aliases {

@@ -9,14 +9,12 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Asserts a skill's declared contract against a transcript.
  *
- * Grades the world, not the words: it reads the tool-use events a transcript
- * records and answers the contract's questions - which tools, commands, and
- * sub-skills had to appear, and which must never. Bash commands are normalised
- * through the repo aliases first, so every invocation form of an aliased binary
- * collapses to one before matching. Every assertion becomes a
- * {@see CheckResult} carrying the evidence, so a failure is debuggable from the
- * report alone. No model is involved; the identical checker grades the recorded
- * deterministic fixture and every live llm trial.
+ * Reads the tool-use events a transcript records and asserts which tools,
+ * commands, and sub-skills had to appear, and which must never. Bash
+ * commands are normalised through the repo aliases first, so every
+ * invocation form of an aliased binary collapses to one before matching.
+ * Every assertion becomes a {@see CheckResult} carrying the evidence, so a
+ * failure is debuggable from the report alone. No model is involved.
  */
 final readonly class ContractChecker {
 

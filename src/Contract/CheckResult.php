@@ -7,11 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Contract;
 /**
  * One assertion's outcome, carrying the evidence that makes it debuggable.
  *
- * Every contract and custom check yields a result with a stable id, the human
- * label that named the behaviour, a pass/fail verdict, the evidence (the
- * matched command, tool, or skill - or the empty string when asserting an
- * absence), and a message stating the outcome and fix direction. Carrying the
- * evidence is the point: a failure is understood from the report, without
+ * The evidence lets a failure be understood from the report, without
  * re-running the transcript.
  */
 final readonly class CheckResult {
@@ -95,9 +91,7 @@ final readonly class CheckResult {
   /**
    * Returns the result as a results-document check row.
    *
-   * The stable id renders under the `check` key the results schema uses, so
-   * every reporter reads a check, a hook case, and a live contract assertion
-   * the same way.
+   * The stable id renders under the `check` key the results schema uses.
    *
    * @return array{check: string, label: string, pass: bool, evidence: string, message: string}
    *   The result as check, label, pass, evidence, and message keys.

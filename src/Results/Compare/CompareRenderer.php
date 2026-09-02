@@ -11,10 +11,12 @@ use AlexSkrypnyk\SkillTest\Render\Table;
  *
  * The aggregate section always prints; the per-model and per-task sections
  * appear only when the compared runs carried llm results, so a deterministic
- * comparison is not padded with empty grids. Each row shows the value from
- * every document and the baseline-to-latest delta, signed so the direction of
- * a change is legible at a glance and a null delta (a figure missing from one
- * side) reads as a dash rather than a fabricated zero.
+ * comparison is not padded with empty grids.
+ *
+ * Each row shows the value from every document and the baseline-to-latest
+ * delta, signed so the direction of a change is explicit. A null delta (a
+ * figure missing from one side) renders as a dash rather than a fabricated
+ * zero.
  */
 final readonly class CompareRenderer {
 
@@ -214,7 +216,7 @@ final readonly class CompareRenderer {
   }
 
   /**
-   * The leading sign for a non-negative number ('+' or ''), '' for negatives.
+   * The sign prefix: '+' for a positive number, empty otherwise.
    *
    * A negative number already prints its own minus sign, so only a positive one
    * needs a '+' prefix; zero renders unsigned.

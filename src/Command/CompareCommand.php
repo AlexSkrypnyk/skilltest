@@ -16,15 +16,14 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `compare` command: two or more results files, side by side.
+ * The `compare` command.
  *
- * Diagnosis, not policy: it loads each `results.json`, lines the runs up, and
- * shows the per-task, per-model, and aggregate deltas so a reader can see what
- * moved between two branches, two skill revisions, or two models. It never
- * decides whether a change is acceptable - that is `gate` - so it exits 0
- * whenever every file loaded, and only a bad argument or an unreadable or
- * incompatible file is a configuration error (exit 2). The first file is the
- * baseline every delta is measured against.
+ * Loads two or more `results.json` files and renders the per-task,
+ * per-model, and aggregate deltas between them. It never decides whether a
+ * change is acceptable - that is `gate` - so it exits 0 whenever every file
+ * loaded, and only a bad argument or an unreadable or incompatible file is a
+ * configuration error (exit 2). The first file is the baseline every delta
+ * is measured against.
  */
 class CompareCommand extends Command {
 

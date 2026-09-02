@@ -10,9 +10,10 @@ namespace AlexSkrypnyk\SkillTest\Judge;
  * The pair (`pass`, `unknown`) is the judge's literal answer: a normally scored
  * criterion is `pass` true/false with `unknown` false; an abstention is
  * `unknown` true with `pass` false, because the judge did not affirm it.
- * Whether the criterion blocks a trial is a separate, policy-dependent question
- * ({@see self::blocks()}); the reported pair stays faithful to the judge so the
- * per-criterion row in the results document is the same whatever the policy.
+ * Whether the criterion blocks a trial is a separate, policy-dependent
+ * question ({@see self::blocks()}); the pair records the judge's answer as
+ * given, so the per-criterion row in the results document is the same
+ * whatever the policy.
  */
 final readonly class JudgeCriterion {
 

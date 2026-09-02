@@ -9,16 +9,13 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Asks a pinned model to play the user and make one conversational move.
  *
- * This is the invocation seam the conversation loop drives after every agent
- * turn of an interactive trial: it builds the persona-and-dialogue prompt,
- * runs the responder through the same stubbable process seam the judge and
- * runner use, and parses the reply into a {@see ResponderDecision}. A responder
- * process that exits non-zero and a response that cannot be parsed into one of
- * the three legitimate moves both yield NULL, so the loop treats a broken or
- * nonsensical responder as a failure rather than a silent stop. The model is
- * pinned by the task's responder config and never derived from the execution
- * model. The process seam is injectable so the loop is tested without spending
- * a token.
+ * After every agent turn of an interactive trial this builds the
+ * persona-and-dialogue prompt, runs the responder process, and parses the
+ * reply into a {@see ResponderDecision}. A responder process that exits
+ * non-zero and a response that cannot be parsed into one of the three
+ * legitimate moves both yield NULL, so a broken or nonsensical responder is
+ * treated as a failure rather than a silent stop. The model is pinned by the
+ * task's responder config and never derived from the execution model.
  */
 final readonly class Responder {
 

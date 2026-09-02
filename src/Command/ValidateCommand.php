@@ -73,14 +73,12 @@ class ValidateCommand extends Command {
   /**
    * Warns about every discovered skill that ships without an `eval.yaml`.
    *
-   * The command loads the whole repo, so it already knows which skill
-   * directories have no `eval.yaml`. Surfacing them keeps validate honest: an
-   * unconfigured repo no longer reports a clean "validated 0 skill(s)." while
-   * the coverage gate would fail that very same repo. The exclusion set is the
-   * coverage gate's own, so validate never disagrees with the gate about which
-   * holes are unexplained. These are warnings, not errors: the coverage gate
-   * owns the hard failure, and validate's config-error exit stays reserved for
-   * malformed or incoherent config.
+   * Without the warnings, an unconfigured repo would report a clean
+   * "validated 0 skill(s)." while the coverage gate fails the same repo. The
+   * exclusion set is the coverage gate's own, so validate and the gate agree
+   * on which uncovered skills are unexplained. These are warnings, not
+   * errors: the coverage gate owns the hard failure, and validate's
+   * config-error exit stays reserved for malformed or incoherent config.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.

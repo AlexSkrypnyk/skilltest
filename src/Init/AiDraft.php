@@ -9,13 +9,13 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * A model's draft of the parts of an `eval.yaml` that need judgement.
  *
- * `init --ai` asks the model for tasks that trigger the skill, command
- * patterns the skill should run, and binary rubric criteria - each tagged with
- * a confidence so low-confidence guesses can be flagged for human review. The
- * model is untrusted input: the JSON object is located even when wrapped in
- * prose or a code fence, structurally-invalid entries are dropped, scalars are
+ * The draft carries tasks that trigger the skill, command patterns the skill
+ * should run, and binary rubric criteria, each tagged with a confidence so
+ * low-confidence guesses can be flagged for human review. The model is
+ * untrusted input: the JSON object is located even when wrapped in prose or
+ * a code fence, structurally-invalid entries are dropped, scalars are
  * collapsed to a single line so they render safely, and anything unparseable
- * yields NULL so the caller falls back to the deterministic template.
+ * yields NULL.
  */
 final readonly class AiDraft {
 
@@ -66,8 +66,8 @@ final readonly class AiDraft {
    *   The raw model stdout.
    *
    * @return array<mixed>|null
-   *   The decoded object, or NULL when none is present. A JSON array is not an
-   *   object and is rejected so the caller falls back to the template.
+   *   The decoded object, or NULL when none is present. A JSON array is not
+   *   an object and is rejected.
    */
   protected static function decode(string $response): ?array {
     $trimmed = trim($response);

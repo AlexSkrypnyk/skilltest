@@ -21,7 +21,7 @@ use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
  * groups the selection excludes never run, a check filter narrows every
  * group's output to the one id, and repo-level hooks run once regardless of
  * how many skills are selected. Every discovered skill gets a result row,
- * whether or not it ships an `eval.yaml`, so nothing the structure and
+ * whether or not it has an `eval.yaml`, so nothing the structure and
  * security engines produce is computed and then dropped. The engines' process
  * hooks are injectable so the orchestration is unit-testable without spawning
  * a process.

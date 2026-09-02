@@ -10,16 +10,10 @@ use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
 
 /**
- * A read model over a decoded `results.json`, shared by grade and gate.
+ * A read model over a decoded `results.json`.
  *
- * The one place the saved document's arithmetic lives, so re-grading and the
- * regression gate read a run the same way instead of re-walking the nested
- * arrays each time. It answers the questions a comparison asks: the schema
- * version (so a foreign-major document is rejected, never misread), the
- * aggregate pass rate over every deterministic check and every llm trial, each
- * task's per-model verdict recomputed from the raw trials against the skill's
- * threshold, and each skill's minimal-model verdict and ladder order. It is a
- * pure reader - it never mutates the document it wraps.
+ * Per-model verdicts are recomputed from the raw trials against the skill's
+ * threshold. It is a pure reader: it never mutates the document it wraps.
  */
 final readonly class ResultsDocument {
 
@@ -122,9 +116,8 @@ final readonly class ResultsDocument {
    *
    * A unit is one check (structure, security, transcript, hook, or
    * coverage violation) or one llm trial. The rate is recomputed from the
-   * document itself rather than read from `totals`, so it is a true pass rate
-   * across checks and trials. An empty document has nothing failing, so it
-   * rates a perfect 1.0.
+   * document itself rather than read from `totals`, so it covers every check
+   * and trial. An empty document has nothing failing, so it rates 1.0.
    *
    * @return float
    *   The pass rate in the range 0..1.
@@ -214,8 +207,7 @@ final readonly class ResultsDocument {
   /**
    * Each skill's model ladder in order, keyed by skill name.
    *
-   * The ladder is the model order the first task ran, weakest first - the order
-   * a minimal-model climb is measured along.
+   * The ladder is the model order the first task ran, weakest first.
    *
    * @return array<string, list<string>>
    *   The ordered model aliases keyed by skill name.

@@ -13,14 +13,14 @@ use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 /**
  * The deterministic `security` group: a supply-chain scan of shipped files.
  *
- * Every regular file a skill ships - not just `SKILL.md`, but bundled scripts,
- * references, and fixtures - is scanned line by line for danger patterns before
- * any model reads it. The `baseline` pack is unconditional: it is not gated on
- * configuration, so nothing a skill declares can disable it or downgrade a
- * finding to a warning, and a skill that ships no `eval.yaml` is scanned like
- * any other. The skill's own `eval.yaml` is the one file excluded - it is the
- * skilltest sidecar config, not shipped content, and it is where forbidden
- * tokens are declared, so scanning it would self-trigger.
+ * Every regular file a skill ships - bundled scripts, references, and
+ * fixtures as well as `SKILL.md` - is scanned line by line for danger
+ * patterns before any model reads it. The `baseline` pack is not gated on
+ * configuration: nothing a skill declares can disable it or downgrade a
+ * finding to a warning, and a skill that ships no `eval.yaml` is scanned
+ * like any other. The skill's own `eval.yaml` is the one file excluded. It
+ * is the skilltest sidecar config, not shipped content, and scanning the
+ * file that declares the forbidden tokens would self-trigger.
  */
 final readonly class SecurityScanner {
 

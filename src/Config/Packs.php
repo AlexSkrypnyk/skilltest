@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Config;
 
 /**
- * The catalog of pre-baked pattern and security packs shipped with the tool.
+ * The catalog of built-in pattern and security packs shipped with the tool.
  *
  * A pattern position in a contract may reference a pack with `pack:<name>`
  * instead of a hand-written regex; the security group enables named packs by
- * listing them. Coherence validation checks that every referenced pack name
- * exists in this catalog.
+ * listing them.
  */
 final class Packs {
 
@@ -34,9 +33,8 @@ final class Packs {
   /**
    * The delimiter-less regexes each pattern pack expands to.
    *
-   * A pack matches a command when any of its regexes matches, so a pack is the
-   * union of its patterns. Versioned with the tool: a release note calls out
-   * additions because they can newly fail an existing suite.
+   * A pack matches a command when any of its regexes matches, so a pack is
+   * the union of its patterns.
    *
    * @var array<string, list<string>>
    */

@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 /**
- * Decides whether a live run can even start: an agent binary and credentials.
+ * Decides whether a live run can start: an agent binary and credentials.
  *
- * The llm suite spends tokens through a real `claude`, so before a single trial
- * runs it must find the binary and see plausible credentials; otherwise the run
- * is a guaranteed, expensive failure and the tool exits `2` with a message that
- * names the missing half. The binary is either the explicit `SKILLTEST_AGENT`
- * override (which also lets a test point at a stub, or a user wrap the CLI) or
- * the first executable `claude` on `PATH`. Credentials are detected
- * heuristically - an API key, an OAuth token, or an authenticated Claude Code
- * home - because the tool never handles the secret itself, it only forwards the
- * host environment to the child.
+ * The llm suite spends tokens through a real `claude`, so before a single
+ * trial runs it must find the binary and see plausible credentials. A run
+ * without either is a guaranteed, expensive failure, so it is blocked up
+ * front. The binary is either the explicit `SKILLTEST_AGENT` override (which
+ * also lets a test point at a stub, or a user wrap the CLI) or the first
+ * executable `claude` on `PATH`. Credentials are detected heuristically - an
+ * API key, an OAuth token, or an authenticated Claude Code home - because the
+ * tool never handles the secret itself; it only forwards the host environment
+ * to the child.
  */
 final readonly class AgentPreflight {
 

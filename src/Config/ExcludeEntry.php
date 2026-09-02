@@ -7,9 +7,8 @@ namespace AlexSkrypnyk\SkillTest\Config;
 /**
  * One `paths.exclude` entry: a skill exempted from the coverage gate.
  *
- * Each exemption names a skill and must carry a reason; a reason-less exemption
- * is a configuration error, so an exclusion is never an unexplained hole in the
- * coverage grid.
+ * Each exemption names a skill and must carry a reason; a reason-less
+ * exemption is a configuration error, so every exclusion is explained.
  */
 final readonly class ExcludeEntry {
 
@@ -30,8 +29,8 @@ final readonly class ExcludeEntry {
    * Builds an entry from a raw `paths.exclude` item.
    *
    * A bare string is read as a skill name with no reason; a mapping reads its
-   * `skill` and `reason` keys. A blank reason is normalised to NULL so absent
-   * and empty are treated the same by the required-reason check.
+   * `skill` and `reason` keys. A blank reason is normalised to NULL so
+   * absent and empty are treated the same.
    *
    * @param mixed $value
    *   The raw item: a skill-name string, or a mapping with skill and reason.

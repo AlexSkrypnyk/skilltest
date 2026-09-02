@@ -7,10 +7,8 @@ namespace AlexSkrypnyk\SkillTest\Security;
 /**
  * A single security finding: one danger pattern matched in one shipped file.
  *
- * Every finding names the check that fired, the file and line it fired on, and
- * the offending line as evidence, so a reader can see exactly what tripped the
- * scan and where. Security findings are always errors - there is no warning
- * variant, so nothing a skill declares can downgrade one.
+ * Security findings are always errors: there is no warning variant, so
+ * nothing a skill declares can downgrade one.
  */
 final readonly class SecurityFinding {
 

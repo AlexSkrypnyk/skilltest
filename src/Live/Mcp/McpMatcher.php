@@ -16,10 +16,9 @@ use JsonSchema\Validator;
  * over the whole argument object; `regex` requires every named field's
  * stringified value to match its delimiter-less pattern, the same pattern
  * dialect the contract engine uses; `schema` validates the arguments against a
- * JSON Schema. Every method is pure and static so matching is unit-testable in
- * isolation from the server loop. When nothing matches, `score` ranks the
- * declared responses by how close each came, so the failure names the nearest
- * fixture rather than a bare "no match".
+ * JSON Schema. When nothing matches, `score` ranks the declared responses by
+ * how close each came, so the failure names the nearest fixture rather than a
+ * bare "no match".
  */
 final class McpMatcher {
 
@@ -53,8 +52,8 @@ final class McpMatcher {
     return match ($response['kind']) {
       self::EXACT => self::exact(is_array($response['matcher']) ? $response['matcher'] : [], $arguments),
       self::REGEX => self::regex(is_array($response['matcher']) ? $response['matcher'] : [], $arguments),
-      // A response is normalised to exactly one of the three known kinds, so no
-      // default arm is reachable; SCHEMA is the remaining case.
+      // A response is normalised to exactly one of the three known kinds, so
+      // the default arm only ever receives SCHEMA.
       default => self::schema($response['matcher'], $arguments),
     };
   }

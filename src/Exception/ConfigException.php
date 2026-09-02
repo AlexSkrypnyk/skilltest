@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Exception;
 
 /**
- * A hard configuration error that maps to the CONFIG_ERROR (2) exit code.
+ * A hard configuration error that maps to the CONFIG_ERROR exit code.
  *
  * Thrown for problems that make a configuration unloadable at all - a file
  * that will not parse, or a schema major the tool cannot read. Coherence

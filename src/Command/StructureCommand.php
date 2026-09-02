@@ -18,13 +18,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Structure command.
  *
- * Runs the deterministic `structure` group: pre-baked, default-on checks that
- * prove each skill's files are well-formed, internally consistent, and honest
- * about what they reference. Any failing check fails the gate with exit 1;
- * warnings (advisories and warn thresholds) are always listed but never
- * affect the exit code. A hard configuration error such as malformed YAML, or
- * a `commands.resolve` binary that cannot run, fails with exit 2. Coherence
- * of each skill's own `eval.yaml` surfaces as the per-skill
+ * Runs the deterministic `structure` group: built-in, default-on checks that
+ * verify each skill's files are well-formed, internally consistent, and
+ * accurate about what they reference. Any failing check fails the gate with
+ * exit 1; warnings (advisories and warn thresholds) are always listed but
+ * never affect the exit code. A hard configuration error such as malformed
+ * YAML, or a `commands.resolve` binary that cannot run, fails with exit 2.
+ * Coherence of each skill's own `eval.yaml` surfaces as the per-skill
  * `structure.contract-coherent` check rather than aborting the run, so one
  * incoherent skill does not mask the rest.
  */

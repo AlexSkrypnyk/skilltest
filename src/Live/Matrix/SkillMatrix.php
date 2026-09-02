@@ -14,9 +14,8 @@ use AlexSkrypnyk\SkillTest\Live\SkillOutcome;
  * Every task of the skill runs the same ladder in the same order, so a model
  * occupies the same position in each task; this folds those positions into one
  * grid row per model and carries the skill's minimal-model verdict beside them.
- * A failing model also carries its failure modes, so the report can say not
- * just that a model failed but why. The rows are in ladder order, weakest
- * first.
+ * A failing model also carries its failure modes, so the report can name why
+ * it failed. The rows are in ladder order, weakest first.
  */
 final readonly class SkillMatrix {
 

@@ -23,9 +23,7 @@ use AlexSkrypnyk\SkillTest\Version;
  * unmocked path fails visibly rather than silently.
  *
  * Every `tools/call` is appended to the trial's mock log, so the run artifacts
- * record exactly what the skill asked for and which fixture answered. The input
- * and output streams are injected, so the whole protocol is exercised in a test
- * without a child process or a socket.
+ * record exactly what the skill asked for and which fixture answered.
  */
 final class McpMockServer {
 

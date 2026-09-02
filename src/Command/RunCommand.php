@@ -57,9 +57,8 @@ class RunCommand extends Command {
    * Constructs a RunCommand.
    *
    * @param \AlexSkrypnyk\SkillTest\Update\UpdateNotifier|null $notifier
-   *   The once-a-day release-check notifier, or NULL to skip the check
-   *   entirely (the default: the notice is a wired-in production convenience,
-   *   never a test or embedded-use side effect).
+   *   The once-a-day release-check notifier, or NULL (the default) to skip
+   *   the check entirely.
    */
   public function __construct(protected ?UpdateNotifier $notifier = NULL) {
     parent::__construct();
@@ -172,8 +171,7 @@ class RunCommand extends Command {
    * Prints the release-check notice after the run, when one is warranted.
    *
    * The notice is a diagnostic and goes to stderr so the stdout results
-   * contract is untouched; the notifier itself is silent in CI, under the
-   * opt-out flag or environment variable, and whenever it is not wired in.
+   * contract is untouched.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $stderr
    *   The error output the notice is written to.
@@ -245,11 +243,11 @@ class RunCommand extends Command {
   /**
    * Emits every requested reporter: results, JUnit, session log, and stdout.
    *
-   * One redactor scrubs every external artifact, and a single loud warning is
+   * One redactor scrubs every external artifact, and a single warning is
    * forced to stderr when redaction is disabled and any such artifact is
-   * written, because a secret may then reach disk or a PR comment. The plain
-   * `--json` stdout is exempt: it is a local convenience, not a persisted or
-   * published artifact.
+   * written, because a secret may then be written to disk or a PR comment.
+   * The plain `--json` stdout is exempt: it is a local convenience, not a
+   * persisted or published artifact.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The standard output, for the stdout format.
@@ -321,10 +319,6 @@ class RunCommand extends Command {
   /**
    * Persists the results document to the requested destinations.
    *
-   * The redactor is built once by the caller and shared with the other
-   * reporters, so a credential exported for the run never lands in a persisted
-   * artifact.
-   *
    * @param \Symfony\Component\Console\Output\OutputInterface $stderr
    *   The error output for the write notices.
    * @param \AlexSkrypnyk\SkillTest\Run\Redactor $redactor
@@ -389,8 +383,8 @@ class RunCommand extends Command {
    * Renders the human report: group status lines, failures, and totals.
    *
    * In quiet verbosity only the failure lines print, forced past the
-   * verbosity gate, so a green run is silent and a red run names exactly
-   * what failed.
+   * verbosity gate; a passing run prints nothing and a failing run lists
+   * each failure.
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.

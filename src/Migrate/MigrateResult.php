@@ -9,9 +9,7 @@ namespace AlexSkrypnyk\SkillTest\Migrate;
  *
  * A file whose major already matches the tool is reported as current with
  * `changed` false and nothing written; an older-major file is rewritten and
- * reported with `changed` true and the versions it moved between. The message
- * is the human line the command prints, so the same wording is asserted once
- * here rather than reconstructed at the call site.
+ * reported with `changed` true and the versions it moved between.
  */
 final readonly class MigrateResult {
 

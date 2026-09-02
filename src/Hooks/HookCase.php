@@ -7,11 +7,10 @@ namespace AlexSkrypnyk\SkillTest\Hooks;
 /**
  * One crafted enforcement case: a tool input and the decision it must provoke.
  *
- * A case is the unit a hook is proven against - it names the tool, the input
- * the model would have run, and whether the hook must block or allow it. It
- * knows how to render itself as the PreToolUse payload the hook reads on stdin,
- * so the runner stays about process control and verdicts rather than the wire
- * format.
+ * A case is the unit a hook is proven against: it names the tool, the input
+ * the model would have run, and whether the hook must block or allow it. The
+ * case renders itself as the PreToolUse payload the hook reads on stdin, so
+ * the wire format stays out of the runner.
  */
 final readonly class HookCase {
 

@@ -24,13 +24,10 @@ final readonly class LoadedConfig {
    * @param string $repoFile
    *   The `skilltest.yml` path, or an empty string when absent.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skills
-   *   The discovered skills that loaded an `eval.yaml`. Everything that reads
-   *   an `eval.yaml` - the llm suite, grading, the transcript group - works
-   *   from this list alone.
+   *   The discovered skills that loaded an `eval.yaml`.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill[] $skillsWithoutEval
    *   The discovered skills that have no `eval.yaml`, each carrying the
-   *   configuration folded from the repo defaults; the coverage gate names
-   *   each one that is not excluded.
+   *   configuration folded from the repo defaults.
    */
   public function __construct(
     public RepoConfig $repo,
@@ -43,9 +40,8 @@ final readonly class LoadedConfig {
   /**
    * Returns every discovered skill, configured or not, in path order.
    *
-   * The engines that read a skill's shipped files rather than its `eval.yaml`
-   * work from this list, so a skill cannot escape the structure and security
-   * groups by shipping no configuration.
+   * Engines that read a skill's files rather than its `eval.yaml` work from
+   * this list, so a skill with no configuration is still checked.
    *
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill[]
    *   The skills, sorted by directory so reports over them are deterministic.

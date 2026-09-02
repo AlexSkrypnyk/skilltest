@@ -11,12 +11,12 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 /**
  * Proves the repository's enforcement hooks actually enforce.
  *
- * For each hook declared in `skilltest.yml`, the runner executes the real hook
- * script with each crafted case's tool input on stdin - the runtime's
- * PreToolUse protocol - and asserts the decision: `expect: block` requires the
- * blocking exit code, `expect: allow` requires success. This is what makes "the
- * broker is the enforcement boundary" testable without a model: the check
- * fails the moment a hook stops blocking what it must block.
+ * For each hook declared in `skilltest.yml`, the runner executes the real
+ * hook script with each crafted case's tool input on stdin - the runtime's
+ * PreToolUse protocol - and asserts the decision: `expect: block` requires
+ * the blocking exit code, `expect: allow` requires success. The check runs
+ * without a model and fails when a hook stops blocking an input it must
+ * block.
  *
  * A declared script that is missing or not executable is a configuration error
  * that aborts the run, so a hook can never silently pass by not running.
@@ -225,7 +225,7 @@ final class HookRunner {
   /**
    * Runs a hook script through `proc_open`, feeding the payload on stdin.
    *
-   * Stdout is discarded to `/dev/null` so a chatty hook cannot fill an unread
+   * Stdout is discarded to `/dev/null` so hook output cannot fill an unread
    * pipe and deadlock; stderr is the one pipe read, because it carries the
    * diagnostic a failing case surfaces. A hook that outlives its timeout is
    * terminated and reported with the timeout code so a hang cannot block the

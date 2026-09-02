@@ -21,17 +21,18 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `gate` command: fail a run that regressed against a committed baseline.
+ * The `gate` command.
  *
- * The nightly counterpart to the free push gate. It never spends a token - it
- * reads two already-produced `results.json` files and applies policy: the
- * pass rate may not drop beyond `--max-regression`; a golden task must
- * keep passing regardless of the aggregate; a skill's minimal model may not
- * climb the ladder; and the task set may not drift beyond the configured
- * allow/warn/fail policy. Golden tasks come from `eval.yaml` in `--dir` on a
- * best-effort basis, so the command still works as a pure two-file comparison
- * when no repo is present. It renders in four formats and mirrors the tool exit
- * contract: `0` pass, `1` regression/golden failure, `2` configuration error.
+ * Fails a run that regressed against a committed baseline. It never spends a
+ * token - it reads two already-produced `results.json` files and applies
+ * policy: the pass rate may not drop beyond `--max-regression`; a golden
+ * task must keep passing regardless of the aggregate; a skill's minimal
+ * model may not climb the ladder; and the task set may not drift beyond the
+ * configured allow/warn/fail policy. Golden tasks come from `eval.yaml` in
+ * `--dir` on a best-effort basis, so the command still works as a pure
+ * two-file comparison when no repo is present. It renders in four formats
+ * and mirrors the tool exit contract: `0` pass, `1` regression/golden
+ * failure, `2` configuration error.
  */
 class GateCommand extends Command {
 
@@ -130,9 +131,10 @@ class GateCommand extends Command {
   /**
    * Collects the golden task keys declared in the repo config, best-effort.
    *
-   * The config is only consulted for the golden set, so a repo that will not
-   * load is a warning, not a fatal error - the gate still compares the two
-   * files. A task is golden when its `eval.yaml` entry sets `golden: true`.
+   * The config is only consulted for the golden set, so a config that fails
+   * to load is a warning, not a fatal error - the gate still compares the
+   * two files. A task is golden when its `eval.yaml` entry sets
+   * `golden: true`.
    *
    * @param string $root
    *   The repository root to load config from.

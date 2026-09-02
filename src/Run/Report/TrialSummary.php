@@ -9,9 +9,9 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 /**
  * Summarises why one llm trial failed, shared by every reporter.
  *
- * A failed trial fails because a contract check did not match or a judge
- * criterion was not met; both the JUnit and github-comment reporters render
- * that same reason, so the derivation lives in one place.
+ * A trial fails because a contract check did not match or a judge criterion
+ * was not met; the derivation lives here once, so every reporter renders
+ * the same reason.
  */
 final class TrialSummary {
 

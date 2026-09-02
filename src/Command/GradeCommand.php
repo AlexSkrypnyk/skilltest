@@ -25,18 +25,18 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * The `grade` command: re-grade offline, without executing an agent.
+ * The `grade` command.
  *
- * Grading is a pure function of a transcript and a contract, so it can be run
- * without the run that produced the transcript. Two modes serve two needs:
- * `--transcript <file> --skill <name>` asserts a skill's contract against any
- * transcript - the same verdict the deterministic transcript group reaches, on
- * any file; and `--results <file>` re-scores every trial in a saved run
- * against the current contract, so a tightened rule shows exactly which trials
- * it would now fail. Both are token-free; only `--judge` spends tokens, to
- * re-run the rubric against each trial's stored transcript. Exit codes mirror
- * the tool contract: `0` pass, `1` a failing check or re-scored verdict, `2` a
- * configuration error.
+ * Re-grades offline, without executing an agent: grading is a pure function
+ * of a transcript and a contract, so it can be run without the run that
+ * produced the transcript. `--transcript <file> --skill <name>` asserts a
+ * skill's contract against any transcript file, reaching the same verdict
+ * the deterministic transcript group reaches; `--results <file>` re-scores
+ * every trial in a saved run against the current contract, so a tightened
+ * rule shows which trials it would fail. Both are token-free; only `--judge`
+ * spends tokens, to re-run the rubric against each trial's stored
+ * transcript. Exit codes mirror the tool contract: `0` pass, `1` a failing
+ * check or re-scored verdict, `2` a configuration error.
  */
 class GradeCommand extends Command {
 

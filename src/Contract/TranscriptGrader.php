@@ -7,14 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Contract;
 /**
  * Grades one transcript file against a skill's contract and custom checks.
  *
- * The single kernel the deterministic transcript group, the record command, and
- * the offline grader all share: parse a transcript file, assert the skill's
- * normalised contract against it, then run every declared custom-check script
- * against the same file. Contract assertions run first, custom checks after,
- * in declaration order - the order a report renders them. Command aliases and
- * the custom-check process runner are injected, so the grading is unit-testable
- * without spawning a process and normalises commands like the live suite
- * does.
+ * Parses the transcript file, asserts the skill's normalised contract
+ * against it, then runs every declared custom-check script against the same
+ * file. Contract assertions run first, custom checks after, in declaration
+ * order. Command aliases and the custom-check process runner are injected,
+ * so the grading is unit-testable without spawning a process.
  */
 final readonly class TranscriptGrader {
 

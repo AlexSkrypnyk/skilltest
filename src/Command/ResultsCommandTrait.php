@@ -8,12 +8,7 @@ use AlexSkrypnyk\SkillTest\ExitCode;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Shared option and error plumbing for the offline results commands.
- *
- * The token-free commands that consume a saved `results.json` - `grade` and
- * `gate` - resolve their root and options and report a configuration error the
- * same way, so that small machinery lives here once rather than being copied
- * into each command.
+ * Shared option and error handling for the offline results commands.
  */
 trait ResultsCommandTrait {
 

@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Gate;
 
 /**
- * One thing the gate noticed: a regression, a golden failure, or drift.
+ * One gate finding: a regression, a golden failure, or drift.
  *
- * A finding is either failing (it fails the gate) or a warning (it is surfaced
- * but does not change the verdict), tagged with the category it belongs to so a
- * report can group and a machine can filter. The message is the human sentence
- * a reader acts on.
+ * A finding is either failing (it fails the gate) or a warning (it is
+ * surfaced but does not change the verdict), tagged with a category so a
+ * report can group and a machine can filter.
  */
 final readonly class GateFinding {
 

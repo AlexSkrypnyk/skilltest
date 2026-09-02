@@ -9,16 +9,15 @@ use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
 
 /**
- * A content-addressed store of graded trials, keyed on everything that matters.
+ * A content-addressed store of graded trials.
  *
  * A live trial is expensive and non-deterministic, so re-running an unchanged
  * task on an unchanged skill wastes tokens for no new signal. This caches the
- * graded trials of one task-on-model under a key that is a digest of the task
+ * graded trials of one task-on-model under a key that digests the task
  * definition, the resolved model id, the tool version, every file the skill
- * ships, and the task's fixtures - so any change to any of them misses and
- * re-runs, while nothing changing hits and replays the prior verdict. It stores
- * only whole, graded trials; re-scoring a saved run against a tightened rubric
- * is a separate, judge-only path, not this cache.
+ * ships, and the task's fixtures. A change to any of them misses and re-runs;
+ * an unchanged task-on-model hits and replays the prior verdict. It stores
+ * only whole, graded trials.
  */
 final readonly class TrialCache {
 

@@ -15,7 +15,7 @@ use AlexSkrypnyk\SkillTest\Render\Table;
  * heading, while the markdown form emits headings, pipe tables, and bulleted
  * detail so a PR or doc renders it natively. The verdict always states the
  * threshold and trial count, and a single-trial verdict is labelled an
- * estimate, so a reader never mistakes one run for a settled answer.
+ * estimate.
  */
 final readonly class MatrixRenderer {
 
@@ -142,7 +142,7 @@ final readonly class MatrixRenderer {
   }
 
   /**
-   * The economic punchline: the minimal model's per-run cost vs the default.
+   * The cost comparison: the minimal model's per-run cost vs the default's.
    *
    * @param \AlexSkrypnyk\SkillTest\Live\Matrix\SkillMatrix $skill
    *   The skill's matrix.

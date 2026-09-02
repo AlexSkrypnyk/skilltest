@@ -9,10 +9,10 @@ use AlexSkrypnyk\File\File;
 /**
  * Writes a single reporter artifact - JUnit XML or a session log - to disk.
  *
- * The content handed here is already redacted at the document layer, before it
- * was rendered to XML or NDJSON, so this writer only owns placing the bytes:
- * it creates any missing parent directory and fails loudly rather than
- * silently when a write does not land.
+ * Content arrives already redacted at the document layer, before rendering
+ * to XML or NDJSON, so this writer only places the bytes. It creates any
+ * missing parent directory, and a failed write throws rather than passing
+ * silently.
  */
 final readonly class ArtifactWriter {
 

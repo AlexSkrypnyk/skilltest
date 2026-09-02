@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Shared option, stream, and encoding plumbing used by every command family.
+ * Shared option, stream, and encoding helpers used by every command family.
  */
 trait SharedCommandTrait {
 

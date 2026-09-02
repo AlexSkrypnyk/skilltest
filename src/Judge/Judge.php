@@ -10,15 +10,14 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Scores one trial against a rubric with a pinned, one-shot judge model.
  *
- * This is the invocation seam the live suite drives when a skill declares a
- * rubric: it assembles the trial evidence from the transcript, builds the
- * strict-evaluator prompt, runs the judge through the same stubbable process
- * seam the runner uses, and parses the verdict. The judge model is pinned by
- * the caller and never derived from the execution model. A judge process that
- * exits non-zero and a verdict that cannot be parsed are both judge failures
- * raised as a {@see JudgeException}, so a broken judge is a distinct result
- * rather than a silent pass or a skill failure. The process seam is injectable
- * so scoring is tested against recorded verdicts without spending a token.
+ * Assembles the trial evidence from the transcript, builds the
+ * strict-evaluator prompt, runs the judge, and parses the verdict. The judge
+ * model is pinned by the caller and never derived from the execution model.
+ * A judge process that exits non-zero and a verdict that cannot be parsed
+ * are both judge failures raised as a {@see JudgeException}, so a broken
+ * judge is a distinct result rather than a silent pass or a skill failure.
+ * The process seam is injectable so scoring is tested against recorded
+ * verdicts without spending a token.
  */
 final readonly class Judge {
 
@@ -94,10 +93,11 @@ final readonly class Judge {
   /**
    * Rejects a verdict that does not score exactly the rubric, one id per line.
    *
-   * A judge that omits, duplicates, or invents a criterion id has not produced
-   * a usable verdict for the rubric, so gating on the criteria it did return
-   * would silently pass a trial on an unproven criterion. Requiring the id set
-   * to be exactly `1..N` makes an incomplete verdict a judge failure instead.
+   * A judge that omits, duplicates, or invents a criterion id has not
+   * produced a usable verdict for the rubric. Gating on the criteria it did
+   * return would silently pass a trial on an unproven criterion. Requiring
+   * the id set to be exactly `1..N` makes an incomplete verdict a judge
+   * failure instead.
    *
    * @param \AlexSkrypnyk\SkillTest\Judge\JudgeVerdict $verdict
    *   The parsed verdict.
@@ -119,12 +119,11 @@ final readonly class Judge {
   /**
    * Renders the trial evidence a judge scores from a transcript.
    *
-   * The judge scores evidence, not vibes: the tool calls the skill made and the
-   * final output it produced. Both are pulled from the same stream-json
-   * transcript the contract engine grades, so the judge sees exactly what the
-   * run did. When the run was an interactive conversation, the responder turns
-   * that drove it are surfaced too, so the judge scores the dialogue rather
-   * than an agent talking to itself.
+   * The evidence is the tool calls the skill made and the final output it
+   * produced, both pulled from the run's stream-json transcript, so the judge
+   * sees exactly what the run did. When the run was an interactive
+   * conversation, the responder turns that drove it are surfaced too, so the
+   * judge scores the dialogue rather than the agent's turns alone.
    *
    * @param string $transcript
    *   The raw stream-json transcript.
@@ -160,8 +159,7 @@ final readonly class Judge {
    *   The responder turns recorded into the transcript, in order.
    *
    * @return string[]
-   *   The section lines, or an empty array for a non-interactive run so the
-   *   evidence of a single-shot trial is unchanged.
+   *   The section lines, or an empty array for a non-interactive run.
    */
   protected static function conversationSection(array $turns): array {
     if ($turns === []) {

@@ -10,16 +10,16 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * Renders an `eval.yaml` from a skill manifest and an optional AI draft.
  *
- * The output is valid by construction: `validate` passes on it with no manual
- * edits. The document is hand-assembled rather than dumped so it can carry the
- * guiding comments, TODO markers, and inline confidence flags that make a
- * scaffold worth reading; every interpolated scalar still round-trips through
- * the YAML dumper so a skill name or drafted pattern cannot break the file.
- * The deterministic `transcript` and the token-spending `llm` blocks stay
- * commented until the author opts in, which is also what keeps template mode
- * clear of the fixture-exists and non-empty-rubric coherence rules; an AI draft
- * only activates the `llm` block when it supplies both a task and a rubric, and
- * every drafted command pattern is compile-checked before it is emitted.
+ * The output is valid by construction: `validate` passes on it with no
+ * manual edits. The document is hand-assembled rather than dumped so it can
+ * carry guiding comments, TODO markers, and inline confidence flags. Every
+ * interpolated scalar still round-trips through the YAML dumper so a skill
+ * name or drafted pattern cannot break the file. The deterministic
+ * `transcript` and the token-spending `llm` blocks stay commented until the
+ * author opts in, which keeps template mode clear of the fixture-exists and
+ * non-empty-rubric coherence rules. An AI draft activates the `llm` block
+ * only when it supplies both a task and a rubric, and every drafted command
+ * pattern is compile-checked before it is emitted.
  */
 final readonly class EvalScaffold {
 

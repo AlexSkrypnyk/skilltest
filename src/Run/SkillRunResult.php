@@ -9,7 +9,7 @@ namespace AlexSkrypnyk\SkillTest\Run;
  *
  * Bundles the structure results, security findings, and transcript assertions
  * produced for a single skill, plus the note explaining a skipped transcript
- * group, so reporting can walk one object per skill instead of re-grouping
+ * group, so a consumer walks one object per skill instead of re-grouping
  * flat engine output.
  */
 final readonly class SkillRunResult {

@@ -7,13 +7,11 @@ namespace AlexSkrypnyk\SkillTest\Update;
 /**
  * Reads GitHub release metadata and assets through one injected fetcher.
  *
- * Both the self-update command and the once-a-day release-check notice need the
- * latest published tag, and self-update additionally needs the release's PHAR
- * and its checksums file; this centralises the URL scheme (mirroring
- * `install.sh`) and the JSON shape so neither caller hand-rolls a GitHub URL.
- * Every network read goes through the injected fetcher - a `(url): [status,
- * body]` closure - so the whole client is exercised offline; the live fetcher
- * is the one untested seam, wired only in production.
+ * Centralises the URL scheme (mirroring `install.sh`) and the JSON shape so
+ * a GitHub URL is never hand-rolled elsewhere. Every network read goes
+ * through the injected fetcher - a `(url): [status, body]` closure - so the
+ * whole client is exercised offline; the live fetcher is the one untested
+ * seam, wired only in production.
  */
 final readonly class ReleaseClient {
 

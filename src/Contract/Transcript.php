@@ -12,9 +12,7 @@ use AlexSkrypnyk\File\File;
  * A transcript is JSONL, one JSON object per line, as emitted by
  * `claude -p --output-format stream-json --verbose`. Every decoded object is
  * walked recursively and each `tool_use` node collected in order, so nested
- * transcript shapes yield the same event stream as flat ones. This parse is the
- * shared substrate the contract engine grades against - the identical events
- * feed the deterministic recorded fixture and every live llm trial.
+ * transcript shapes yield the same event stream as flat ones.
  */
 final class Transcript {
 
@@ -146,8 +144,7 @@ final class Transcript {
   /**
    * The last `result` event's text.
    *
-   * This is the agent's final assistant message - the reply a conversational
-   * responder answers and the "final output" a judge scores.
+   * This is the agent's final assistant message.
    *
    * @return string
    *   The result text, or the empty string when the transcript has no result.
@@ -230,10 +227,10 @@ final class Transcript {
   /**
    * Scans a transcript for its result text, session id, and responder turns.
    *
-   * A single pass over the top-level events collects the three whole-run facts
-   * the tool-use walk does not: the last `result` event's text and the last
-   * `session_id` (both defined by the run's final tally), and every injected
-   * responder turn in the order the conversation recorded them.
+   * A single pass over the top-level events collects the three whole-run
+   * facts the tool-use walk does not: the last `result` event's text, the
+   * last `session_id`, and every injected responder turn in the order the
+   * conversation recorded them.
    *
    * @param string $jsonl
    *   The transcript, one JSON object per line.

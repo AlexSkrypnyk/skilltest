@@ -10,14 +10,15 @@ use AlexSkrypnyk\SkillTest\Results\Metrics;
 /**
  * Renders a results document as one self-contained HTML file.
  *
- * A single file a skill author opens straight from `file://`: the run summary,
- * a per-skill drill-down to each check's evidence (native `<details>`, so no
- * script runs), the task-by-model matrix grid with its minimal-model verdict
- * when the run carried llm results, and the cost totals. The stylesheet is
- * inlined and the page references no external asset - no stylesheet link, no
- * script, no image, no font - so opening it makes zero network requests and it
- * renders identically offline. Every value the document carries is escaped,
- * so a skill name or a piece of evidence can never break out of its cell.
+ * The page opens straight from `file://`. Drill-downs use native
+ * `<details>`, so no script runs.
+ *
+ * The stylesheet is inlined and the page references no external asset - no
+ * stylesheet link, no script, no image, no font - so opening it makes zero
+ * network requests and it renders identically offline.
+ *
+ * Every value the document carries is escaped, so a skill name or a piece
+ * of evidence can never break out of its cell.
  */
 final readonly class HtmlReport {
 

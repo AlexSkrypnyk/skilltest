@@ -10,14 +10,14 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 /**
  * Runs a skill's custom check script and renders its verdict as a result.
  *
- * The escape hatch for the genuinely skill-specific residue: a check may be a
- * script instead of a declared pattern. The script is invoked with the
- * transcript path as `$1` and the skill directory as `$2`; its exit code
- * decides pass or fail, and an optional JSON object on stdout
+ * A check may be a script instead of a declared pattern, covering the
+ * skill-specific cases no pre-baked pattern expresses. The script is invoked
+ * with the transcript path as `$1` and the skill directory as `$2`; its exit
+ * code decides pass or fail, and an optional JSON object on stdout
  * (`{"pass": bool, "message": "...", "evidence": "..."}`) enriches - or
  * overrides - the verdict so it renders like any pre-baked check. Process
- * execution is funnelled through one injectable runner so the verdict logic is
- * unit-testable without spawning a process.
+ * execution is funnelled through one injectable runner so the verdict logic
+ * is unit-testable without spawning a process.
  */
 final readonly class CustomCheck {
 

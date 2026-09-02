@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Init;
 
 /**
- * A minimal line-oriented diff for the merge-safe preview.
+ * A minimal line-oriented diff of two documents.
  *
- * When `init` would overwrite an existing `eval.yaml` without `--force`, it
- * shows what it would have written instead of clobbering the file. A
- * longest-common-subsequence walk keeps unchanged lines aligned so the
- * additions (`+`) and removals (`-`) a reader sees are the real edits, not the
- * noise a naive positional compare produces when lines shift.
+ * A longest-common-subsequence walk keeps unchanged lines aligned so the
+ * additions (`+`) and removals (`-`) a reader sees are the real edits, not
+ * the noise a naive positional compare produces when lines shift.
  */
 final readonly class LineDiff {
 

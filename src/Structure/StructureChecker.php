@@ -17,18 +17,14 @@ use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 /**
  * The deterministic `structure` group: each skill's files are well-formed.
  *
- * Runs a fixed catalog of pre-baked checks against every discovered skill and
- * its `SKILL.md`, proving the frontmatter parses and is honest, the tool
- * declaration is safe, the body executes nothing before the model reads it,
- * the files it references exist, the commands it names are real, the document
- * fits its token budget, and its own `eval.yaml` is coherent, plus warn-only
- * quality advisories about the skill's shape. Every check is default-on and
- * produces a verdict for every skill; a skill may switch one off in
- * `eval.yaml` with a written reason, and that suppression is reported rather
- * than hidden. A skill that ships no `eval.yaml` runs every check but
- * `contract-coherent`, which has no file to judge. The one check that runs a
- * process (`command-refs-resolve`) does so through an injected runner, and a
- * binary that cannot run is a hard configuration error, never a silent pass.
+ * Runs a fixed catalog of pre-baked checks against every discovered skill
+ * and its `SKILL.md`. Every check is default-on and produces a verdict for
+ * every skill. A skill may switch one off in `eval.yaml` with a written
+ * reason, and the suppression is reported. A skill that ships no `eval.yaml`
+ * runs every check but `contract-coherent`, which has no file to judge. The
+ * one check that runs a process (`command-refs-resolve`) does so through an
+ * injected runner, and a binary that cannot run is a configuration error,
+ * not a pass.
  */
 final class StructureChecker {
 
@@ -312,9 +308,6 @@ final class StructureChecker {
   /**
    * The checks that apply to one skill, given what is configured for it.
    *
-   * Shared with the run plan so `--list` names exactly the checks the run
-   * produces.
-   *
    * @param bool $resolves_commands
    *   Whether `commands.resolve` is configured for the repository.
    * @param bool $has_eval
@@ -340,9 +333,9 @@ final class StructureChecker {
   /**
    * Dispatches one check to its implementation.
    *
-   * Returns a list because a check may report more than one verdict: the
-   * advisory check emits one warning per tripped advisory, while every other
-   * check reports exactly one result.
+   * Returns a list because a check may report more than one verdict. The
+   * advisory check emits one warning per tripped advisory; every other check
+   * reports exactly one result.
    *
    * @param string $check_id
    *   The check id to run.
@@ -541,8 +534,8 @@ final class StructureChecker {
     $id = self::CHECK_NO_UNRESTRICTED_BASH;
 
     // Inspect the declared tool entries, not the raw document: a `Bash(*)` in
-    // the body is documentation, not a grant, and a multiline list form must be
-    // caught as surely as the inline string form.
+    // the body is documentation, not a grant, and a multiline list form must
+    // be caught the same as the inline string form.
     foreach ($this->allowedToolEntries($document) as [$line, $entry]) {
       if (preg_match(self::UNRESTRICTED_BASH_GRANT, $entry) === 1) {
         return StructureResult::fail($id, $name, 'allowed-tools grants unrestricted Bash access.', $file, $line, $entry);
@@ -671,8 +664,8 @@ final class StructureChecker {
    *
    * The count comes from the same counter the `tokens` command uses, so the
    * gate and the accounting report can never disagree. Over the limit fails;
-   * at or over the warn threshold warns without failing, giving authors
-   * headroom to act before the budget blocks them.
+   * at or over the warn threshold warns without failing, so authors can act
+   * before the count reaches the limit.
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedSkill $loaded_skill
    *   The loaded skill, carrying any `limit`/`warn-at`/`vocab` overrides.
@@ -715,10 +708,8 @@ final class StructureChecker {
   /**
    * Reports warn-only quality advisories about the skill's shape.
    *
-   * Advisories are advice, never gates: each tripped heuristic - an over-long
-   * numbered procedure in the body, a description that enumerates too many
-   * quoted trigger phrases, or more reference markdown files than a reader
-   * can hold - is its own warning, and a skill with none gets a single pass.
+   * Advisories warn and never fail. Each tripped heuristic is its own
+   * warning, and a skill with none gets a single pass.
    *
    * @param \AlexSkrypnyk\SkillTest\Structure\SkillDocument $document
    *   The parsed `SKILL.md`.
@@ -953,9 +944,9 @@ final class StructureChecker {
   /**
    * Whether a relative path steps outside the skill directory.
    *
-   * A `..` path segment points at a parent, so the reference is to a file the
-   * skill does not ship; the check requires references to resolve inside the
-   * skill directory, so such a path fails rather than being followed.
+   * A `..` path segment points at a parent, so the reference names a file
+   * the skill does not ship. The check requires references to resolve inside
+   * the skill directory, so such a path fails instead of being followed.
    *
    * @param string $path
    *   The candidate path.
@@ -1010,8 +1001,8 @@ final class StructureChecker {
   /**
    * The declared allowed-tools entries as [file line, entry] pairs.
    *
-   * Reads the parsed frontmatter value in either form - a comma-separated
-   * string or a YAML list - and pairs each entry with the file line it appears
+   * Reads the parsed frontmatter value in either form: a comma-separated
+   * string or a YAML list. Each entry is paired with the file line it appears
    * on, so a finding can point at the offending declaration.
    *
    * @param \AlexSkrypnyk\SkillTest\Structure\SkillDocument $document

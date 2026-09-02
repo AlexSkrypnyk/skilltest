@@ -8,10 +8,8 @@ namespace AlexSkrypnyk\SkillTest\Live;
  * The raw outcome of the one live trial `skilltest record` runs.
  *
  * A recording is graded from the fixture it writes, not from the live run, so
- * this carries only what the command needs to persist and then re-grade: the
- * transcript verbatim (the JSONL written to the skill's fixture path), the
- * agent's exit code (a non-zero exit or a timeout is folded into the verdict so
- * a broken run never records a green fixture), and the wall-clock duration.
+ * this carries only what the command persists and then re-grades: the raw
+ * transcript, the agent's exit code, and the wall-clock duration.
  */
 final readonly class RecordResult {
 
