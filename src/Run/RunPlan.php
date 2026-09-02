@@ -123,7 +123,7 @@ final readonly class RunPlan {
     $checks = array_map(static fn(array $pattern): string => $pattern[0], SecurityScanner::BASELINE_PATTERNS);
 
     if (Data::toStringList(Data::get($skill->effective->security, 'forbidden-tokens')) !== []) {
-      $checks[] = SecurityScanner::FORBIDDEN_TOKEN_CHECK;
+      $checks[] = SecurityScanner::CHECK_FORBIDDEN_TOKENS;
     }
 
     return array_values(array_filter($checks, $this->selection->matches(...)));

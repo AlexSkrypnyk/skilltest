@@ -27,7 +27,7 @@ final readonly class SecurityScanner {
   /**
    * The check id for a skill-declared forbidden token.
    */
-  public const string FORBIDDEN_TOKEN_CHECK = 'security.forbidden-tokens';
+  public const string CHECK_FORBIDDEN_TOKENS = 'security.forbidden-tokens';
 
   /**
    * The always-on baseline pack as [check id, delimited regex, description].
@@ -165,7 +165,7 @@ final readonly class SecurityScanner {
 
       foreach ($tokens as $token) {
         if ($token !== '' && str_contains($line, $token)) {
-          $findings[] = new SecurityFinding(self::FORBIDDEN_TOKEN_CHECK, $relative, $number, $evidence, sprintf("forbidden token '%s' appears in a shipped file", $token));
+          $findings[] = new SecurityFinding(self::CHECK_FORBIDDEN_TOKENS, $relative, $number, $evidence, sprintf("forbidden token '%s' appears in a shipped file", $token));
         }
       }
     }
