@@ -159,12 +159,11 @@ final readonly class UpdateNotifier {
     try {
       $contents = File::read($file);
     }
+    // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      // @codeCoverageIgnoreStart
       return NULL;
-      // @codeCoverageIgnoreEnd
     }
-
+    // @codeCoverageIgnoreEnd
     $decoded = json_decode($contents, TRUE);
 
     if (!is_array($decoded)) {
@@ -193,12 +192,12 @@ final readonly class UpdateNotifier {
     try {
       File::dump($file, json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
     }
+    // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      // @codeCoverageIgnoreStart
       // The notice is a convenience, so a cache write that fails costs one
       // extra network read tomorrow rather than an error today.
-      // @codeCoverageIgnoreEnd
     }
+    // @codeCoverageIgnoreEnd
   }
 
   /**

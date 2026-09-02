@@ -80,11 +80,11 @@ final class Transcript {
     try {
       return new self(File::read($path));
     }
+    // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      // @codeCoverageIgnoreStart
       return new self('');
-      // @codeCoverageIgnoreEnd
     }
+    // @codeCoverageIgnoreEnd
   }
 
   /**

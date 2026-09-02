@@ -99,12 +99,11 @@ final readonly class TrialCache {
     try {
       $contents = File::read($file);
     }
+    // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      // @codeCoverageIgnoreStart
       return NULL;
-      // @codeCoverageIgnoreEnd
     }
-
+    // @codeCoverageIgnoreEnd
     $rows = Data::toArrayList(json_decode($contents, TRUE));
     $trials = array_map(TrialResult::fromCache(...), $rows);
 
@@ -125,12 +124,12 @@ final readonly class TrialCache {
     try {
       File::dump($this->file($key), json_encode($rows, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
     }
+    // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      // @codeCoverageIgnoreStart
       // A cache write is best-effort: the trials are already graded, so a
       // failure here costs a re-run, never a result.
-      // @codeCoverageIgnoreEnd
     }
+    // @codeCoverageIgnoreEnd
   }
 
   /**
