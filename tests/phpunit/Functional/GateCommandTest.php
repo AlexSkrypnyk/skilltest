@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\GateCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ResultsDocumentTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 final class GateCommandTest extends TestCase {
 
   use ApplicationTrait;
+  use DirectoryCleanupTrait;
   use ResultsDocumentTrait;
 
   /**
@@ -357,40 +359,6 @@ final class GateCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

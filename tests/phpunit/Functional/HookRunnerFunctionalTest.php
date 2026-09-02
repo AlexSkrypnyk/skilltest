@@ -6,6 +6,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Hooks\HookRunner;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -22,6 +23,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HookRunner::class)]
 #[Group('hooks')]
 final class HookRunnerFunctionalTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A real working directory the fixture hooks live and execute in.
@@ -138,38 +141,6 @@ final class HookRunnerFunctionalTest extends TestCase {
     $path = $this->workdir . '/' . $name;
     file_put_contents($path, $body);
     chmod($path, $mode);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      return;
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

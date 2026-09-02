@@ -9,6 +9,7 @@ use AlexSkrypnyk\SkillTest\Ai\PromptRunner;
 use AlexSkrypnyk\SkillTest\Command\InitCommand;
 use AlexSkrypnyk\SkillTest\Command\ValidateCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 final class InitCommandTest extends TestCase {
 
   use ApplicationTrait;
+  use DirectoryCleanupTrait;
 
   /**
    * A real repository root the scaffold reads and writes under.
@@ -226,40 +228,6 @@ final class InitCommandTest extends TestCase {
     $tester = $this->applicationGetTester();
     $this->assertSame(0, $tester->getStatusCode(), 'Scaffolded eval.yaml should pass validate. Output: ' . $tester->getDisplay());
     $this->assertStringContainsString('OK: validated', $tester->getDisplay());
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

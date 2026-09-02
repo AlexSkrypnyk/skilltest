@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\CacheCommand;
 use AlexSkrypnyk\SkillTest\Live\TrialCache;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 final class CacheCommandTest extends TestCase {
 
   use ApplicationTrait;
+  use DirectoryCleanupTrait;
 
   /**
    * The temporary repository root holding the cache directory.
@@ -97,40 +99,6 @@ final class CacheCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay();
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

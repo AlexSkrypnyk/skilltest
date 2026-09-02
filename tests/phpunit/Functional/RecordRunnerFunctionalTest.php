@@ -11,6 +11,7 @@ use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\RecordResult;
 use AlexSkrypnyk\SkillTest\Live\RecordRunner;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +26,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RecordRunner::class)]
 #[Group('live')]
 final class RecordRunnerFunctionalTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * A transcript the fake pool returns for a recorded run.
@@ -215,40 +218,6 @@ final class RecordRunnerFunctionalTest extends TestCase {
     $skills = (new ConfigLoader($this->root))->load()->skills;
 
     return $skills[0];
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

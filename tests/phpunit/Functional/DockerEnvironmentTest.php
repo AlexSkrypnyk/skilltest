@@ -9,6 +9,7 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Live\DockerEnvironment;
 use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\TrialWorkspace;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(DockerEnvironment::class)]
 #[Group('live')]
 final class DockerEnvironmentTest extends TestCase {
+
+  use DirectoryCleanupTrait;
 
   /**
    * The temporary base holding the repo root and workspaces.
@@ -383,40 +386,6 @@ final class DockerEnvironmentTest extends TestCase {
    */
   protected function workspace(DockerEnvironment $environment): TrialWorkspace {
     return $environment->setup('alpha', 'skills/alpha', ['fixture' => 'fixtures/seed.txt', 'repos' => [], 'workdir' => NULL]);
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

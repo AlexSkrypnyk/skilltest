@@ -18,6 +18,7 @@ use AlexSkrypnyk\SkillTest\Live\ResponderOutcome;
 use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -34,6 +35,7 @@ use PHPUnit\Framework\TestCase;
 final class LlmSuiteFunctionalTest extends TestCase {
 
   use ArrayPathTrait;
+  use DirectoryCleanupTrait;
 
   /**
    * A transcript that satisfies the alpha contract.
@@ -883,40 +885,6 @@ final class LlmSuiteFunctionalTest extends TestCase {
     file_put_contents($root . '/skills/alpha/eval.yaml', $eval);
 
     return $root;
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

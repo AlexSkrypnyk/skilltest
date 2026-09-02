@@ -8,6 +8,7 @@ use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\JunitSchemaValidationTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
 use AlexSkrypnyk\SkillTest\Update\ReleaseClient;
@@ -27,6 +28,7 @@ final class RunCommandTest extends TestCase {
 
   use ApplicationTrait;
   use ArrayPathTrait;
+  use DirectoryCleanupTrait;
   use JunitSchemaValidationTrait;
   use SchemaValidationTrait;
 
@@ -748,38 +750,6 @@ final class RunCommandTest extends TestCase {
     }
 
     return $decoded;
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      return;
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }

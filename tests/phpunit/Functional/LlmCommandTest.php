@@ -11,6 +11,7 @@ use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
 use AlexSkrypnyk\SkillTest\Live\DockerPreflight;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,6 +30,7 @@ final class LlmCommandTest extends TestCase {
 
   use ApplicationTrait;
   use ArrayPathTrait;
+  use DirectoryCleanupTrait;
   use SchemaValidationTrait;
 
   /**
@@ -611,40 +613,6 @@ final class LlmCommandTest extends TestCase {
     }
 
     return $decoded;
-  }
-
-  /**
-   * Recursively removes a directory tree.
-   *
-   * @param string $dir
-   *   The directory to remove.
-   */
-  protected function remove(string $dir): void {
-    if (!is_dir($dir)) {
-      // @codeCoverageIgnoreStart
-      return;
-      // @codeCoverageIgnoreEnd
-    }
-
-    foreach (scandir($dir) ?: [] as $item) {
-      if ($item === '.') {
-        continue;
-      }
-      if ($item === '..') {
-        continue;
-      }
-      $path = $dir . '/' . $item;
-
-      if (is_dir($path) && !is_link($path)) {
-        $this->remove($path);
-
-        continue;
-      }
-
-      unlink($path);
-    }
-
-    rmdir($dir);
   }
 
 }
