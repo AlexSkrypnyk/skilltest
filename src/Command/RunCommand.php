@@ -11,6 +11,7 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
+use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Results\Interpreter;
 use AlexSkrypnyk\SkillTest\Run\Redactor;
 use AlexSkrypnyk\SkillTest\Run\Report\ArtifactWriter;
@@ -50,11 +51,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  * nothing else.
  */
 class RunCommand extends Command {
-
-  /**
-   * The directory, relative to the repo root, the update cache lives under.
-   */
-  public const string CACHE_DIR = '.skilltest/cache';
 
   /**
    * Constructs a RunCommand.
@@ -190,7 +186,7 @@ class RunCommand extends Command {
       return;
     }
 
-    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . self::CACHE_DIR, $flag_disabled);
+    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, $flag_disabled);
 
     if ($notice !== NULL) {
       $stderr->writeln($notice);

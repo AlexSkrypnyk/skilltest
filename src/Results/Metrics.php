@@ -32,7 +32,7 @@ final class Metrics {
   /**
    * The deterministic per-skill groups, in scan order.
    */
-  protected const array DETERMINISTIC_GROUPS = ['security', 'structure', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * The default threshold used when a document records no verdict threshold.

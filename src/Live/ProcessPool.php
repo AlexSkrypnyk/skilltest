@@ -27,6 +27,11 @@ final readonly class ProcessPool {
   use ProcessTerminationTrait;
 
   /**
+   * The default per-process wall-clock budget, in seconds.
+   */
+  public const float DEFAULT_TIMEOUT = 300.0;
+
+  /**
    * Constructs a ProcessPool.
    *
    * @param int $concurrency
@@ -36,7 +41,7 @@ final readonly class ProcessPool {
    */
   public function __construct(
     protected int $concurrency = 1,
-    protected float $timeout = 300.0,
+    protected float $timeout = self::DEFAULT_TIMEOUT,
   ) {}
 
   /**
