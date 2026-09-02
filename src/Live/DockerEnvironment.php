@@ -29,10 +29,7 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  */
 final class DockerEnvironment implements EnvironmentInterface {
 
-  /**
-   * The scratch directory, relative to the repo root, workspaces live under.
-   */
-  public const string WORKSPACE_DIR = '.skilltest/tmp';
+  use EnvironmentWorkspaceTrait;
 
   /**
    * The directory the workspace is mounted at inside every container.
@@ -50,23 +47,11 @@ final class DockerEnvironment implements EnvironmentInterface {
   public const float PREPARE_TIMEOUT = 600.0;
 
   /**
-   * Runs a pool of commands and returns each one's exit, stdout, and duration.
-   *
-   * @var \Closure(array<array-key, array{0: string, 1: string}>): array<array-key, array{0: int, 1: string, 2: int}>
-   */
-  protected \Closure $pool;
-
-  /**
    * Runs one docker admin command and returns its exit code and stdout.
    *
    * @var \Closure(string, string): array{0: int, 1: string}
    */
   protected \Closure $docker;
-
-  /**
-   * The base directory trial workspaces are assembled under.
-   */
-  protected string $workspaceBase;
 
   /**
    * The run identifier stamped on containers so teardown can sweep them.
@@ -82,13 +67,6 @@ final class DockerEnvironment implements EnvironmentInterface {
    * The image built for this run, or NULL when the base image is used as-is.
    */
   protected ?string $builtImage = NULL;
-
-  /**
-   * The paths of workspaces preserved because retention was requested.
-   *
-   * @var string[]
-   */
-  protected array $keptWorkspaces = [];
 
   /**
    * Constructs a DockerEnvironment.
@@ -164,26 +142,6 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    */
-  public function setup(string $skill, string $path, array $inputs): TrialWorkspace {
-    $workspace = new TrialWorkspace($this->workspaceBase . '/' . uniqid('ws-', TRUE), $this->root, $skill, $path, $inputs, $this->git);
-
-    // Assembly is transactional: a half-built workspace is removed here rather
-    // than left for a caller that never received the handle to clean up.
-    try {
-      $workspace->assemble();
-    }
-    catch (\Throwable $throwable) {
-      $workspace->cleanup();
-
-      throw $throwable;
-    }
-
-    return $workspace;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function exec(array $batch): array {
     $commands = [];
     $names = [];
@@ -211,19 +169,6 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    */
-  public function cleanup(TrialWorkspace $workspace): void {
-    if ($this->keepWorkspaces) {
-      $this->keptWorkspaces[] = $workspace->path();
-
-      return;
-    }
-
-    $workspace->cleanup();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function teardown(): void {
     // Remove any container this run left behind (a timed-out client can orphan
     // one), then the image built for this run, then the scratch area - but only
@@ -238,13 +183,6 @@ final class DockerEnvironment implements EnvironmentInterface {
     if (is_dir($this->workspaceBase) && File::dirIsEmpty($this->workspaceBase)) {
       File::rmdir($this->workspaceBase);
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function keptWorkspaces(): array {
-    return $this->keptWorkspaces;
   }
 
   /**
