@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Hooks;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
  * Proves the repository's enforcement hooks actually enforce.
@@ -99,7 +99,7 @@ final class HookRunner {
    * @return list<\AlexSkrypnyk\SkillTest\Contract\CheckResult>
    *   One result per case, in declaration order.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a hook names no script, its script is missing or not executable, or
    *   a case omits its tool or declares an `expect` other than block/allow.
    */
@@ -141,7 +141,7 @@ final class HookRunner {
    * @return \AlexSkrypnyk\SkillTest\Hooks\HookCase
    *   The validated case.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the case omits its tool or its `expect` is not block/allow.
    */
   protected function buildCase(array $raw, int $hook_index, int $case_index): HookCase {

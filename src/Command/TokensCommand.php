@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Command;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 use AlexSkrypnyk\SkillTest\Tokens\GitRef;
@@ -130,7 +130,7 @@ class TokensCommand extends Command {
    * @return int
    *   The exit code.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a configured vocabulary cannot be read or parsed.
    */
   protected function runCount(InputInterface $input, OutputInterface $output, string $root, string $format, string $sort): int {
@@ -194,7 +194,7 @@ class TokensCommand extends Command {
    * @return int
    *   The exit code.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the configuration, the ref, the threshold, or the vocabulary is
    *   unusable.
    */
@@ -470,7 +470,7 @@ class TokensCommand extends Command {
    * @return float|null
    *   The threshold percentage, or NULL when not given.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the value is not a non-negative number.
    */
   protected function threshold(InputInterface $input): ?float {

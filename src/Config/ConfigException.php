@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AlexSkrypnyk\SkillTest\Exception;
+namespace AlexSkrypnyk\SkillTest\Config;
 
 /**
  * A hard configuration error that maps to the CONFIG_ERROR exit code.

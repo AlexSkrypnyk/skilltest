@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Results;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Results\ResultsFile;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use org\bovigo\vfs\vfsStream;

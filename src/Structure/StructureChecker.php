@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Structure;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Tokens\TokenCounter;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 
@@ -201,7 +201,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult[]
    *   The results, in skill-then-check order.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When `commands.resolve` is enabled but its binary cannot run or parse.
    */
   public function check(LoadedConfig $loaded_config): array {
@@ -227,7 +227,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\CommandCatalog|null
    *   The catalog, or NULL when the command-reference check is disabled.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When `commands.resolve` is set but names no binary.
    */
   protected function catalog(LoadedConfig $loaded_config): ?CommandCatalog {
@@ -617,7 +617,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
    *   The result.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the binary cannot run or its output cannot be parsed.
    */
   protected function checkCommandRefs(LoadedSkill $loaded_skill, string $name, string $dir, CommandCatalog $catalog): StructureResult {
@@ -679,7 +679,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
    *   The result.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a configured vocabulary cannot be read or parsed.
    */
   protected function checkTokenBudget(LoadedSkill $loaded_skill, SkillDocument $document, string $name, string $file): StructureResult {

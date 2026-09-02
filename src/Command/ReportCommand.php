@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Results\Interpreter;
 use AlexSkrypnyk\SkillTest\Results\Report\HtmlRenderer;
@@ -95,7 +95,7 @@ class ReportCommand extends Command {
   /**
    * Renders a configuration error with its file context when it has one.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
+   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
    *   The error.
    *
    * @return string

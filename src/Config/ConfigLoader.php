@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Config;
 
 use AlexSkrypnyk\File\File;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -55,7 +54,7 @@ final readonly class ConfigLoader {
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedConfig
    *   The loaded configuration.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a file will not parse or declares an unreadable schema major.
    */
   public function load(array $cli = []): LoadedConfig {
@@ -103,7 +102,7 @@ final readonly class ConfigLoader {
    * @return string
    *   The `skilltest.yml` path to load, or an empty string when there is none.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the environment override points at a missing file.
    */
   protected function repoConfigFile(): string {
@@ -131,7 +130,7 @@ final readonly class ConfigLoader {
    * @return array<mixed>
    *   The parsed mapping, or an empty array for an empty file.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file will not parse or is not a mapping.
    */
   protected function parseFile(string $file): array {
@@ -175,7 +174,7 @@ final readonly class ConfigLoader {
    * @param string $file
    *   The file path, for the error message.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the version is not a string, malformed, or a different major.
    */
   protected function gateVersion(array $data, string $file): void {

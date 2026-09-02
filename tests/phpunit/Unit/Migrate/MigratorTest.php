@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Migrate;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Migrate\Migrator;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use org\bovigo\vfs\vfsStream;

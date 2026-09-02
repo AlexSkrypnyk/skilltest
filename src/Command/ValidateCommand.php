@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Coverage\Coverage;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
@@ -121,7 +121,7 @@ class ValidateCommand extends Command {
   /**
    * Reports a fatal load error and returns the config-error exit code.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
+   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
    *   The load error.
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.

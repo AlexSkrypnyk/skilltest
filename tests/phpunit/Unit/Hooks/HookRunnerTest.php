@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Hooks;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Hooks\HookCase;
 use AlexSkrypnyk\SkillTest\Hooks\HookRunner;
 use PHPUnit\Framework\Attributes\CoversClass;

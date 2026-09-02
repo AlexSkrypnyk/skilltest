@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
  * One task's responder configuration, resolved from its `responder` block.
@@ -51,7 +51,7 @@ final readonly class ResponderConfig {
    * @return self|null
    *   The parsed configuration, or NULL for a plain single-prompt task.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the responder block is malformed or resolves to no model.
    */
   public static function fromTask(array $task, string $config_file, ?string $judge_model, array $model_aliases): ?self {

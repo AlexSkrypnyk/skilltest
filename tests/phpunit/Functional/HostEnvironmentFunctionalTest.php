@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Live\EnvironmentInterface;
 use AlexSkrypnyk\SkillTest\Live\HostEnvironment;
 use PHPUnit\Framework\Attributes\CoversClass;

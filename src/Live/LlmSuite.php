@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\Glob;
@@ -14,7 +15,6 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Contract\ContractChecker;
 use AlexSkrypnyk\SkillTest\Contract\CustomCheck;
 use AlexSkrypnyk\SkillTest\Contract\Transcript;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Judge\Judge;
 use AlexSkrypnyk\SkillTest\Judge\JudgeException;
 use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
@@ -157,7 +157,7 @@ final readonly class LlmSuite {
    * @return \AlexSkrypnyk\SkillTest\Live\LlmReport
    *   The aggregated run outcome.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the selection runs no tasks, a task is malformed, no model is
    *   configured, or a workspace cannot be assembled.
    */
@@ -395,7 +395,7 @@ final readonly class LlmSuite {
    * @return array<int, \AlexSkrypnyk\SkillTest\Live\TrialResult>
    *   The graded trials keyed by trial number.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a workspace cannot be assembled or a `before-task` hook aborts.
    */
   protected function runBatch(LoadedConfig $config, LoadedSkill $skill, array $entry, array $inputs, ?ResponderConfig $responder, string $token, string $model_id, McpMock $mock, array $allowed, array $numbers): array {
@@ -844,7 +844,7 @@ final readonly class LlmSuite {
    * @return array<int, array{name: string, prompt: string, task: array<mixed>}>
    *   The validated task entries.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a selected task omits its name or prompt.
    */
   protected function selectTasks(array $tasks, array $globs, string $config_file): array {

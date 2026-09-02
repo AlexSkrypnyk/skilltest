@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Migrate;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -39,7 +39,7 @@ final readonly class Migrator {
    * @return \AlexSkrypnyk\SkillTest\Migrate\MigrateResult
    *   The outcome: whether the file changed, the versions, and the message.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file is missing, unreadable, not a mapping, carries an
    *   unparseable version, or declares a major newer than this tool supports.
    */
@@ -93,7 +93,7 @@ final readonly class Migrator {
    * @return string
    *   The file contents.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file cannot be read.
    */
   protected function read(string $file): string {
@@ -118,7 +118,7 @@ final readonly class Migrator {
    * @return array<mixed>
    *   The parsed mapping.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file will not parse or is not a mapping.
    */
   protected function parseYaml(string $contents, string $file): array {
@@ -143,7 +143,7 @@ final readonly class Migrator {
    * @return array<mixed>
    *   The parsed object.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file will not parse or is not an object.
    */
   protected function parseJson(string $contents, string $file): array {
@@ -168,7 +168,7 @@ final readonly class Migrator {
    * @return array<mixed>
    *   The mapping.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the document is not a mapping.
    */
   protected function asMapping(mixed $parsed, string $file): array {
@@ -190,7 +190,7 @@ final readonly class Migrator {
    * @return \AlexSkrypnyk\SkillTest\Config\SchemaVersion
    *   The parsed version; the current version when none is declared.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the version is a non-scalar or an unparseable string.
    */
   protected function version(array $data, string $file): SchemaVersion {

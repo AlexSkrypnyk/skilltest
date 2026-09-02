@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Tokens;
 
 use AlexSkrypnyk\File\File;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 
 /**
  * The one token counter behind every token-accounting feature.
@@ -88,7 +88,7 @@ final class TokenCounter {
    * @return int
    *   The token count.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a configured vocabulary cannot be read or parsed.
    */
   public function count(string $text): int {
@@ -204,7 +204,7 @@ final class TokenCounter {
    * @return array<string, int>
    *   The ranks keyed by token bytes.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the vocabulary cannot be read or parsed.
    */
   protected function ranks(): array {
@@ -222,7 +222,7 @@ final class TokenCounter {
    * @return array<string, int>
    *   The ranks keyed by token bytes.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file cannot be read, a line is malformed, or no ranks parse.
    */
   protected function loadVocab(string $path): array {

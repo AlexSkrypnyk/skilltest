@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\DockerConfig;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
@@ -124,7 +124,7 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the workspace base cannot be created or the run image cannot be
    *   prepared.
    */
@@ -217,7 +217,7 @@ final class DockerEnvironment implements EnvironmentInterface {
    * @return string
    *   The image every trial container starts from.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the base image cannot be pulled or the run image cannot be built.
    */
   protected function prepareImage(): string {
@@ -235,7 +235,7 @@ final class DockerEnvironment implements EnvironmentInterface {
   /**
    * Ensures the base image is present locally, pulling it once when it is not.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the image is absent and cannot be pulled.
    */
   protected function ensureBaseImage(): void {
@@ -261,7 +261,7 @@ final class DockerEnvironment implements EnvironmentInterface {
    * @return string
    *   The tag of the built run image.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the build fails.
    */
   protected function buildRunImage(string $setup): string {

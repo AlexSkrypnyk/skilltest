@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\File\File;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 
 /**
@@ -59,7 +59,7 @@ final class HostEnvironment implements EnvironmentInterface {
   /**
    * {@inheritdoc}
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the workspace base directory cannot be created.
    */
   public function prepare(): void {

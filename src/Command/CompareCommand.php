@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Results\Compare\Comparison;
 use AlexSkrypnyk\SkillTest\Results\Compare\CompareRenderer;
@@ -102,7 +102,7 @@ class CompareCommand extends Command {
    * @return array<int, array{label: string, document: array<string, mixed>}>
    *   The labelled documents.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When any file is missing, unreadable, or incompatible.
    */
   protected function loadFiles(array $paths): array {
@@ -127,7 +127,7 @@ class CompareCommand extends Command {
   /**
    * Renders a configuration error with its file context when it has one.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
+   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
    *   The error.
    *
    * @return string

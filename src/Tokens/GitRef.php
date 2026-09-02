@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tokens;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**
@@ -72,7 +72,7 @@ final class GitRef {
    * @return string
    *   The resolved ref.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the requested ref, or neither default ref, resolves to a commit.
    */
   public function resolve(?string $requested): string {

@@ -54,7 +54,7 @@ final readonly class RecordRunner {
    * @return \AlexSkrypnyk\SkillTest\Live\RecordResult
    *   The raw transcript, exit code, and duration of the run.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the task inputs are malformed or a workspace cannot be assembled.
    */
   public function record(LoadedSkill $skill, array $entry, string $model_id): RecordResult {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Structure;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**
@@ -91,7 +91,7 @@ final class CommandCatalog {
    * @return string[]
    *   The unique first tokens, e.g. `['workflow', 'build']`.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the binary cannot run or its output cannot be parsed.
    */
   public function firstTokens(): array {
@@ -106,7 +106,7 @@ final class CommandCatalog {
    * @return string[]
    *   The unique first tokens.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the binary cannot run or its output cannot be parsed.
    */
   protected function resolve(): array {

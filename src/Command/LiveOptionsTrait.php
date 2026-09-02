@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\LlmReport;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
@@ -198,7 +198,7 @@ trait LiveOptionsTrait {
   /**
    * Converts a thrown configuration error to a reportable message.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
+   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
    *   The thrown error.
    *
    * @return \AlexSkrypnyk\SkillTest\Validation\ValidationMessage
