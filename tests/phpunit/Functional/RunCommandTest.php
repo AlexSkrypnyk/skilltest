@@ -97,19 +97,19 @@ final class RunCommandTest extends TestCase {
     $this->assertFileExists($root . '/hooks/guard.ran');
   }
 
-  public function testUpdateNoticePrintsAfterRun(): void {
+  public function testUpdateNoticePrintsAfterRunWhenRequested(): void {
     $root = $this->realRepo();
 
-    $output = $this->runWithNotifier(['--dir' => $root], $this->newerNotifier(), 0);
+    $output = $this->runWithNotifier(['--dir' => $root, '--update-check' => TRUE], $this->newerNotifier(), 0);
 
     $this->assertStringContainsString('A new skilltest release is available: 2.0.0', $output);
     $this->assertStringContainsString('self-update', $output);
   }
 
-  public function testUpdateNoticeSuppressedByFlag(): void {
+  public function testUpdateNoticeAbsentWithoutTheFlag(): void {
     $root = $this->realRepo();
 
-    $output = $this->runWithNotifier(['--dir' => $root, '--no-update-check' => TRUE], $this->newerNotifier(), 0);
+    $output = $this->runWithNotifier(['--dir' => $root], $this->newerNotifier(), 0);
 
     $this->assertStringNotContainsString('A new skilltest release is available', $output);
   }

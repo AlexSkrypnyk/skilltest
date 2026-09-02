@@ -84,7 +84,7 @@ class RunCommand extends Command {
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts')
       ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the top failure and a concrete next step')
-      ->addOption(name: 'no-update-check', mode: InputOption::VALUE_NONE, description: 'Skip the once-a-day check for a newer skilltest release');
+      ->addOption(name: 'update-check', mode: InputOption::VALUE_NONE, description: 'Check once a day for a newer skilltest release; the only network call this command makes');
   }
 
   /**
@@ -162,7 +162,7 @@ class RunCommand extends Command {
       }
     }
 
-    $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('no-update-check'));
+    $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('update-check'));
 
     return $report->failed() ? ExitCode::FAIL : ExitCode::PASS;
   }
@@ -177,15 +177,15 @@ class RunCommand extends Command {
    *   The error output the notice is written to.
    * @param string $root
    *   The repository root, under which the once-a-day cache lives.
-   * @param bool $flag_disabled
-   *   Whether `--no-update-check` was passed.
+   * @param bool $flag_enabled
+   *   Whether `--update-check` was passed.
    */
-  protected function emitUpdateNotice(OutputInterface $stderr, string $root, bool $flag_disabled): void {
+  protected function emitUpdateNotice(OutputInterface $stderr, string $root, bool $flag_enabled): void {
     if (!$this->notifier instanceof UpdateNotifier) {
       return;
     }
 
-    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, $flag_disabled);
+    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, $flag_enabled);
 
     if ($notice !== NULL) {
       $stderr->writeln($notice);

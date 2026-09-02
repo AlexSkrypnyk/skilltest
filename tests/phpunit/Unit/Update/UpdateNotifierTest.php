@@ -14,9 +14,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class UpdateNotifierTest.
  *
- * Unit test for the release-check notice: the disable paths (flag, env, CI,
- * source build), the once-a-day cache, and the version comparison, all with an
- * injected clock and fetcher.
+ * Unit test for the release-check notice: the opt-in paths (flag and env), the
+ * silent paths (source build, current version, transport failure), the
+ * once-a-day cache, and the version comparison, all with an injected clock and
+ * fetcher.
  */
 #[CoversClass(UpdateNotifier::class)]
 #[Group('update')]
@@ -36,35 +37,38 @@ final class UpdateNotifierTest extends TestCase {
     $this->root = vfsStream::setup('root')->url();
   }
 
-  public function testDisabledInCiWithoutAnyFetch(): void {
-    $calls = [];
-    $notifier = $this->notifier('1.0.0', '2.0.0', ['CI' => 'true'], 1000, $calls);
-
-    $this->assertNull($notifier->notice($this->root, FALSE));
-    $this->assertCount(0, $calls);
-  }
-
-  public function testDisabledByEnvironmentVariable(): void {
-    $calls = [];
-    $notifier = $this->notifier('1.0.0', '2.0.0', [UpdateNotifier::ENV_DISABLE => '1'], 1000, $calls);
-
-    $this->assertNull($notifier->notice($this->root, FALSE));
-    $this->assertCount(0, $calls);
-  }
-
-  public function testDisabledByFlag(): void {
+  public function testSkippedWithoutOptInAndWithoutAnyFetch(): void {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, TRUE));
+    $this->assertNull($notifier->notice($this->root, FALSE));
     $this->assertCount(0, $calls);
+  }
+
+  public function testEnabledByEnvironmentVariable(): void {
+    $calls = [];
+    $notifier = $this->notifier('1.0.0', '2.0.0', [UpdateNotifier::ENV_ENABLE => '1'], 1000, $calls);
+
+    $notice = $notifier->notice($this->root, FALSE);
+
+    $this->assertNotNull($notice);
+    $this->assertStringContainsString('2.0.0', $notice);
+    $this->assertCount(1, $calls);
+  }
+
+  public function testEnabledByFlagAloneWithoutEnvironment(): void {
+    $calls = [];
+    $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
+
+    $this->assertNotNull($notifier->notice($this->root, TRUE));
+    $this->assertCount(1, $calls);
   }
 
   public function testSilentForNonVersionCurrent(): void {
     $calls = [];
     $notifier = $this->notifier('development', '2.0.0', [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, FALSE));
+    $this->assertNull($notifier->notice($this->root, TRUE));
     $this->assertCount(0, $calls);
   }
 
@@ -72,7 +76,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertStringContainsString('2.0.0', $notice);
@@ -88,14 +92,14 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('2.0.0', '2.0.0', [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, FALSE));
+    $this->assertNull($notifier->notice($this->root, TRUE));
   }
 
   public function testNoNoticeWhenRemoteIsOlder(): void {
     $calls = [];
     $notifier = $this->notifier('2.0.0', '1.0.0', [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, FALSE));
+    $this->assertNull($notifier->notice($this->root, TRUE));
   }
 
   public function testFreshCacheIsUsedWithoutFetching(): void {
@@ -103,7 +107,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '9.9.9', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertStringContainsString('3.0.0', $notice);
@@ -115,7 +119,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertStringContainsString('2.0.0', $notice);
@@ -126,7 +130,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', NULL, [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, FALSE));
+    $this->assertNull($notifier->notice($this->root, TRUE));
     $this->assertCount(1, $calls);
   }
 
@@ -134,7 +138,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', 'nightly', [], 1000, $calls);
 
-    $this->assertNull($notifier->notice($this->root, FALSE));
+    $this->assertNull($notifier->notice($this->root, TRUE));
   }
 
   public function testMalformedCacheIsIgnoredAndRefetched(): void {
@@ -142,7 +146,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertCount(1, $calls);
@@ -153,7 +157,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.0.0', '2.0.0', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertCount(1, $calls);
@@ -163,7 +167,7 @@ final class UpdateNotifierTest extends TestCase {
     $calls = [];
     $notifier = $this->notifier('1.4.0', 'v1.5.0', [], 1000, $calls);
 
-    $notice = $notifier->notice($this->root, FALSE);
+    $notice = $notifier->notice($this->root, TRUE);
 
     $this->assertNotNull($notice);
     $this->assertStringContainsString('v1.5.0', $notice);
@@ -173,7 +177,7 @@ final class UpdateNotifierTest extends TestCase {
     $client = new ReleaseClient(static fn(string $url): array => [200, json_encode(['tag_name' => '2.0.0'], JSON_THROW_ON_ERROR)]);
     $notifier = new UpdateNotifier($client, [], '1.0.0');
 
-    $notice = $notifier->notice($this->root . '/nested/cache', FALSE);
+    $notice = $notifier->notice($this->root . '/nested/cache', TRUE);
 
     $this->assertNotNull($notice);
     $this->assertStringContainsString('2.0.0', $notice);

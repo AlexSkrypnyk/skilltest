@@ -116,18 +116,15 @@ skilltest self-update
 
 ### The update notice
 
-After a `run`, skilltest may print a single line on stderr:
+The release check is opt-in. Ask for it with `--update-check` on `run`, or by setting `SKILLTEST_UPDATE_CHECK` to any non-empty value, and skilltest may print a single line on stderr afterwards:
 
 ```
 A new skilltest release is available: 1.3.0 (you have 1.2.0). Run `skilltest self-update` to upgrade.
 ```
 
-The check is deliberately unobtrusive: at most 1 network read a day (the newest tag is cached in `.skilltest/cache/update-check.json` under your repository root), stderr only so `--json` output stays clean, and silent when the network is unreachable. It never runs when any of these hold:
+Leaving it off is what keeps the CI gate hermetic: with no opt-in, `run` makes no network call at all, so a pipeline cannot fail on a rate limit or a DNS hiccup in a check it never asked for.
 
-- `--no-update-check` was passed to `run`.
-- `SKILLTEST_NO_UPDATE_CHECK` is set to any non-empty value.
-- `CI` is set to any non-empty value, which CI providers do, so pipelines never see it.
-- You're running from source, where the version is `development`.
+When you do enable it the check stays unobtrusive: at most 1 network read a day (the newest tag is cached in `.skilltest/cache/update-check.json` under your repository root), stderr only so `--json` output stays clean, and silent when the network is unreachable. It also stays silent when you're running from source, where the version is `development`.
 
 Nothing ever updates itself implicitly; the notice only points at `self-update`.
 

@@ -25,14 +25,9 @@ final readonly class UpdateNotifier {
   public const string CACHE_FILE = 'update-check.json';
 
   /**
-   * The environment variable that opts out of the check.
+   * The environment variable that opts in to the check.
    */
-  public const string ENV_DISABLE = 'SKILLTEST_NO_UPDATE_CHECK';
-
-  /**
-   * The environment variable whose presence marks a CI run.
-   */
-  public const string ENV_CI = 'CI';
+  public const string ENV_ENABLE = 'SKILLTEST_UPDATE_CHECK';
 
   /**
    * The cache lifetime, in seconds: one day.
@@ -63,14 +58,15 @@ final readonly class UpdateNotifier {
    *
    * @param string $cache_dir
    *   The directory the once-a-day cache is read from and written to.
-   * @param bool $flag_disabled
-   *   Whether an explicit `--no-update-check` flag was passed.
+   * @param bool $flag_enabled
+   *   Whether an explicit `--update-check` flag was passed.
    *
    * @return string|null
-   *   The one-line notice, or NULL when disabled, silent, current, or offline.
+   *   The one-line notice, or NULL when the check was not requested, or when
+   *   the running version is silent, current, or the read fails.
    */
-  public function notice(string $cache_dir, bool $flag_disabled): ?string {
-    if ($this->disabled($flag_disabled) || !$this->isVersion($this->currentVersion)) {
+  public function notice(string $cache_dir, bool $flag_enabled): ?string {
+    if (!$this->enabled($flag_enabled) || !$this->isVersion($this->currentVersion)) {
       return NULL;
     }
 
@@ -90,16 +86,16 @@ final readonly class UpdateNotifier {
   }
 
   /**
-   * Whether the check is opted out by flag, environment variable, or CI.
+   * Whether the check is opted in by flag or environment variable.
    *
-   * @param bool $flag_disabled
-   *   Whether an explicit `--no-update-check` flag was passed.
+   * @param bool $flag_enabled
+   *   Whether an explicit `--update-check` flag was passed.
    *
    * @return bool
-   *   TRUE when no check should run.
+   *   TRUE when the check should run.
    */
-  protected function disabled(bool $flag_disabled): bool {
-    return $flag_disabled || ($this->env[self::ENV_DISABLE] ?? '') !== '' || ($this->env[self::ENV_CI] ?? '') !== '';
+  protected function enabled(bool $flag_enabled): bool {
+    return $flag_enabled || ($this->env[self::ENV_ENABLE] ?? '') !== '';
   }
 
   /**

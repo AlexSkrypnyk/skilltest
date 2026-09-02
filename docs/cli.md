@@ -102,7 +102,7 @@ Token accounting so skill files stay small on purpose. `tokens count <paths>` re
 
 The default command and the CI gate: `skilltest` alone means `skilltest run`, and this is the command CI runs on every push. It runs the deterministic suite - `structure`, `security`, and `transcript` per selected skill, `hooks` once at repo level - plus the coverage gate, under which a discovered skill without an `eval.yaml` fails the run unless it's excluded in config. No model and no tokens anywhere in the path, and results touch disk only when a persistence flag, a file reporter, or the session log asks for a file.
 
-After a run it also checks for a newer skilltest release, at most once a day, and prints a notice to stderr. The check keeps its stamp under `.skilltest/cache/` and is skipped under `--no-update-check`, when `SKILLTEST_NO_UPDATE_CHECK` is set, or when `CI` is set.
+`run` makes no network call unless you ask for one. Pass `--update-check`, or set `SKILLTEST_UPDATE_CHECK` to any non-empty value, and it checks for a newer skilltest release after the run - at most once a day, cached under `.skilltest/cache/` - and prints a notice to stderr. Without either, nothing leaves the machine.
 
 | Flag | Description |
 |---|---|
@@ -119,7 +119,7 @@ After a run it also checks for a newer skilltest release, at most once a day, an
 | `--output <file>` | Persist the results document to this file |
 | `--output-dir <dir>` | Persist the results document, with artifacts, to a timestamped subdirectory of this directory |
 | `--interpret` | Append a plain-language reading of the result: the top failure and a concrete next step |
-| `--no-update-check` | Skip the once-a-day check for a newer skilltest release |
+| `--update-check` | Check once a day for a newer skilltest release; the only network call this command makes |
 
 ## skilltest llm
 
