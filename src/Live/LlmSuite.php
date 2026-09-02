@@ -69,6 +69,19 @@ final readonly class LlmSuite {
   public const string CHECK_RESPONDER = 'live.responder';
 
   /**
+   * Whether a check result is the judge verdict or the judge rubric check.
+   *
+   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $check
+   *   The check result.
+   *
+   * @return bool
+   *   TRUE when the check id is the judge verdict or judge rubric id.
+   */
+  public static function isJudgeCheck(CheckResult $check): bool {
+    return $check->id === self::CHECK_JUDGE || $check->id === self::CHECK_JUDGE_RUBRIC;
+  }
+
+  /**
    * The default per-trial wall-clock budget, in seconds.
    */
   public const float DEFAULT_TIMEOUT = 300.0;
