@@ -336,7 +336,7 @@ final readonly class Grader {
     $first = Data::toArrayList(Data::get($tasks[0], 'models'));
 
     foreach ($first as $position => $model_entry) {
-      if ($this->positionSupports($tasks, $position, $threshold)) {
+      if ($this->modelPassesEveryTask($tasks, $position, $threshold)) {
         return ResultsDocument::modelAlias($model_entry);
       }
     }
@@ -357,7 +357,7 @@ final readonly class Grader {
    * @return bool
    *   TRUE when every task's model at that position met the threshold.
    */
-  protected function positionSupports(array $tasks, int $position, float $threshold): bool {
+  protected function modelPassesEveryTask(array $tasks, int $position, float $threshold): bool {
     foreach ($tasks as $task) {
       $models = Data::toArrayList(Data::get($task, 'models'));
       $model = $models[$position] ?? NULL;
