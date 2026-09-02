@@ -32,6 +32,17 @@ trait LiveOptionsTrait {
   use SharedCommandTrait;
 
   /**
+   * The input options folded into the CLI configuration overrides.
+   */
+  protected const array OVERRIDES = [
+    'models' => 'models',
+    'threshold' => 'threshold',
+    'trials' => 'trials',
+    'env' => 'env',
+    'judge-model' => 'judge-model',
+  ];
+
+  /**
    * Reads an integer option, returning NULL when it is absent or non-numeric.
    *
    * @param \Symfony\Component\Console\Input\InputInterface $input

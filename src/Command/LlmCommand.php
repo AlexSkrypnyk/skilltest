@@ -49,17 +49,6 @@ class LlmCommand extends Command {
   use LiveOptionsTrait;
 
   /**
-   * The input options folded into the CLI configuration overrides.
-   */
-  protected const array OVERRIDES = [
-    'models' => 'models',
-    'threshold' => 'threshold',
-    'trials' => 'trials',
-    'env' => 'env',
-    'judge-model' => 'judge-model',
-  ];
-
-  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
