@@ -76,8 +76,8 @@ class RunCommand extends Command {
       ->addOption(name: 'group', mode: InputOption::VALUE_REQUIRED, description: 'Run one group only: structure, security, hooks, or transcript')
       ->addOption(name: 'check', mode: InputOption::VALUE_REQUIRED, description: 'Run one check id only')
       ->addOption(name: 'list', mode: InputOption::VALUE_NONE, description: 'List selected skills and the checks that would run, without running')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Render stdout as a reporter format: github-comment')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, github-comment, or json')
       ->addOption(name: 'reporter', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, description: 'Write an additional reporter file (repeatable): junit:<path>')
       ->addOption(name: 'session-log', mode: InputOption::VALUE_NONE, description: 'Write an ordered NDJSON event stream for the run (requires --session-dir)')
       ->addOption(name: 'session-dir', mode: InputOption::VALUE_REQUIRED, description: 'Directory the --session-log NDJSON stream is written to')
@@ -153,7 +153,7 @@ class RunCommand extends Command {
       $this->emitReports($output, $stderr, $filtered, $report_options, $document);
     }
 
-    if ($report_options->stdoutFormat() === 'human') {
+    if ($report_options->stdoutFormat() === 'text') {
       $this->renderReport($output, $filtered, $selection, $report);
 
       if ($interpret && $document !== NULL) {

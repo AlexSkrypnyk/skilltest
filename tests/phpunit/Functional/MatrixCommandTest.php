@@ -270,7 +270,7 @@ final class MatrixCommandTest extends TestCase {
 
     $output = $this->runMatrix(['--dir' => $root, '--format' => 'xml'], 2);
 
-    $this->assertStringContainsString('unknown format; expected one of: text, markdown', $output);
+    $this->assertStringContainsString('unknown format; expected one of: text, markdown, json', $output);
   }
 
   public function testParallelNonIntegerIsConfigError(): void {

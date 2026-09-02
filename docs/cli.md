@@ -14,7 +14,7 @@ The token-spending commands are `llm`, `matrix`, and `record`, plus the opt-in `
 
 Default output is terse and human: a status line per check group per skill, a summary block, and every failure expanded with its check id, message, and evidence. Diagnostics go to stderr; stdout is reserved for results.
 
-`--json`, on the commands that produce a results document (`run`, `llm`, `matrix`, `version`, `validate`, `grade`), writes the machine-readable document to stdout and nothing else; the schema lives in [reporting](reporting.md). `coverage`, `security`, `structure`, and `tokens` reach the same end through `--format json`.
+`--format`, on every command that emits machine-readable output (`run`, `llm`, `matrix`, `version`, `validate`, `grade`, `coverage`, `security`, `structure`, `tokens`, `compare`, `gate`), takes `json` among its values and writes the machine-readable document to stdout and nothing else; the schema lives in [reporting](reporting.md). `--json` is shorthand for `--format=json` and is kept on all 12 commands so no existing invocation breaks.
 
 `-q` / `--quiet` is Symfony's global verbosity flag, and `run` and `llm` treat it as failures-only mode: a green run prints nothing, and a red run names exactly what failed.
 
@@ -36,7 +36,8 @@ Prints the tool version, the supported config and results schema versions, and b
 
 | Flag | Description |
 |---|---|
-| `--json` | Output as JSON |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest validate
 
@@ -47,7 +48,8 @@ Schema-validates the repo `skilltest.yml` and every discovered `eval.yaml`, then
 | `--dir <path>` | Repository root (default: current directory) |
 | `--show-config` | Print the effective merged configuration per skill |
 | `--models <list>` | Override the model list (comma-separated) shown by `--show-config` |
-| `--json` | Output as JSON |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest coverage
 
@@ -57,6 +59,7 @@ Renders the skill-to-eval coverage grid - which skills have an `eval.yaml`, whic
 |---|---|
 | `--dir <path>` | Repository root (default: current directory) |
 | `--format <name>` | Output format: `text`, `markdown`, or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest security
 
@@ -66,6 +69,7 @@ Runs the `security` group on its own: a static supply-chain scan of every file e
 |---|---|
 | `--dir <path>` | Repository root (default: current directory) |
 | `--format <name>` | Output format: `text`, `markdown`, or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest init
 
@@ -84,6 +88,7 @@ Runs the `structure` group on its own: pre-baked, default-on checks that each sk
 |---|---|
 | `--dir <path>` | Repository root (default: current directory) |
 | `--format <name>` | Output format: `text`, `markdown`, or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest tokens
 
@@ -92,7 +97,8 @@ Token accounting so skill files stay small on purpose. `tokens count <paths>` re
 | Flag | Description |
 |---|---|
 | `--dir <path>` | Repository root (default: current directory) |
-| `--format <name>` | Output format: `table` or `json` (default: `table`) |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 | `--sort <order>` | Sort order for `count`: `path` or `tokens` (default: `path`) |
 | `--vocab <file>` | Tiktoken-format vocabulary file for exact BPE counts (default: estimation) |
 | `--threshold <pct>` | Fail `compare` when an existing file grows more than this percentage |
@@ -111,8 +117,8 @@ The default command and the CI gate: `skilltest` alone means `skilltest run`, an
 | `--group <name>` | Run a single group: `structure`, `security`, `hooks`, or `transcript` |
 | `--check <id>` | Run a single check id |
 | `--list` | List the selected skills and the checks that would run, without running |
-| `--json` | Emit the machine-readable results document on stdout and nothing else |
-| `--format github-comment` | Render stdout as a GitHub PR comment block instead of the human report |
+| `--json` | Shorthand for `--format=json` |
+| `--format <name>` | Output format: `text`, `github-comment`, or `json` (default: `text`) |
 | `--reporter junit:<path>` | Write an additional JUnit XML file (repeatable) |
 | `--session-log` | Write an ordered NDJSON event stream for the run (requires `--session-dir`) |
 | `--session-dir <dir>` | Directory the `--session-log` stream is written to |
@@ -136,7 +142,8 @@ The live suite: for each selected skill and task, it runs the skill headlessly t
 | `--env <name>` | Execution environment: `host` or `docker` |
 | `--parallel <n>` | Number of concurrent trials (default: 1) |
 | `--judge-model <model>` | Override the judge model (alias or id); the judge model never follows `--models` |
-| `--json` | Emit the machine-readable results document on stdout and nothing else |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 | `--output <file>` | Persist the results document to this file |
 | `--output-dir <dir>` | Persist the results document and transcripts to a timestamped subdirectory of this directory |
 | `--keep-workspace` | Preserve each trial workspace after the run and print its path for debugging |
@@ -161,8 +168,8 @@ The multi-model answer machine: it runs the same live suite as `llm` across the 
 | `--judge-model <model>` | Override the judge model (alias or id); the judge model never follows the ladder |
 | `--stop-at-pass` | Stop climbing the ladder at the first passing model (cheaper, no full matrix) |
 | `--estimate` | Print the plan and a rough cost, then exit without running |
-| `--format <name>` | Human output format: `text` or `markdown` (default: `text`) |
-| `--json` | Emit the machine-readable results document on stdout and nothing else |
+| `--format <name>` | Output format: `text`, `markdown`, or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 | `--output <file>` | Persist the results document to this file |
 | `--output-dir <dir>` | Persist the results document and transcripts to a timestamped subdirectory of this directory |
 | `--interpret` | Append a plain-language reading of the result: the weakest task and a concrete next step |
@@ -214,7 +221,8 @@ Re-grades offline, without executing an agent - grading is a pure function of a 
 | `--skill <name>` | The skill whose contract to assert (required with `--transcript`) |
 | `--results <file>` | Re-score this saved `results.json` against the current contract |
 | `--judge` | Re-run the judge when re-scoring (spends tokens; needs an authenticated agent) |
-| `--json` | Emit the machine-readable result on stdout and nothing else |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest gate
 
@@ -227,7 +235,8 @@ Compares a current `results.json` against a committed baseline and fails on regr
 | `--max-regression <pts>` | Tolerated aggregate pass-rate drop, in percentage points (default: 0) |
 | `--on-new-tasks <policy>` | Policy for tasks new since the baseline: `allow`, `warn`, or `fail` (default: `warn`) |
 | `--on-removed-tasks <policy>` | Policy for tasks removed since the baseline: `allow`, `warn`, or `fail` (default: `warn`) |
-| `--format <name>` | Output format: `human`, `json`, `markdown`, or `github-actions` (default: `human`) |
+| `--format <name>` | Output format: `text`, `json`, `markdown`, or `github-actions` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 | `--dir <path>` | Repository root, for reading golden tasks from `eval.yaml` (default: current directory) |
 
 ## skilltest compare
@@ -236,7 +245,8 @@ Puts 2 or more `results.json` files side by side, passed as arguments with the f
 
 | Flag | Description |
 |---|---|
-| `--format <name>` | Output format: `table` or `json` (default: `table`) |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 
 ## skilltest report
 

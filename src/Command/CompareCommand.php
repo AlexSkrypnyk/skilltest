@@ -32,7 +32,7 @@ class CompareCommand extends Command {
   /**
    * The supported output formats.
    */
-  public const array FORMATS = ['table', 'json'];
+  public const array FORMATS = ['text', 'json'];
 
   /**
    * {@inheritdoc}
@@ -42,7 +42,8 @@ class CompareCommand extends Command {
       ->setName('compare')
       ->setDescription('Compare two or more results.json files: per-task, per-model, and aggregate deltas')
       ->addArgument(name: 'files', mode: InputArgument::REQUIRED | InputArgument::IS_ARRAY, description: 'Two or more results.json files, the first the baseline')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: table or json', default: 'table');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -61,7 +62,8 @@ class CompareCommand extends Command {
     }
 
     $format = $input->getOption('format');
-    $format = is_string($format) && $format !== '' ? $format : 'table';
+    $format = is_string($format) && $format !== '' ? $format : 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
 
     if (!in_array($format, self::FORMATS, TRUE)) {
       $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);

@@ -46,7 +46,7 @@ class TokensCommand extends Command {
   /**
    * The supported output formats.
    */
-  public const array FORMATS = ['table', 'json'];
+  public const array FORMATS = ['text', 'json'];
 
   /**
    * The supported sort orders for `count`.
@@ -75,7 +75,8 @@ class TokensCommand extends Command {
       ->addArgument(name: 'action', mode: InputArgument::REQUIRED, description: 'The action: count or compare')
       ->addArgument(name: 'targets', mode: InputArgument::IS_ARRAY, description: 'Paths to count (count), or the git ref to compare against (compare)', default: [])
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: table or json', default: 'table')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'sort', mode: InputOption::VALUE_REQUIRED, description: 'Sort order for count: path or tokens', default: 'path')
       ->addOption(name: 'vocab', mode: InputOption::VALUE_REQUIRED, description: 'Tiktoken-format vocabulary file for exact BPE counts (default: estimation)')
       ->addOption(name: 'threshold', mode: InputOption::VALUE_REQUIRED, description: 'Fail compare when an existing file grows more than this percentage')
@@ -89,6 +90,7 @@ class TokensCommand extends Command {
     $root = $this->resolveRoot($input);
     $action = $input->getArgument('action');
     $format = $input->getOption('format');
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
     $sort = $input->getOption('sort');
 
     if (!is_string($action) || !in_array($action, self::ACTIONS, TRUE)) {

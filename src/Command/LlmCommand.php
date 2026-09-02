@@ -48,6 +48,11 @@ class LlmCommand extends Command {
   use LiveOptionsTrait;
 
   /**
+   * The supported output formats.
+   */
+  public const array FORMATS = ['text', 'json'];
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -63,7 +68,8 @@ class LlmCommand extends Command {
       ->addOption(name: 'env', mode: InputOption::VALUE_REQUIRED, description: 'Execution environment: host or docker')
       ->addOption(name: 'parallel', mode: InputOption::VALUE_REQUIRED, description: 'Number of concurrent trials (default 1)')
       ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows --models')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
       ->addOption(name: 'keep-workspace', mode: InputOption::VALUE_NONE, description: 'Preserve each trial workspace after the run and print its path for debugging')
@@ -79,8 +85,16 @@ class LlmCommand extends Command {
     $started = microtime(TRUE);
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
-    $json = (bool) $input->getOption('json');
     $stderr = $this->stderr($output);
+
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+
+    if (!in_array($format, self::FORMATS, TRUE)) {
+      return $this->reportErrors($output, $stderr, $format === 'json', [ValidationMessage::error('', '', sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)))]);
+    }
+
+    $json = $format === 'json';
 
     $parallel_option = $this->stringOption($input, 'parallel');
     $parallel = $parallel_option === NULL ? 1 : $this->intOption($input, 'parallel');

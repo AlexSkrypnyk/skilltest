@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 final class GateRendererTest extends TestCase {
 
   public function testHumanPassing(): void {
-    $out = (new GateRenderer())->render(new GateReport(1.0, 1.0, 0.0, []), 'human');
+    $out = (new GateRenderer())->render(new GateReport(1.0, 1.0, 0.0, []), 'text');
 
     $this->assertStringContainsString('gate: PASS', $out);
     $this->assertStringContainsString('pass rate: 100% -> 100% (unchanged; 0 allowed).', $out);
@@ -30,7 +30,7 @@ final class GateRendererTest extends TestCase {
   public function testHumanFailingListsFindings(): void {
     $report = new GateReport(1.0, 0.95, 0.0, [GateFinding::fail('regression', 'dropped 5 points')]);
 
-    $out = (new GateRenderer())->render($report, 'human');
+    $out = (new GateRenderer())->render($report, 'text');
 
     $this->assertStringContainsString('gate: FAIL', $out);
     $this->assertStringContainsString('down 5 points', $out);
@@ -99,7 +99,7 @@ final class GateRendererTest extends TestCase {
 
   #[DataProvider('dataProviderDeltaPhrase')]
   public function testDeltaPhrase(float $baseline, float $current, string $needle): void {
-    $out = (new GateRenderer())->render(new GateReport($baseline, $current, 0.0, []), 'human');
+    $out = (new GateRenderer())->render(new GateReport($baseline, $current, 0.0, []), 'text');
 
     $this->assertStringContainsString($needle, $out);
   }

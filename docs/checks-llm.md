@@ -236,7 +236,8 @@ Results go to stdout, diagnostics to stderr. `--json` replaces the human report 
 | `--env <host\|docker>` | Execution environment |
 | `--parallel <n>` | Concurrent trials (default 1) |
 | `--judge-model <m>` | Override the judge model; it never follows `--models` |
-| `--json` | Emit the results document on stdout and nothing else |
+| `--format <name>` | Output format: `text` or `json` (default: `text`) |
+| `--json` | Shorthand for `--format=json` |
 | `--output <file>` | Persist the results document to this file |
 | `--output-dir <dir>` | Persist the document plus transcripts to a timestamped subdirectory |
 | `--keep-workspace` | Preserve trial workspaces and print their paths |

@@ -170,7 +170,7 @@ The default output is a human summary, structured the same way across commands:
 | `--session-log` with `--session-dir <dir>` | `run` | An ordered NDJSON event stream |
 | `skilltest report <file> --html <out>` | `report` | A single self-contained HTML page |
 
-`--json` and `--format github-comment` are mutually exclusive - stdout carries exactly one format. Under `--json`, a configuration error is also machine-readable: `{"ok": false, "skills": [], "errors": [...]}` on stdout with exit code 2.
+On `run`, `--json` conflicts only with a `--format` value other than `json` (for example `--format github-comment`) - stdout carries exactly one format. Under `--json`, a configuration error is also machine-readable: `{"ok": false, "skills": [], "errors": [...]}` on stdout with exit code 2.
 
 ### JUnit XML
 
@@ -242,7 +242,7 @@ Each row shows the value from every file and a signed baseline-to-latest delta. 
 
 Each finding carries a severity (`FAIL` or `WARN`) and a category (`regression`, `golden`, `minimal-model`, `new-task`, `removed-task`). The gate fails the moment any finding fails; a warnings-only run passes. Exit codes follow the tool contract: 0 pass, 1 fail, 2 configuration error (a bad flag, a missing file, a foreign schema major).
 
-`--format` picks the output shape: `human` (a terse verdict, the rate line, and the findings), `json` (the verdict, both rates, the drop, and structured findings), `markdown` (a PR-comment block with a findings table), or `github-actions` (one `::error`/`::warning` workflow annotation per finding plus a closing `::notice` summary, surfaced inline on the workflow run).
+`--format` picks the output shape (default `text`): `text` (a terse verdict, the rate line, and the findings), `json` (the verdict, both rates, the drop, and structured findings), `markdown` (a PR-comment block with a findings table), or `github-actions` (one `::error`/`::warning` workflow annotation per finding plus a closing `::notice` summary, surfaced inline on the workflow run).
 
 ## Offline re-grading: `skilltest grade`
 

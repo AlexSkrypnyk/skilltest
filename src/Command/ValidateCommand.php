@@ -30,6 +30,11 @@ class ValidateCommand extends Command {
   use SharedCommandTrait;
 
   /**
+   * The supported output formats.
+   */
+  public const array FORMATS = ['text', 'json'];
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -39,7 +44,8 @@ class ValidateCommand extends Command {
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
       ->addOption(name: 'show-config', mode: InputOption::VALUE_NONE, description: 'Print the effective merged configuration per skill')
       ->addOption(name: 'models', mode: InputOption::VALUE_REQUIRED, description: 'Override the model list (comma-separated) shown by --show-config')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Output as JSON');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -47,7 +53,17 @@ class ValidateCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $is_json = (bool) $input->getOption('json');
+
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+
+    if (!in_array($format, self::FORMATS, TRUE)) {
+      $this->stderr($output)->writeln('ERROR ' . sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
+
+      return ExitCode::CONFIG_ERROR;
+    }
+
+    $is_json = $format === 'json';
     $show_config = (bool) $input->getOption('show-config');
 
     try {

@@ -47,7 +47,8 @@ class CoverageCommand extends Command {
       ->setName('coverage')
       ->setDescription('Render the skill-to-eval coverage grid and enforce the coverage gate')
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -56,6 +57,7 @@ class CoverageCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
     $format = $input->getOption('format');
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
     $stderr = $this->stderr($output);
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {

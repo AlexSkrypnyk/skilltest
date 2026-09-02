@@ -47,7 +47,7 @@ class MatrixCommand extends Command {
   /**
    * The supported human output formats.
    */
-  public const array FORMATS = ['text', 'markdown'];
+  public const array FORMATS = ['text', 'markdown', 'json'];
 
   /**
    * The default trials per model per task, applied when nothing else sets it.
@@ -72,8 +72,8 @@ class MatrixCommand extends Command {
       ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows the ladder')
       ->addOption(name: 'stop-at-pass', mode: InputOption::VALUE_NONE, description: 'Stop climbing the ladder at the first passing model (cheaper, no full matrix)')
       ->addOption(name: 'estimate', mode: InputOption::VALUE_NONE, description: 'Print the plan (skills x tasks x trials x models) and a rough cost, then exit without running')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Human output format: text or markdown', default: 'text')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
       ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the weakest task and a concrete next step');
@@ -93,6 +93,8 @@ class MatrixCommand extends Command {
     if (!in_array($format, self::FORMATS, TRUE)) {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)))]);
     }
+
+    $json = $json || $format === 'json';
 
     try {
       $selection = RunSelection::create($this->globs($input, 'skill'), NULL, NULL);
