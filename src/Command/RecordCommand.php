@@ -114,7 +114,7 @@ class RecordCommand extends Command {
       return ExitCode::CONFIG_ERROR;
     }
 
-    $skill = $this->selectSkill($loaded, $skill_name);
+    $skill = $this->matchSkill($loaded, $skill_name);
 
     if (!$skill instanceof LoadedSkill) {
       return $this->reportError($stderr, ValidationMessage::error('', '', sprintf("no skill named '%s' with an %s was found.", $skill_name, $loaded->repo->evalFile)));
@@ -215,7 +215,7 @@ class RecordCommand extends Command {
    * @return \AlexSkrypnyk\SkillTest\Config\LoadedSkill|null
    *   The matching skill, or NULL when none carries that name.
    */
-  protected function selectSkill(LoadedConfig $loaded, string $name): ?LoadedSkill {
+  protected function matchSkill(LoadedConfig $loaded, string $name): ?LoadedSkill {
     foreach ($loaded->skills as $skill) {
       if ($skill->effective->skill === $name) {
         return $skill;
