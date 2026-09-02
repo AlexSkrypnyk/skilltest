@@ -19,7 +19,7 @@
     "require": {
         "php": ">=8.3",
         "justinrainbow/json-schema": "^6.10",
-        "symfony/console": "^7.4.13",
+        "symfony/console": "^7.4.16",
         "symfony/yaml": "^7.4"
     },
     "require-dev": {
@@ -31,9 +31,9 @@
         "ergebnis/composer-normalize": "^2.52.0",
         "mikey179/vfsstream": "^1.6.12",
         "opis/closure": "^4.5.0",
-        "phpstan/phpstan": "^2.2.2",
-        "phpunit/phpunit": "^11.5.55",
-        "rector/rector": "^2.5.1"
+        "phpstan/phpstan": "^2.2.8",
+        "phpunit/phpunit": "^11.5.56",
+        "rector/rector": "^2.6.3"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
@@ -59,18 +59,16 @@
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "ergebnis/composer-normalize": true
         },
-        "audit": {
-            "policy": {
-                "abandoned": {
-                    "audit": "report"
-                },
-                "advisories": {
-                    "audit": "fail",
-                    "block": false
-                }
+        "discard-changes": true,
+        "policy": {
+            "advisories": {
+                "block": false,
+                "audit": "fail"
+            },
+            "abandoned": {
+                "audit": "report"
             }
         },
-        "discard-changes": true,
         "sort-packages": true
     },
     "scripts": {

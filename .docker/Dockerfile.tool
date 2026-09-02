@@ -11,6 +11,11 @@
 
 # syntax=docker/dockerfile:1
 
+# The apt packages track the base image's current releases, and the Composer
+# steps stay in separate layers so a source change does not re-resolve
+# dependencies.
+# hadolint global ignore=DL3008,DL3059
+
 FROM php:8.3-cli AS builder
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

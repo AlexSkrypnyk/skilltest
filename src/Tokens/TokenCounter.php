@@ -208,9 +208,7 @@ final class TokenCounter {
    *   When the vocabulary cannot be read or parsed.
    */
   protected function ranks(): array {
-    if ($this->ranks === NULL) {
-      $this->ranks = $this->loadVocab((string) $this->vocabPath);
-    }
+    $this->ranks ??= $this->loadVocab((string) $this->vocabPath);
 
     return $this->ranks;
   }

@@ -8,6 +8,7 @@ parameters:
 
   paths:
     - src
+    - skilltest
     - tests/phpunit
 
   excludePaths:
