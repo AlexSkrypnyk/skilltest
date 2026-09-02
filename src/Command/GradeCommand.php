@@ -209,7 +209,7 @@ class GradeCommand extends Command {
       return $failing === 0 ? ExitCode::PASS : ExitCode::FAIL;
     }
 
-    $this->reportRescore($output, $result, $failing);
+    $this->renderRescore($output, $result, $failing);
 
     return $failing === 0 ? ExitCode::PASS : ExitCode::FAIL;
   }
@@ -224,7 +224,7 @@ class GradeCommand extends Command {
    * @param int $failing
    *   The number of failing task-on-model verdicts after re-scoring.
    */
-  protected function reportRescore(OutputInterface $output, RescoreResult $result, int $failing): void {
+  protected function renderRescore(OutputInterface $output, RescoreResult $result, int $failing): void {
     $output->writeln(sprintf('Re-scored %d trial(s): %d newly failing, %d newly passing.', $result->trialsRescored, $result->newlyFailing, $result->newlyPassing));
 
     foreach ($result->notes as $note) {

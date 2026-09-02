@@ -173,7 +173,7 @@ class RecordCommand extends Command {
     $checks = $this->grade($root, $loaded, $skill, $path, $result->exitCode);
     $pass = array_reduce($checks, static fn(bool $carry, CheckResult $result): bool => $carry && $result->pass, TRUE);
 
-    $this->report($output, $skill, $entry['name'], $model_id, $this->relativePath($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
+    $this->renderReport($output, $skill, $entry['name'], $model_id, $this->relativePath($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
 
     if ($skill->effective->transcript === NULL) {
       $stderr->writeln(sprintf("note: set 'deterministic.transcript: %s' in %s so the deterministic run consumes this fixture.", self::DEFAULT_FIXTURE, $this->relativePath($root, $skill->file)));
@@ -407,7 +407,7 @@ class RecordCommand extends Command {
    * @param bool $pass
    *   Whether every check passed.
    */
-  protected function report(OutputInterface $output, LoadedSkill $skill, string $task, string $model_id, string $path, bool $overwrote, array $checks, bool $pass): void {
+  protected function renderReport(OutputInterface $output, LoadedSkill $skill, string $task, string $model_id, string $path, bool $overwrote, array $checks, bool $pass): void {
     $output->writeln(sprintf("%s %s (skill '%s', task '%s', model '%s').", $overwrote ? 'Overwrote' : 'Recorded', $path, $skill->effective->skill, $task, $model_id));
 
     if ($pass) {

@@ -59,10 +59,10 @@ class ValidateCommand extends Command {
     $uncovered = $this->warnUncovered($loaded, $result);
 
     if ($is_json) {
-      $this->writeJson($output, $loaded, $result, $show_config);
+      $this->renderJson($output, $loaded, $result, $show_config);
     }
     else {
-      $this->writeHuman($output, $loaded, $result, $show_config, $uncovered);
+      $this->renderHuman($output, $loaded, $result, $show_config, $uncovered);
     }
 
     return $result->hasErrors() ? ExitCode::CONFIG_ERROR : ExitCode::PASS;
@@ -80,7 +80,7 @@ class ValidateCommand extends Command {
    * owns the hard failure, and validate's config-error exit stays reserved for
    * malformed or incoherent config.
    *
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The result to append warnings to.
@@ -88,8 +88,8 @@ class ValidateCommand extends Command {
    * @return int
    *   The number of uncovered skills warned about.
    */
-  protected function warnUncovered(LoadedConfig $loaded_config, ValidationResult $validation_result): int {
-    $violations = (new Coverage($loaded_config))->violations();
+  protected function warnUncovered(LoadedConfig $loaded, ValidationResult $validation_result): int {
+    $violations = (new Coverage($loaded))->violations();
 
     foreach ($violations as $violation) {
       $validation_result->addWarning($violation->path, '', sprintf("skill '%s' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $violation->skill));
@@ -175,14 +175,14 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
    * @param bool $show_config
    *   Whether to include the merged configuration.
    */
-  protected function writeJson(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config): void {
+  protected function renderJson(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config): void {
     $payload = [
       'ok' => !$validation_result->hasErrors(),
       'errors' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->errors()),
@@ -192,7 +192,7 @@ class ValidateCommand extends Command {
     if ($show_config) {
       $config = [];
 
-      foreach ($loaded_config->skills as $skill) {
+      foreach ($loaded->skills as $skill) {
         $config[$skill->effective->skill] = $skill->effective->toArray();
       }
 
@@ -207,7 +207,7 @@ class ValidateCommand extends Command {
    *
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
-   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded_config
+   * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
    * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
    *   The validation result.
@@ -216,9 +216,9 @@ class ValidateCommand extends Command {
    * @param int $uncovered
    *   The number of discovered skills that have no `eval.yaml`.
    */
-  protected function writeHuman(OutputInterface $output, LoadedConfig $loaded_config, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
+  protected function renderHuman(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
     if ($show_config) {
-      foreach ($loaded_config->skills as $skill) {
+      foreach ($loaded->skills as $skill) {
         $output->writeln('# ' . $skill->effective->skill);
         $output->writeln(Yaml::dump($skill->effective->toArray(), 6, 2));
       }
@@ -239,12 +239,12 @@ class ValidateCommand extends Command {
     }
 
     if ($uncovered > 0) {
-      $output->writeln(sprintf('OK: validated %d skill(s); %d discovered skill(s) have no eval.yaml (see warnings).', count($loaded_config->skills), $uncovered));
+      $output->writeln(sprintf('OK: validated %d skill(s); %d discovered skill(s) have no eval.yaml (see warnings).', count($loaded->skills), $uncovered));
 
       return;
     }
 
-    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded_config->skills)));
+    $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded->skills)));
   }
 
   /**
