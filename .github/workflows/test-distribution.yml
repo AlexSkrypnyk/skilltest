@@ -27,10 +27,6 @@ jobs:
         uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
         with:
           dockerfile: .docker/Dockerfile.tool
-          # The image tracks the latest apt releases on purpose, so the
-          # version-pinning rule never applies.
-          ignore: DL3008
-          failure-threshold: warning
         continue-on-error: ${{ vars.CI_LINT_IGNORE_FAILURE == '1' }}
 
       - name: Set up Docker Buildx
@@ -69,10 +65,6 @@ jobs:
         uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
         with:
           dockerfile: .docker/Dockerfile.agent
-          # The image tracks the latest apt and npm releases on purpose, so the
-          # version-pinning rules never apply.
-          ignore: DL3008,DL3016
-          failure-threshold: warning
         continue-on-error: ${{ vars.CI_LINT_IGNORE_FAILURE == '1' }}
 
       - name: Set up Docker Buildx
