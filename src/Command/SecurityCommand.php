@@ -71,14 +71,14 @@ class SecurityCommand extends Command {
       return $this->reportErrors($output, $format, [$message]);
     }
 
-    $result = (new ConfigValidator($root))->validate($loaded);
+    $validation = (new ConfigValidator($root))->validate($loaded);
 
-    foreach ($result->warnings() as $warning) {
+    foreach ($validation->warnings() as $warning) {
       $this->stderr($output)->writeln('WARNING ' . $warning->render());
     }
 
-    if ($result->hasErrors()) {
-      return $this->reportErrors($output, $format, $result->errors());
+    if ($validation->hasErrors()) {
+      return $this->reportErrors($output, $format, $validation->errors());
     }
 
     $findings = (new SecurityScanner($root))->scan($loaded);
