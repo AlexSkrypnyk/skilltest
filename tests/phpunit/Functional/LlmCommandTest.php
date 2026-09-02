@@ -272,6 +272,15 @@ final class LlmCommandTest extends TestCase {
     $this->assertStringContainsString('--parallel must be an integer', $output);
   }
 
+  public function testUnknownFormatIsConfigError(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $output = $this->runLlm(['--dir' => $root, '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('unknown format; expected one of: text, json.', $output);
+  }
+
   public function testDockerEnvironmentRunsTrialThroughContainer(): void {
     $root = $this->realRepo();
     $this->useDocker($this->dockerStub($root, 'ok', self::PASS_STREAM));

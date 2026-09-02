@@ -191,6 +191,14 @@ final class GradeCommandTest extends TestCase {
     $this->assertStringContainsString('malformed YAML', $output);
   }
 
+  public function testUnknownFormatIsConfigError(): void {
+    $root = $this->repo();
+
+    $output = $this->runGrade(['--dir' => $root, '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('ERROR unknown format; expected one of: text, json.', $output);
+  }
+
   public function testResultsRescoreTightenedContractFlipsToFail(): void {
     // The saved trial passed, but its transcript pushed; the current contract
     // now forbids pushing, so re-scoring must fail it - with no agent run.

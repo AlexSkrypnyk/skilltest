@@ -170,6 +170,15 @@ final class CoverageCommandTest extends TestCase {
     $this->assertStringContainsString('missing a reason', $this->firstErrorMessage($decoded));
   }
 
+  public function testValidationWarningGoesToStderr(): void {
+    $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "version: \"1\"\nbogus: 1\n"]);
+
+    $output = $this->runCoverage(['--dir' => $root->url()], 0);
+
+    $this->assertStringContainsString('WARNING', $output);
+    $this->assertStringContainsString('bogus - unknown key (ignored).', $output);
+  }
+
   public function testDefaultsToCurrentDirectory(): void {
     $output = $this->runCoverage([], 0);
 

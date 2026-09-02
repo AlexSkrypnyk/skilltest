@@ -246,6 +246,14 @@ final class ValidateCommandTest extends TestCase {
     $this->assertStringContainsString('has no eval.yaml', $output);
   }
 
+  public function testUnknownFormatIsConfigError(): void {
+    $root = vfsStream::setup('root', NULL, ['skills' => []]);
+
+    $output = $this->runValidate(['--dir' => $root->url(), '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('unknown format; expected one of: text, json.', $output);
+  }
+
   /**
    * Runs the validate command and asserts the exit code.
    *

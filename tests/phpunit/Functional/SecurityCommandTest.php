@@ -245,6 +245,15 @@ final class SecurityCommandTest extends TestCase {
     $this->assertStringContainsString("unknown security pack 'nope'.", $output);
   }
 
+  public function testValidationWarningGoesToStderr(): void {
+    $root = vfsStream::setup('root', NULL, ['skilltest.yml' => "version: \"1\"\nbogus: 1\n"]);
+
+    $output = $this->runSecurity(['--dir' => $root->url()], 0);
+
+    $this->assertStringContainsString('WARNING', $output);
+    $this->assertStringContainsString('bogus - unknown key (ignored).', $output);
+  }
+
   public function testDefaultsToCurrentDirectory(): void {
     $output = $this->runSecurity([], 0);
 
