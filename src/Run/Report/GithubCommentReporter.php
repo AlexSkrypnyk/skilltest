@@ -13,7 +13,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * note appended, so the comment always posts. Every number comes from the
  * document; the reporter computes no verdicts of its own.
  */
-final class GithubCommentReporter {
+final readonly class GithubCommentReporter {
 
   /**
    * GitHub's hard maximum length, in characters, for a single comment body.

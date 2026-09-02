@@ -14,7 +14,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * beneath it. The column ordering, the missing-cell dash, and the verdict
  * wording live here once, so every renderer draws the same grid.
  */
-final class MatrixGrid {
+final readonly class MatrixGrid {
 
   /**
    * The model columns across a skill's tasks, in first-seen order.

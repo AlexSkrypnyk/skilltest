@@ -20,7 +20,7 @@ use JsonSchema\Validator;
  * how close each came, so the failure names the nearest fixture rather than a
  * bare "no match".
  */
-final class McpMatcher {
+final readonly class McpMatcher {
 
   /**
    * The exact full-argument matcher kind.

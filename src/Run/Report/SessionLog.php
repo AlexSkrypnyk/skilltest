@@ -20,7 +20,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * `seq` orders them regardless. The document handed here is already redacted,
  * so no event carries a secret value.
  */
-final class SessionLog {
+final readonly class SessionLog {
 
   /**
    * The deterministic groups streamed, in per-skill order.

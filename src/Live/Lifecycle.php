@@ -24,7 +24,7 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * validated up front, so a hook missing its command is caught before any
  * trial runs.
  */
-final class Lifecycle {
+final readonly class Lifecycle {
 
   /**
    * The phase run once before any trial.

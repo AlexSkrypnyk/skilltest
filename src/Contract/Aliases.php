@@ -16,7 +16,7 @@ use AlexSkrypnyk\SkillTest\Config\Pcre;
  * `broker workflow start` then all satisfy a single `broker workflow start`
  * contract pattern.
  */
-final class Aliases {
+final readonly class Aliases {
 
   /**
    * Rewrites every aliased invocation form in a command to its canonical name.

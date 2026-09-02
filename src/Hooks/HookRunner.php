@@ -24,7 +24,7 @@ use AlexSkrypnyk\SkillTest\Contract\CheckResult;
  * injectable closures so the verdict logic is unit-testable without spawning a
  * process.
  */
-final class HookRunner {
+final readonly class HookRunner {
 
   /**
    * The check id prefix hook results render under.

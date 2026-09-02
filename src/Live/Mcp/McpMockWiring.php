@@ -20,7 +20,7 @@ use AlexSkrypnyk\File\File;
  * absolute so the mock child process writes its log regardless of the working
  * directory the agent started it from.
  */
-final class McpMockWiring {
+final readonly class McpMockWiring {
 
   /**
    * The directory the per-server definitions and logs are written under.

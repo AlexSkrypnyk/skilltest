@@ -16,7 +16,7 @@ use AlexSkrypnyk\SkillTest\Config\Pcre;
  * to one test: whether any command matches, and which command is the
  * evidence.
  */
-final class Matcher {
+final readonly class Matcher {
 
   /**
    * Expands a pattern position to the concrete regexes it matches with.

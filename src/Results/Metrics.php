@@ -19,7 +19,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * structure, a broken contract before an llm verdict, so the top failure
  * is deterministic.
  */
-final class Metrics {
+final readonly class Metrics {
 
   /**
    * The finding kinds, most-blocking first, deciding the "top failure".

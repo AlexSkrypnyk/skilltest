@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * resolve outside it, so only the skill's own real files are listed.
  * Results are sorted so a report over them is deterministic.
  */
-final class SkillFiles {
+final readonly class SkillFiles {
 
   /**
    * File extensions that mark a file as markdown.

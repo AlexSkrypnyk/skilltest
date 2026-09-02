@@ -17,7 +17,7 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * compares against nothing would always pass. The process call is injected so
  * resolution and content reads are unit-testable without a real repository.
  */
-final class GitRef {
+final readonly class GitRef {
 
   /**
    * The wall-clock budget, in seconds, for one git call.

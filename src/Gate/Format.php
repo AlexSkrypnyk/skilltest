@@ -10,7 +10,7 @@ namespace AlexSkrypnyk\SkillTest\Gate;
  * The rule lives once: at most one decimal place, with a trailing `.0`
  * trimmed so a whole number reads as `5`, not `5.0`.
  */
-final class Format {
+final readonly class Format {
 
   /**
    * Formats a number with at most one decimal place, trimming a trailing zero.

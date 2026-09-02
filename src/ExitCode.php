@@ -9,7 +9,7 @@ namespace AlexSkrypnyk\SkillTest;
  *
  * Exit codes are a documented API: changing a value is a breaking change.
  */
-final class ExitCode {
+final readonly class ExitCode {
 
   /**
    * Everything selected passed.

@@ -15,7 +15,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  *
  * The paragraph is templated from the document alone and costs no tokens.
  */
-final class Interpreter {
+final readonly class Interpreter {
 
   /**
    * Builds the interpretation paragraph for a results document.

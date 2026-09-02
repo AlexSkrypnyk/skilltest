@@ -19,7 +19,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * Every number comes from the document; the reporter computes no verdicts
  * of its own.
  */
-final class JUnitReporter {
+final readonly class JUnitReporter {
 
   /**
    * The deterministic groups rendered, in the order they appear per skill.

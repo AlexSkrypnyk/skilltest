@@ -26,7 +26,7 @@ use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
  * injected runner, and a binary that cannot run is a configuration error,
  * not a pass.
  */
-final class StructureChecker {
+final readonly class StructureChecker {
 
   /**
    * Frontmatter parses with a non-empty name and description.
