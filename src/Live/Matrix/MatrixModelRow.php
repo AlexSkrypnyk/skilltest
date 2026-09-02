@@ -11,14 +11,15 @@ use AlexSkrypnyk\SkillTest\Live\TrialResult;
 /**
  * One model's row in a skill's matrix grid, aggregated over the skill's tasks.
  *
- * A skill runs every task on the same model, so a model's grid row folds
- * those tasks together: the trial count, the contract-passing and
- * judge-passing tallies, and the summed cost are the sums across the skill's
- * tasks, and the row's verdict is whether the model supports the skill (every
- * task met its threshold), not merely whether the aggregate pass rate did.
+ * A skill runs every task on the same model, so a model's grid row folds those
+ * tasks together: the trial count, the contract-passing and judge-passing
+ * tallies, and the summed cost are the sums across the skill's tasks. The row's
+ * verdict is whether every task met its threshold, not whether the aggregate
+ * pass rate did.
+ *
  * Contract and judge are counted separately because a model that obeys the
  * contract but writes output the judge rejects is a different failure from one
- * that goes off-contract; a skill with no rubric has no judge tally at all.
+ * that goes off-contract. A skill with no rubric has no judge tally.
  */
 final readonly class MatrixModelRow {
 

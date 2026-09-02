@@ -14,15 +14,17 @@ use AlexSkrypnyk\SkillTest\Version;
  * speaks just enough of the Model Context Protocol over newline-delimited
  * JSON-RPC to stand in for a real MCP server: it completes the initialize
  * handshake, advertises the mocked tools, and answers `tools/call` from the
- * first response whose matcher accepts the arguments. Fidelity to the product
- * promise lives in two rules - a matched call returns its fixture as text, and
- * an unmatched or unknown call returns an `isError` result naming the tool and
- * the closest declared fixture, never an empty success - so a skill that drifts
- * onto an unmocked path fails loudly instead of silently. Every `tools/call` is
- * appended to the trial's mock log so the run artifacts record exactly what the
- * skill asked for and which fixture answered. The input and output streams are
- * injected, so the whole protocol is exercised in a test without a child
- * process or a socket.
+ * first response whose matcher accepts the arguments.
+ *
+ * Two rules govern the answers. A matched call returns its fixture as text. An
+ * unmatched or unknown call returns an `isError` result naming the tool and the
+ * closest declared fixture, never an empty success, so a skill that takes an
+ * unmocked path fails visibly rather than silently.
+ *
+ * Every `tools/call` is appended to the trial's mock log, so the run artifacts
+ * record exactly what the skill asked for and which fixture answered. The input
+ * and output streams are injected, so the whole protocol is exercised in a test
+ * without a child process or a socket.
  */
 final class McpMockServer {
 
