@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
 final class AliasesTest extends TestCase {
 
   /**
-   * The reference broker alias from the config PRD.
+   * An alias collapsing every `bin/broker` invocation form to `broker`.
    */
   protected const array BROKER_ALIAS = ['broker' => '(?:php\s+)?(?:\S*/)?bin/broker\b'];
 
