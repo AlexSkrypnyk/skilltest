@@ -15,7 +15,7 @@ use AlexSkrypnyk\SkillTest\Exception\ConfigException;
  * script with each crafted case's tool input on stdin - the runtime's
  * PreToolUse protocol - and asserts the decision: `expect: block` requires the
  * blocking exit code, `expect: allow` requires success. This is what makes "the
- * harness is the enforcement boundary" testable without a model: the check
+ * broker is the enforcement boundary" testable without a model: the check
  * fails the moment a hook stops blocking what it must block.
  *
  * A declared script that is missing or not executable is a configuration error

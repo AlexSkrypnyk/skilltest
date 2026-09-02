@@ -32,7 +32,7 @@ final class GraderTest extends TestCase {
   /**
    * A transcript that satisfies the contract.
    */
-  protected const string PASS = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","result":"done"}' . "\n";
+  protected const string PASS = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","result":"done"}' . "\n";
 
   /**
    * A transcript that violates the forbidden-command contract.

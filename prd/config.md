@@ -13,7 +13,7 @@ Lives next to the skill (`skills/<name>/eval.yaml` by default; the location patt
 ```yaml
 version: "1"
 
-skill: run-harness-workflow          # optional; defaults to the directory name
+skill: run-broker-workflow           # optional; defaults to the directory name
 
 # The behavioural contract: declared once, asserted against BOTH the recorded
 # transcript (deterministic suite) and every live run (llm suite).
@@ -24,12 +24,12 @@ contract:
     forbidden: []                    # must never appear
   commands:                          # label: pattern; the label names the behaviour, the pattern proves it
     required:
-      harness drives the workflow: '\bharness\s+workflow\s+(start|next|status)\b'
+      broker drives the workflow: '\bbroker\s+workflow\s+(start|next|status)\b'
     forbidden:
       raw git mutations: pack:git-mutations      # pre-baked pattern pack, no regex needed
       raw gh mutations: pack:gh-mutations
   skills:                            # Skill-tool invocations (sub-skills)
-    required: [harness:build-generic]
+    required: [broker:build-generic]
     forbidden: []
 
 security:
@@ -42,7 +42,7 @@ deterministic:
 llm:
   tasks:
     - name: invoked
-      prompt: /harness:run-harness-workflow
+      prompt: /broker:run-broker-workflow
     - name: discovery                # P2: the prompt does not name the skill; it must trigger anyway
       prompt: "Continue the current feature ticket end to end."
       discovery: true
@@ -52,9 +52,9 @@ llm:
   models: ladder                     # the repo ladder, or an explicit list of aliases/ids
   judge:
     rubric:                          # binary criteria; each is judged pass/fail, never a holistic score
-      - Asks the harness for the next step rather than deciding the order itself.
+      - Asks the broker for the next step rather than deciding the order itself.
       - Invokes the configured skill for each judgement step and the binary for deterministic steps.
-      - Lets the harness own branch, board, and PR state instead of issuing raw git or gh.
+      - Lets the broker own branch, board, and PR state instead of issuing raw git or gh.
   checks: []                         # optional custom check scripts, run against each live transcript
 ```
 
@@ -76,11 +76,11 @@ paths:
   exclude: []                        # skill names exempt from the coverage gate (each requires a reason)
 
 aliases:                             # command normalisation applied before contract matching
-  harness: '(?:php\s+)?(?:\S*/)?bin/harness'   # `php bin/harness x`, `./bin/harness x` and `harness x` all match `harness x`
+  broker: '(?:php\s+)?(?:\S*/)?bin/broker'   # `php bin/broker x`, `./bin/broker x` and `broker x` all match `broker x`
 
 commands:
   resolve:
-    binary: bin/harness              # optional; when set, `harness <sub>` references in skill files must
+    binary: bin/broker               # optional; when set, `broker <sub>` references in skill files must
     list-args: [list, --json]        # resolve against the binary's real command list (structure group)
 
 guards:                              # appended to every skill's contract.commands.forbidden

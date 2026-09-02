@@ -36,7 +36,7 @@ final class StructureCheckerTest extends TestCase {
    *
    * @var array<string, mixed>
    */
-  protected const array RESOLVE_REPO = ['commands' => ['resolve' => ['binary' => 'bin/harness', 'list-args' => ['list', '--json']]]];
+  protected const array RESOLVE_REPO = ['commands' => ['resolve' => ['binary' => 'bin/broker', 'list-args' => ['list', '--json']]]];
 
   #[DataProvider('dataProviderSingleCheck')]
   public function testSingleCheck(string $skill_md, string $check_id, string $status, string $message_substring): void {
@@ -194,7 +194,7 @@ final class StructureCheckerTest extends TestCase {
   }
 
   public function testCommandRefsResolvePassesForKnownCommands(): void {
-    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\nRun `bin/harness build` then `harness test`.\n";
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\nRun `bin/broker build` then `broker test`.\n";
     $runner = fn(): array => [0, '["build","test"]'];
 
     $result = $this->only($this->results($this->dir($skill_md), [], self::RESOLVE_REPO, $runner), StructureChecker::CHECK_COMMAND_REFS_RESOLVE);
@@ -203,22 +203,22 @@ final class StructureCheckerTest extends TestCase {
   }
 
   public function testCommandRefsResolveFailsForUnknownCommand(): void {
-    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\nRun `harness deploy` now.\n";
+    $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\nRun `broker deploy` now.\n";
     $runner = fn(): array => [0, '["build","test"]'];
 
     $result = $this->only($this->results($this->dir($skill_md), [], self::RESOLVE_REPO, $runner), StructureChecker::CHECK_COMMAND_REFS_RESOLVE);
 
     $this->assertSame(StructureResult::FAIL, $result->status);
     $this->assertStringContainsString("'deploy' is not a command", $result->message);
-    $this->assertStringContainsString('harness deploy', $result->evidence);
+    $this->assertStringContainsString('broker deploy', $result->evidence);
   }
 
   public function testCommandRefsResolveScansBundledScriptsAndSkipsEval(): void {
     $skill_md = "---\nname: foo\ndescription: A clean well-formed skill for tests.\n---\n# Foo\n";
     $files = [
       'SKILL.md' => $skill_md,
-      'eval.yaml' => "version: \"1\"\nnote: run bin/harness bogus\n",
-      'run.sh' => "#!/bin/sh\nbin/harness deploy\n",
+      'eval.yaml' => "version: \"1\"\nnote: run bin/broker bogus\n",
+      'run.sh' => "#!/bin/sh\nbin/broker deploy\n",
     ];
     $runner = fn(): array => [0, '["build"]'];
 

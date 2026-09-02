@@ -43,7 +43,7 @@ final class RunCommandTest extends TestCase {
   /**
    * A transcript satisfying the alpha skill's contract.
    */
-  protected const string CLEAN_TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n";
+  protected const string CLEAN_TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n";
 
   /**
    * A transcript violating the alpha skill's contract both ways.
@@ -217,9 +217,9 @@ final class RunCommandTest extends TestCase {
   public function testFailingResolveBinaryIsConfigErrorDuringTheSuite(): void {
     $root = $this->realRepo();
     mkdir($root . '/bin', 0777, TRUE);
-    file_put_contents($root . '/bin/harness', "#!/bin/sh\nexit 3\n");
-    chmod($root . '/bin/harness', 0755);
-    file_put_contents($root . '/skilltest.yml', "version: \"1\"\ncommands:\n  resolve:\n    binary: bin/harness\n    list-args: [list]\n");
+    file_put_contents($root . '/bin/broker', "#!/bin/sh\nexit 3\n");
+    chmod($root . '/bin/broker', 0755);
+    file_put_contents($root . '/skilltest.yml', "version: \"1\"\ncommands:\n  resolve:\n    binary: bin/broker\n    list-args: [list]\n");
 
     $output = $this->runCommand(['--dir' => $root], 2);
 
@@ -641,7 +641,7 @@ final class RunCommandTest extends TestCase {
    *   The `eval.yaml` content.
    */
   protected function alphaEval(string $transcript): string {
-    return sprintf("version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n  commands:\n    required:\n      builds the thing: '\\bharness\\s+build\\b'\n    forbidden:\n      no git pushes: '\\bgit\\s+push\\b'\ndeterministic:\n  transcript: %s\n", $transcript);
+    return sprintf("version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n  commands:\n    required:\n      builds the thing: '\\bbroker\\s+build\\b'\n    forbidden:\n      no git pushes: '\\bgit\\s+push\\b'\ndeterministic:\n  transcript: %s\n", $transcript);
   }
 
   /**

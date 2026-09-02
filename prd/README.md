@@ -2,7 +2,7 @@
 
 `skilltest` is a standalone test runner for agent skills. It ships as a single executable (PHAR, Docker image, later a static binary), reads one declarative `eval.yaml` per skill, and gives every skill repository two things: a token-free **deterministic** suite strict enough to gate CI, and an **llm** suite that runs the skill against real models to measure how well - and on how small a model - it actually works.
 
-These PRDs specify the product extracted from the [harness repository](https://github.com/AlexSkrypnyk/harness) into this project (`alexskrypnyk/skilltest`, binary `skilltest`). They are the contract for the extraction; the harness implementation under its `tests/src` is reference material at most and may be refactored or rewritten entirely.
+These PRDs specify the product built in this project (`alexskrypnyk/skilltest`, binary `skilltest`). They are the contract for the build.
 
 ## Why it exists
 
@@ -51,7 +51,7 @@ Features assessed from skillgrade and adopted as skilltest requirements:
 | Skill-trigger / discovery testing | Discovery tasks (prompt does not name the skill) | `checks-llm.md` | P2 |
 | Multi-agent executors (Gemini, Codex, OpenCode, ACP) | Out of scope for v1; adapter seam reserved | `README.md` non-goals | P3 |
 
-Features assessed from waza and adopted as skilltest requirements (full assessment in the harness repository's `.artifacts/skill-eval-comparison.md`):
+Features assessed from waza and adopted as skilltest requirements:
 
 | waza feature | skilltest requirement | PRD | Priority |
 |---|---|---|---|
@@ -92,7 +92,6 @@ Features assessed from waza and adopted as skilltest requirements (full assessme
 | [`environments.md`](environments.md) | `host` and `docker` execution environments, lifecycle hooks |
 | [`reporting.md`](reporting.md) | Results schema, reporters, statistics, the regression gate |
 | [`distribution.md`](distribution.md) | PHAR, Docker image, static binary, CI recipes |
-| [`migration.md`](migration.md) | Moving the harness repository from `tests/` to skilltest |
 
 ## Vocabulary
 

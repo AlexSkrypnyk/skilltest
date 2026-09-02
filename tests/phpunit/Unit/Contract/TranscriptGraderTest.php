@@ -33,7 +33,7 @@ final class TranscriptGraderTest extends TestCase {
     $dir = dirname(__DIR__, 3) . '/.artifacts/tmp/transcriptgrader-' . getmypid() . '-' . uniqid();
     mkdir($dir, 0777, TRUE);
     $this->transcript = $dir . '/transcript.jsonl';
-    file_put_contents($this->transcript, '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n");
+    file_put_contents($this->transcript, '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n");
   }
 
   /**
@@ -59,13 +59,13 @@ final class TranscriptGraderTest extends TestCase {
   }
 
   public function testAppliesAliasesToCommandMatching(): void {
-    $contract = ['commands' => ['required' => ['builds' => '\\bharness\\s+build\\b']]];
+    $contract = ['commands' => ['required' => ['builds' => '\\bbroker\\s+build\\b']]];
 
-    $results = (new TranscriptGrader('/root', ['harness' => '\\bharness\\b']))->grade($this->transcript, $contract, [], '/root/skills/alpha');
+    $results = (new TranscriptGrader('/root', ['broker' => '\\bbroker\\b']))->grade($this->transcript, $contract, [], '/root/skills/alpha');
 
     $this->assertCount(1, $results);
     $this->assertTrue($results[0]->pass);
-    $this->assertSame('harness build', $results[0]->evidence);
+    $this->assertSame('broker build', $results[0]->evidence);
   }
 
   public function testCustomChecksFollowContractInOrderWithSkillDirArgument(): void {

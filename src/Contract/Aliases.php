@@ -12,8 +12,8 @@ use AlexSkrypnyk\SkillTest\Config\Pcre;
  * Repo config `aliases:` maps a canonical name to a delimiter-less pattern;
  * each occurrence of the pattern in a command is rewritten to the canonical
  * name so that every invocation form collapses to one. This is what makes
- * `php bin/harness workflow start`, `./bin/harness workflow start`, and
- * `harness workflow start` all satisfy a single `harness workflow start`
+ * `php bin/broker workflow start`, `./bin/broker workflow start`, and
+ * `broker workflow start` all satisfy a single `broker workflow start`
  * contract pattern.
  */
 final class Aliases {

@@ -39,7 +39,7 @@ final class LlmCommandTest extends TestCase {
   /**
    * The stream-json a passing stub agent emits.
    */
-  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","num_turns":4,"total_cost_usd":0.02,"usage":{"input_tokens":200,"output_tokens":90}}' . "\n";
+  protected const string PASS_STREAM = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","num_turns":4,"total_cost_usd":0.02,"usage":{"input_tokens":200,"output_tokens":90}}' . "\n";
 
   /**
    * The stream-json a contract-violating stub agent emits.
@@ -351,7 +351,7 @@ final class LlmCommandTest extends TestCase {
 
     $transcripts = glob($root . '/runs/*/artifacts/alpha__invoked__haiku__t1.jsonl') ?: [];
     $this->assertCount(1, $transcripts);
-    $this->assertStringContainsString('harness build', (string) file_get_contents($transcripts[0]));
+    $this->assertStringContainsString('broker build', (string) file_get_contents($transcripts[0]));
   }
 
   public function testSecretIsRedactedFromPersistedTranscripts(): void {
@@ -466,7 +466,7 @@ final class LlmCommandTest extends TestCase {
 
     file_put_contents($this->tempDir . '/skills/alpha/SKILL.md', "---\nname: alpha\ndescription: A clean well-formed skill for tests.\n---\n# Body\n");
 
-    $eval = "version: \"1\"\ncontract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bharness\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
+    $eval = "version: \"1\"\ncontract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bbroker\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
     if ($tasks) {
       $eval .= "llm:\n  tasks:\n    - name: invoked\n      prompt: Build the thing\n";
     }

@@ -1,6 +1,6 @@
-{"type":"assistant","message":{"content":[{"type":"text","text":"starting"},{"type":"tool_use","name":"Bash","input":{"command":"php bin/harness workflow start"}}]}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"starting"},{"type":"tool_use","name":"Bash","input":{"command":"php bin/broker workflow start"}}]}}
 
-{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"harness:build-generic"}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"broker:build-generic"}}]}}
 this line is not valid json
 {"type":"tool_use","name":"Bash","input":{"command":"git push origin main"}}
 {"type":"tool_use","name":"Read","input":{"file_path":"README.md"}}

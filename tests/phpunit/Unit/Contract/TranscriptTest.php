@@ -21,8 +21,8 @@ final class TranscriptTest extends TestCase {
     $transcript = Transcript::fromFile(__DIR__ . '/../../Fixtures/transcript.jsonl');
 
     $this->assertSame(['Bash', 'Skill', 'Bash', 'Read', 'Bash'], $transcript->toolNames());
-    $this->assertSame(['php bin/harness workflow start', 'git push origin main'], $transcript->bashCommands());
-    $this->assertSame(['harness:build-generic'], $transcript->skillInvocations());
+    $this->assertSame(['php bin/broker workflow start', 'git push origin main'], $transcript->bashCommands());
+    $this->assertSame(['broker:build-generic'], $transcript->skillInvocations());
   }
 
   public function testFromMissingFileYieldsNoEvents(): void {

@@ -20,7 +20,7 @@ final class CommandCatalogTest extends TestCase {
 
   #[DataProvider('dataProviderParsesFirstTokens')]
   public function testParsesFirstTokens(string $stdout, array $expected): void {
-    $catalog = new CommandCatalog('/repo', 'bin/harness', ['list', '--json'], fn(): array => [0, $stdout]);
+    $catalog = new CommandCatalog('/repo', 'bin/broker', ['list', '--json'], fn(): array => [0, $stdout]);
 
     $this->assertSame($expected, $catalog->firstTokens());
   }
@@ -35,9 +35,9 @@ final class CommandCatalogTest extends TestCase {
   }
 
   public function testBinaryNameIsBasename(): void {
-    $catalog = new CommandCatalog('/repo', 'bin/harness', [], fn(): array => [0, '["x"]']);
+    $catalog = new CommandCatalog('/repo', 'bin/broker', [], fn(): array => [0, '["x"]']);
 
-    $this->assertSame('harness', $catalog->binaryName());
+    $this->assertSame('broker', $catalog->binaryName());
   }
 
   public function testResolutionIsMemoised(): void {
@@ -48,7 +48,7 @@ final class CommandCatalogTest extends TestCase {
       return [0, '["build"]'];
     };
 
-    $catalog = new CommandCatalog('/repo', 'bin/harness', [], $runner);
+    $catalog = new CommandCatalog('/repo', 'bin/broker', [], $runner);
     $catalog->firstTokens();
     $catalog->firstTokens();
 
@@ -63,23 +63,23 @@ final class CommandCatalogTest extends TestCase {
       return [0, '["build"]'];
     };
 
-    (new CommandCatalog('/repo', 'bin/harness', ['list', '--json'], $runner))->firstTokens();
+    (new CommandCatalog('/repo', 'bin/broker', ['list', '--json'], $runner))->firstTokens();
 
-    $this->assertSame("'bin/harness' 'list' '--json'", $captured);
+    $this->assertSame("'bin/broker' 'list' '--json'", $captured);
   }
 
   public function testNonZeroExitThrows(): void {
-    $catalog = new CommandCatalog('/repo', 'bin/harness', [], fn(): array => [3, '']);
+    $catalog = new CommandCatalog('/repo', 'bin/broker', [], fn(): array => [3, '']);
 
     $this->expectException(ConfigException::class);
-    $this->expectExceptionMessage("command binary 'bin/harness' failed (exit 3)");
+    $this->expectExceptionMessage("command binary 'bin/broker' failed (exit 3)");
 
     $catalog->firstTokens();
   }
 
   #[DataProvider('dataProviderUnparseableOutputThrows')]
   public function testUnparseableOutputThrows(string $stdout): void {
-    $catalog = new CommandCatalog('/repo', 'bin/harness', [], fn(): array => [0, $stdout]);
+    $catalog = new CommandCatalog('/repo', 'bin/broker', [], fn(): array => [0, $stdout]);
 
     $this->expectException(ConfigException::class);
     $this->expectExceptionMessage('produced no parseable command list');

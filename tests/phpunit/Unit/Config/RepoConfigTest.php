@@ -45,8 +45,8 @@ final class RepoConfigTest extends TestCase {
   public function testFull(): void {
     $repo = RepoConfig::fromArray([
       'paths' => ['skills' => 'my-skills', 'eval-file' => 'eval.yml', 'exclude' => [['skill' => 'foo', 'reason' => 'legacy']]],
-      'aliases' => ['harness' => 'bin/harness'],
-      'commands' => ['resolve' => ['binary' => 'bin/harness', 'list-args' => ['list', '--json']]],
+      'aliases' => ['broker' => 'bin/broker'],
+      'commands' => ['resolve' => ['binary' => 'bin/broker', 'list-args' => ['list', '--json']]],
       'guards' => ['broker bypass' => 'pack:gh-mutations'],
       'hooks' => [['script' => 'hooks/x.php', 'cases' => []], 'not-an-array'],
       'models' => ['aliases' => ['haiku' => 'claude-haiku'], 'ladder' => ['haiku'], 'default' => 'haiku', 'judge' => 'haiku'],
@@ -59,11 +59,11 @@ final class RepoConfigTest extends TestCase {
     $this->assertCount(1, $repo->excludes);
     $this->assertSame('foo', $repo->excludes[0]->skill);
     $this->assertSame('legacy', $repo->excludes[0]->reason);
-    $this->assertSame(['harness' => 'bin/harness'], $repo->aliases);
+    $this->assertSame(['broker' => 'bin/broker'], $repo->aliases);
     $this->assertSame(['broker bypass' => 'pack:gh-mutations'], $repo->guards);
     $this->assertCount(1, $repo->hooks);
     $this->assertSame(['script' => 'hooks/x.php', 'cases' => []], $repo->hooks[0]);
-    $this->assertSame(['binary' => 'bin/harness', 'list-args' => ['list', '--json']], $repo->commandResolve);
+    $this->assertSame(['binary' => 'bin/broker', 'list-args' => ['list', '--json']], $repo->commandResolve);
     $this->assertSame(['haiku' => 'claude-haiku'], $repo->modelAliases);
     $this->assertSame(['haiku'], $repo->ladder);
     $this->assertSame('haiku', $repo->defaultModel);

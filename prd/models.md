@@ -33,7 +33,7 @@ The judge model stays pinned (`models.judge`) across the whole matrix, so scores
 A model "supports" a skill when every task's pass rate on that model meets its threshold. The **minimal model** is the first supporting model on the ladder. The verdict is computed per skill and printed as the report's headline:
 
 ```
-run-harness-workflow
+run-broker-workflow
   model     trials   contract   judge   pass rate   verdict
   haiku     3        2/3        1/3     0.33        fail
   sonnet    3        3/3        3/3     1.00        pass
@@ -55,8 +55,8 @@ Across skills, `skilltest matrix` renders the repo-level grid - the answer to "w
 
 ```
 skill                    haiku   sonnet   opus    minimal
-run-harness-workflow     0.33    1.00     1.00    sonnet
-init-harness-project     1.00    1.00     1.00    haiku
+run-broker-workflow      0.33    1.00     1.00    sonnet
+init-broker-project      1.00    1.00     1.00    haiku
 resolve-reviews          0.00    0.67     1.00    opus
 ```
 

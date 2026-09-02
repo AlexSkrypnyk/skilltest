@@ -17,11 +17,11 @@ use PHPUnit\Framework\TestCase;
 final class TableTest extends TestCase {
 
   public function testTextAlignsColumnsToWidestCell(): void {
-    $lines = Table::text(['Skill', 'Minimal'], [['run-harness', 'sonnet'], ['init', 'haiku']]);
+    $lines = Table::text(['Skill', 'Minimal'], [['run-broker', 'sonnet'], ['init', 'haiku']]);
 
-    $this->assertSame('Skill        Minimal', $lines[0]);
-    $this->assertSame('run-harness  sonnet', $lines[1]);
-    $this->assertSame('init         haiku', $lines[2]);
+    $this->assertSame('Skill       Minimal', $lines[0]);
+    $this->assertSame('run-broker  sonnet', $lines[1]);
+    $this->assertSame('init        haiku', $lines[2]);
   }
 
   public function testTextTrimsTrailingWhitespace(): void {
@@ -39,11 +39,11 @@ final class TableTest extends TestCase {
   }
 
   public function testMarkdownEmitsValidPipeTable(): void {
-    $lines = Table::markdown(['Skill', 'Minimal'], [['run-harness', 'sonnet']]);
+    $lines = Table::markdown(['Skill', 'Minimal'], [['run-broker', 'sonnet']]);
 
     $this->assertSame('| Skill | Minimal |', $lines[0]);
     $this->assertSame('| --- | --- |', $lines[1]);
-    $this->assertSame('| run-harness | sonnet |', $lines[2]);
+    $this->assertSame('| run-broker | sonnet |', $lines[2]);
   }
 
   public function testMarkdownEscapesPipesInCells(): void {

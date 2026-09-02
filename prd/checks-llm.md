@@ -8,7 +8,7 @@ For each task in a skill's `llm.tasks`, skilltest launches a headless agent run:
 
 Tasks:
 
-- **Invoked tasks** name the skill (`prompt: /harness:run-harness-workflow`): they test that the skill, once triggered, behaves within contract.
+- **Invoked tasks** name the skill (`prompt: /broker:run-broker-workflow`): they test that the skill, once triggered, behaves within contract.
 - **Discovery tasks (P2)** describe the job without naming the skill (`discovery: true`): the run passes only if the skill actually triggered (its Skill invocation or skill-file read appears in the transcript) and the contract held. This is trigger-precision testing - the thing that most often degrades on smaller models.
 - **Baseline mode (P2)**: with `--baseline`, each task also runs without the skill available, and the report shows the improvement delta (normalized gain: how much of the remaining headroom the skill recovers). This answers "does this skill help at all?" - a skill whose baseline passes anyway is documentation, not capability.
 
@@ -25,7 +25,7 @@ The judge scores what deterministic checks cannot: is the output accurate, in vo
 - **Binary criteria only.** The rubric is a list of independent yes/no statements. Each is judged pass/fail; there is no holistic 1-100 score, because N small judgements are dramatically lower-variance than one big one.
 - **Abstention is first-class.** The judge may return `unknown` per criterion when the evidence does not show the answer. Abstentions surface in the report as `unknown`, are configurable to count as failures in strict mode, and are never silently treated as passes.
 - **Structured verdicts.** The judge returns JSON (`criteria: [{id, pass}], reasoning, unknown`); parsing is hardened (fence stripping, clamping, fallback extraction) and a malformed verdict is a judge failure, not a skill failure.
-- **The judge is itself tested.** The verdict parser and prompt builder are unit-tested against recorded verdict fixtures, so judge-harness drift is caught without spending tokens and separately from skill regressions.
+- **The judge is itself tested.** The verdict parser and prompt builder are unit-tested against recorded verdict fixtures, so judge drift is caught without spending tokens and separately from skill regressions.
 - **Cheap model by default.** Judging uses the configured `models.judge` (default: the ladder's weakest model); the judge model never silently follows the execution model upward.
 
 What the judge sees: the task prompt, the transcript (tool calls and results), and any declared output artifact. It scores evidence, not vibes.

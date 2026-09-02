@@ -38,7 +38,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
   /**
    * A transcript that satisfies the alpha contract.
    */
-  protected const string PASS_TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"harness build"}}' . "\n" . '{"type":"result","num_turns":3,"total_cost_usd":0.01,"usage":{"input_tokens":100,"output_tokens":50}}' . "\n";
+  protected const string PASS_TRANSCRIPT = '{"type":"tool_use","name":"Bash","input":{"command":"broker build"}}' . "\n" . '{"type":"result","num_turns":3,"total_cost_usd":0.01,"usage":{"input_tokens":100,"output_tokens":50}}' . "\n";
 
   /**
    * A transcript that violates the alpha contract.
@@ -53,7 +53,7 @@ final class LlmSuiteFunctionalTest extends TestCase {
   /**
    * The base contract every helper eval declares.
    */
-  protected const string CONTRACT = "contract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bharness\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
+  protected const string CONTRACT = "contract:\n  tools:\n    allowed: [Bash]\n    required: [Bash]\n  commands:\n    required:\n      builds: '\\bbroker\\s+build\\b'\n    forbidden:\n      no push: '\\bgit\\s+push\\b'\n";
 
   /**
    * An llm tail whose one task mocks a single MCP tool.

@@ -99,7 +99,6 @@ jobs:
 | [`prd/environments.md`](prd/environments.md) | `host` and `docker` execution environments, lifecycle hooks |
 | [`prd/reporting.md`](prd/reporting.md) | Results schema, reporters, statistics, the regression gate |
 | [`prd/distribution.md`](prd/distribution.md) | PHAR, Docker image, static binary, CI recipes |
-| [`prd/migration.md`](prd/migration.md) | Moving the harness repository from `tests/` to skilltest |
 
 ## Maintenance
 
