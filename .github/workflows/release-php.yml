@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -34,8 +34,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
-          php-version: 8.3
-          tools: composer:2.10
+          php-version: 8.4
 
       - name: Install dependencies
         run: composer install
@@ -48,7 +47,10 @@ jobs:
           version="${INPUTS_VERSION:-${REF_NAME}}"
           echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
           echo "Release version: $version"
-          sed -i "s/\"skilltest-version\": \"development\"/\"skilltest-version\": \"${version}\"/g" box.json
+
+      - name: Set PHAR version
+        run: |
+          sed -i "s/\"skilltest-version\": \"development\"/\"skilltest-version\": \"${RELEASE_VERSION}\"/g" box.json
 
       - name: Build PHAR
         run: composer build
@@ -76,7 +78,7 @@ jobs:
           cat skilltest.phar.sha256
 
       - name: Create Release
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           files: |
