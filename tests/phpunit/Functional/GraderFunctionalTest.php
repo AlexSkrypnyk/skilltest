@@ -13,14 +13,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Class GraderTest.
+ * Class GraderFunctionalTest.
  *
  * Functional test for the offline re-score engine: contract re-evaluation from
  * saved transcripts, runtime-failure preservation, the minimal-model recompute,
  * and re-judging through an injected judge seam so no agent is spawned.
  */
 #[CoversClass(Grader::class)]
-final class GraderTest extends TestCase {
+final class GraderFunctionalTest extends TestCase {
 
   use ResultsDocumentTrait;
 
