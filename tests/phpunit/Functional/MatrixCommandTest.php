@@ -102,7 +102,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root], 0);
+    $output = $this->runMatrix(['--dir' => $root], 0);
 
     $this->assertMatchesRegularExpression('/haiku +3 +\S+ +\S+ +0\.00 +fail/', $output);
     $this->assertMatchesRegularExpression('/sonnet +3 +\S+ +\S+ +1\.00 +pass/', $output);
@@ -114,7 +114,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--interpret' => TRUE], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--interpret' => TRUE], 0);
 
     $this->assertStringContainsString("task 'invoked' on haiku in 'alpha'", $output);
     $this->assertStringContainsString("Strengthen the skill's guidance", $output);
@@ -124,7 +124,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root], 0);
+    $output = $this->runMatrix(['--dir' => $root], 0);
 
     $this->assertStringContainsString('haiku failure modes:', $output);
     $this->assertStringContainsString('contract.commands.forbidden (3x)', $output);
@@ -135,7 +135,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--stop-at-pass' => TRUE], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--trials' => '1', '--stop-at-pass' => TRUE], 0);
 
     $this->assertStringContainsString('stop-at-pass: climbed to the first supporting model per skill.', $output);
     $this->assertMatchesRegularExpression('/sonnet +1 +\S+ +\S+ +1\.00 +pass/', $output);
@@ -147,7 +147,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--estimate' => TRUE], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--estimate' => TRUE], 0);
 
     $this->assertStringContainsString('matrix plan (nothing runs with --estimate):', $output);
     // One skill, one task, three ladder models, three trials: 9 trials.
@@ -166,7 +166,7 @@ final class MatrixCommandTest extends TestCase {
     putenv(self::SECRET_ENV);
     putenv('HOME=' . $root . '/no-home');
 
-    $output = $this->runCommand(['--dir' => $root, '--estimate' => TRUE], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--estimate' => TRUE], 0);
 
     $this->assertStringContainsString('total trials: 9', $output);
   }
@@ -175,7 +175,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runCommand(['--dir' => $root, '--estimate' => TRUE, '--json' => TRUE], 0));
+    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--estimate' => TRUE, '--json' => TRUE], 0));
 
     $this->assertTrue($decoded['estimate']);
     $this->assertSame(9, $decoded['total_trials']);
@@ -187,7 +187,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo(skills: ['alpha', 'beta']);
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--trials' => '1'], 0);
 
     $this->assertStringContainsString('all skills', $output);
     $this->assertMatchesRegularExpression('/alpha +0\.00 +1\.00 +1\.00 +sonnet/', $output);
@@ -198,7 +198,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo(skills: ['alpha', 'beta']);
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--format' => 'markdown'], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--trials' => '1', '--format' => 'markdown'], 0);
 
     $this->assertStringContainsString('### alpha', $output);
     $this->assertStringContainsString('### all skills', $output);
@@ -213,7 +213,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo(rubric: TRUE);
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runCommand(['--dir' => $root, '--trials' => '1', '--json' => TRUE], 0));
+    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--trials' => '1', '--json' => TRUE], 0));
 
     $models = $this->pathArray($decoded, 'skills', 0, 'llm', 'tasks', 0, 'models');
     $this->assertCount(3, $models);
@@ -228,7 +228,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runCommand(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
+    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
 
     $this->assertMatchesResultsSchema((string) json_encode($decoded));
     $this->assertSame('matrix', $this->path($decoded, 'run', 'command'));
@@ -240,7 +240,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 0);
+    $this->runMatrix(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 0);
 
     $results = glob($root . '/runs/*/results.json') ?: [];
     $this->assertCount(1, $results);
@@ -252,7 +252,7 @@ final class MatrixCommandTest extends TestCase {
     $this->useAgent($this->modelAgent($root));
     $file = $root . '/matrix.json';
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--output' => $file], 0);
+    $this->runMatrix(['--dir' => $root, '--trials' => '1', '--output' => $file], 0);
 
     $this->assertFileExists($file);
     $this->assertMatchesResultsSchema((string) file_get_contents($file));
@@ -262,7 +262,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--format' => 'xml'], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--format' => 'xml'], 2);
 
     $this->assertStringContainsString('unknown format; expected one of: text, markdown', $output);
   }
@@ -271,7 +271,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--parallel' => 'abc'], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--parallel' => 'abc'], 2);
 
     $this->assertStringContainsString('--parallel must be an integer', $output);
   }
@@ -280,7 +280,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--parallel' => '0'], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--parallel' => '0'], 2);
 
     $this->assertStringContainsString('--parallel must be at least 1', $output);
   }
@@ -289,7 +289,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--env' => 'docker'], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--env' => 'docker'], 2);
 
     $this->assertStringContainsString('docker environment is not yet implemented', $output);
   }
@@ -299,7 +299,7 @@ final class MatrixCommandTest extends TestCase {
     mkdir($root . '/empty-path', 0777, TRUE);
     putenv('PATH=' . $root . '/empty-path');
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runMatrix(['--dir' => $root], 2);
 
     $this->assertStringContainsString("the 'claude' agent was not found on PATH", $output);
   }
@@ -308,7 +308,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--skill' => ['nope-*']], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--skill' => ['nope-*']], 2);
 
     $this->assertStringContainsString('no skills matched --skill nope-*', $output);
   }
@@ -318,7 +318,7 @@ final class MatrixCommandTest extends TestCase {
     $this->useAgent($this->modelAgent($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "mystery: true\n", FILE_APPEND);
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 0);
+    $output = $this->runMatrix(['--dir' => $root, '--trials' => '1'], 0);
 
     $this->assertStringContainsString('WARNING', $output);
     $this->assertStringContainsString('mystery', $output);
@@ -329,7 +329,7 @@ final class MatrixCommandTest extends TestCase {
     $this->useAgent($this->modelAgent($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n    forbidden: [Bash]\nllm:\n  tasks:\n    - name: invoked\n      prompt: go\n");
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runMatrix(['--dir' => $root], 2);
 
     $this->assertStringContainsString("tool 'Bash' is in both required and forbidden", $output);
   }
@@ -338,7 +338,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo(tasks: FALSE);
     $this->useAgent($this->modelAgent($root));
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runMatrix(['--dir' => $root], 2);
 
     $this->assertStringContainsString('no llm tasks are declared', $output);
   }
@@ -348,7 +348,7 @@ final class MatrixCommandTest extends TestCase {
     $this->useAgent($this->modelAgent($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "contract: [bad\n");
 
-    $output = $this->runCommand(['--dir' => $root, '--json' => TRUE], 2);
+    $output = $this->runMatrix(['--dir' => $root, '--json' => TRUE], 2);
 
     $decoded = $this->decode($output);
     $this->assertFalse($decoded['ok']);
@@ -438,7 +438,7 @@ final class MatrixCommandTest extends TestCase {
    * @return string
    *   The combined command output.
    */
-  protected function runCommand(array $input, int $expected_exit): string {
+  protected function runMatrix(array $input, int $expected_exit): string {
     $this->applicationInitFromCommand(MatrixCommand::class);
     $this->applicationGetTester()->run($input, ['capture_stderr_separately' => TRUE]);
 

@@ -104,7 +104,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '3'], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '3'], 0);
 
     $this->assertStringContainsString('alpha invoked haiku PASS (pass_rate 1.00, 3/3 trials)', $output);
     $this->assertStringContainsString('3 trial(s)', $output);
@@ -115,7 +115,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '2', '--keep-workspace' => TRUE], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '2', '--keep-workspace' => TRUE], 0);
 
     $kept = glob($root . '/.skilltest/tmp/ws-*') ?: [];
     $this->assertCount(2, $kept, 'Both trial workspaces should be preserved.');
@@ -126,14 +126,14 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+    $this->runLlm(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
 
     // A second cached run with a now-failing agent still passes, proving the
     // agent was not re-executed.
     $this->applicationTearDown();
     $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
 
     $this->assertStringContainsString('alpha invoked haiku PASS', $output);
     $this->assertStringContainsString('(cached)', $output);
@@ -143,12 +143,12 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
+    $this->runLlm(['--dir' => $root, '--trials' => '1', '--cache' => TRUE], 0);
 
     $this->applicationTearDown();
     $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--no-cache' => TRUE], 1);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1', '--no-cache' => TRUE], 1);
 
     $this->assertStringContainsString('alpha invoked haiku FAIL', $output);
     $this->assertStringNotContainsString('(cached)', $output);
@@ -159,7 +159,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     file_put_contents($root . '/skilltest.yml', "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n  default: haiku\nllm:\n  lifecycle:\n    before-task:\n      - command: exit 7\n        error-on-fail: true\n");
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 2);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1'], 2);
 
     $this->assertStringContainsString("lifecycle before-task hook 'exit 7' failed with exit 7", $output);
   }
@@ -169,7 +169,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     file_put_contents($root . '/skilltest.yml', "version: \"1\"\nmodels:\n  aliases:\n    haiku: claude-haiku-4-5\n  default: haiku\nllm:\n  lifecycle:\n    after-run:\n      - command: exit 4\n");
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1'], 0);
 
     $this->assertStringContainsString("WARNING lifecycle after-run hook 'exit 4' failed", $output);
   }
@@ -178,7 +178,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '3'], 1);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '3'], 1);
 
     $this->assertStringContainsString('alpha invoked haiku FAIL (pass_rate 0.00, 0/3 trials)', $output);
     $this->assertStringContainsString("contract.commands.forbidden FAIL - forbidden behaviour 'no push'", $output);
@@ -188,7 +188,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 1);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 1);
 
     $this->assertStringContainsString("task 'invoked' on haiku in 'alpha'", $output);
     $this->assertStringContainsString("Strengthen the skill's guidance", $output);
@@ -198,7 +198,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '3', '--interpret' => TRUE], 0);
 
     $this->assertStringContainsString('check(s) passed', $output);
   }
@@ -207,10 +207,10 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $serial = $this->model($this->decode($this->runCommand(['--dir' => $root, '--trials' => '3', '--parallel' => '1', '--json' => TRUE], 0)));
+    $serial = $this->model($this->decode($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '1', '--json' => TRUE], 0)));
 
     $this->applicationTearDown();
-    $parallel = $this->model($this->decode($this->runCommand(['--dir' => $root, '--trials' => '3', '--parallel' => '3', '--json' => TRUE], 0)));
+    $parallel = $this->model($this->decode($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '3', '--json' => TRUE], 0)));
 
     $this->assertSame($serial, $parallel);
   }
@@ -221,7 +221,7 @@ final class LlmCommandTest extends TestCase {
     putenv(LlmSuite::ENV_TIMEOUT . '=0.5');
 
     $started = microtime(TRUE);
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 1);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1'], 1);
 
     $this->assertLessThan(4.0, microtime(TRUE) - $started);
     $this->assertStringContainsString('timed out', $output);
@@ -233,7 +233,7 @@ final class LlmCommandTest extends TestCase {
     putenv(self::SECRET_ENV);
     putenv('HOME=' . $root . '/no-home');
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runLlm(['--dir' => $root], 2);
 
     $this->assertStringContainsString('no agent credentials found', $output);
   }
@@ -243,7 +243,7 @@ final class LlmCommandTest extends TestCase {
     mkdir($root . '/empty-path', 0777, TRUE);
     putenv('PATH=' . $root . '/empty-path');
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runLlm(['--dir' => $root], 2);
 
     $this->assertStringContainsString("the 'claude' agent was not found on PATH", $output);
   }
@@ -252,7 +252,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--parallel' => '0'], 2);
+    $output = $this->runLlm(['--dir' => $root, '--parallel' => '0'], 2);
 
     $this->assertStringContainsString('--parallel must be at least 1', $output);
   }
@@ -261,7 +261,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--parallel' => 'abc'], 2);
+    $output = $this->runLlm(['--dir' => $root, '--parallel' => 'abc'], 2);
 
     $this->assertStringContainsString('--parallel must be an integer', $output);
   }
@@ -270,7 +270,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useDocker($this->dockerStub($root, 'ok', self::PASS_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--env' => 'docker'], 0);
+    $output = $this->runLlm(['--dir' => $root, '--env' => 'docker'], 0);
 
     $this->assertStringContainsString('alpha invoked haiku PASS', $output);
     $this->assertSame([], glob($root . '/.skilltest/tmp/ws-*') ?: [], 'Trial workspaces should be cleaned up.');
@@ -280,7 +280,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useDocker($this->dockerStub($root, 'down', NULL, 1));
 
-    $output = $this->runCommand(['--dir' => $root, '--env' => 'docker'], 2);
+    $output = $this->runLlm(['--dir' => $root, '--env' => 'docker'], 2);
 
     $this->assertStringContainsString('Docker daemon is not reachable', $output);
   }
@@ -289,7 +289,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo(tasks: FALSE);
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runLlm(['--dir' => $root], 2);
 
     $this->assertStringContainsString('no llm tasks are declared', $output);
   }
@@ -298,7 +298,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $output = $this->runCommand(['--dir' => $root, '--skill' => ['nope-*']], 2);
+    $output = $this->runLlm(['--dir' => $root, '--skill' => ['nope-*']], 2);
 
     $this->assertStringContainsString('no skills matched --skill nope-*', $output);
   }
@@ -308,7 +308,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "contract: [bad\n");
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runLlm(['--dir' => $root], 2);
 
     $this->assertStringContainsString('malformed YAML', $output);
   }
@@ -318,7 +318,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n    forbidden: [Bash]\nllm:\n  tasks:\n    - name: invoked\n      prompt: go\n");
 
-    $output = $this->runCommand(['--dir' => $root], 2);
+    $output = $this->runLlm(['--dir' => $root], 2);
 
     $this->assertStringContainsString("tool 'Bash' is in both required and forbidden", $output);
   }
@@ -327,7 +327,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $decoded = $this->decode($this->runCommand(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
+    $decoded = $this->decode($this->runLlm(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
 
     $this->assertSame('llm', $this->path($decoded, 'run', 'command'));
     $this->assertSame('alpha', $this->path($decoded, 'skills', 0, 'skill'));
@@ -343,7 +343,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 0);
+    $this->runLlm(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 0);
 
     $results = glob($root . '/runs/*/results.json') ?: [];
     $this->assertCount(1, $results);
@@ -359,7 +359,7 @@ final class LlmCommandTest extends TestCase {
     $secret = 'sk-fake-credential-value';
     $this->useAgent($this->stub($root, 'leak', '{"type":"result","note":"token ' . $secret . '"}'));
 
-    $this->runCommand(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 1);
+    $this->runLlm(['--dir' => $root, '--trials' => '1', '--output-dir' => $root . '/runs'], 1);
 
     $transcripts = glob($root . '/runs/*/artifacts/*.jsonl') ?: [];
     $content = (string) file_get_contents($transcripts[0]);
@@ -372,7 +372,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     $file = $root . '/results-out.json';
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--output' => $file], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1', '--output' => $file], 0);
 
     $this->assertFileExists($file);
     $this->assertMatchesResultsSchema((string) file_get_contents($file));
@@ -384,7 +384,7 @@ final class LlmCommandTest extends TestCase {
     $this->useAgent($this->passStub($root));
     file_put_contents($root . '/skills/alpha/eval.yaml', "mystery: true\n", FILE_APPEND);
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1'], 0);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1'], 0);
 
     $this->assertStringContainsString('WARNING', $output);
     $this->assertStringContainsString('mystery', $output);
@@ -393,7 +393,7 @@ final class LlmCommandTest extends TestCase {
   public function testDefaultsToCurrentDirectory(): void {
     $this->useAgent('claude');
 
-    $output = $this->runCommand([], 2);
+    $output = $this->runLlm([], 2);
 
     $this->assertStringContainsString('no skills found under the configured skills paths', $output);
   }
@@ -402,7 +402,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useDocker($this->dockerStub($root, 'down', NULL, 1));
 
-    $decoded = $this->decode($this->runCommand(['--dir' => $root, '--env' => 'docker', '--json' => TRUE], 2));
+    $decoded = $this->decode($this->runLlm(['--dir' => $root, '--env' => 'docker', '--json' => TRUE], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
@@ -413,7 +413,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->stub($root, 'fail', self::FAIL_STREAM));
 
-    $output = $this->runCommand(['--dir' => $root, '--trials' => '1', '--quiet' => TRUE], 1);
+    $output = $this->runLlm(['--dir' => $root, '--trials' => '1', '--quiet' => TRUE], 1);
 
     $this->assertStringContainsString('alpha invoked haiku FAIL', $output);
     $this->assertStringNotContainsString('verdict(s) across', $output);
@@ -584,7 +584,7 @@ final class LlmCommandTest extends TestCase {
    * @return string
    *   The combined command output.
    */
-  protected function runCommand(array $input, int $expected_exit): string {
+  protected function runLlm(array $input, int $expected_exit): string {
     $this->applicationInitFromCommand(LlmCommand::class);
     $this->applicationGetTester()->run($input, ['capture_stderr_separately' => TRUE]);
 
