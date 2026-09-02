@@ -26,8 +26,8 @@ final readonly class LineDiff {
    *   '+' (only in new).
    */
   public static function unified(string $old, string $new): string {
-    $a = explode("\n", $old);
-    $b = explode("\n", $new);
+    $a = preg_split('/\R/', $old) ?: [];
+    $b = preg_split('/\R/', $new) ?: [];
     $table = self::table($a, $b);
 
     $rows = count($a);

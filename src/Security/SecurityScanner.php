@@ -153,7 +153,7 @@ final readonly class SecurityScanner {
     // @codeCoverageIgnoreEnd
     $findings = [];
 
-    foreach (explode("\n", $contents) as $index => $line) {
+    foreach (preg_split('/\R/', $contents) ?: [] as $index => $line) {
       $number = $index + 1;
       $evidence = trim($line);
 

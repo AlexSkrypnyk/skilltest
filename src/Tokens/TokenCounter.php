@@ -235,7 +235,7 @@ final class TokenCounter {
 
     $ranks = [];
 
-    foreach (explode("\n", $content) as $index => $line) {
+    foreach (preg_split('/\R/', $content) ?: [] as $index => $line) {
       $trimmed = trim($line);
 
       if ($trimmed === '') {

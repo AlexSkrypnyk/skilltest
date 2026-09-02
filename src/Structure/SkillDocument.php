@@ -80,7 +80,7 @@ final readonly class SkillDocument {
    *   The parsed document.
    */
   public static function fromString(string $content): self {
-    $lines = explode("\n", $content);
+    $lines = preg_split('/\R/', $content) ?: [];
 
     if (rtrim($lines[0], "\r") !== self::FENCE) {
       return new self($content, FALSE, FALSE, [], $content, 1);
