@@ -137,7 +137,7 @@ class RecordCommand extends Command {
     $existed = is_file($path);
 
     if ($existed && !$input->getOption('force')) {
-      return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relative($root, $path))));
+      return $this->reportError($stderr, ValidationMessage::error('', '', sprintf('fixture %s already exists; pass --force to overwrite.', $this->relativePath($root, $path))));
     }
 
     $environment = $skill->effective->environment;
@@ -173,10 +173,10 @@ class RecordCommand extends Command {
     $checks = $this->grade($root, $loaded, $skill, $path, $result->exitCode);
     $pass = array_reduce($checks, static fn(bool $carry, CheckResult $result): bool => $carry && $result->pass, TRUE);
 
-    $this->report($output, $skill, $entry['name'], $model_id, $this->relative($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
+    $this->report($output, $skill, $entry['name'], $model_id, $this->relativePath($root, $path), $existed && (bool) $input->getOption('force'), $checks, $pass);
 
     if ($skill->effective->transcript === NULL) {
-      $stderr->writeln(sprintf("note: set 'deterministic.transcript: %s' in %s so the deterministic run consumes this fixture.", self::DEFAULT_FIXTURE, $this->relative($root, $skill->file)));
+      $stderr->writeln(sprintf("note: set 'deterministic.transcript: %s' in %s so the deterministic run consumes this fixture.", self::DEFAULT_FIXTURE, $this->relativePath($root, $skill->file)));
     }
 
     return $pass ? ExitCode::PASS : ExitCode::FAIL;
@@ -454,7 +454,7 @@ class RecordCommand extends Command {
    * @return string
    *   The path relative to the root, or unchanged when it is outside the root.
    */
-  protected function relative(string $root, string $path): string {
+  protected function relativePath(string $root, string $path): string {
     $prefix = rtrim($root, '/') . '/';
 
     return str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path;

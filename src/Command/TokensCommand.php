@@ -146,7 +146,7 @@ class TokensCommand extends Command {
 
       if (is_dir($absolute)) {
         foreach (SkillFiles::markdownUnder($absolute) as $file) {
-          $rows[$this->displayPath($root, $file)] = $counter->count($this->contents($file));
+          $rows[$this->relativePath($root, $file)] = $counter->count($this->contents($file));
         }
 
         continue;
@@ -156,7 +156,7 @@ class TokensCommand extends Command {
         return $this->error($output, sprintf("path '%s' does not exist.", $target));
       }
 
-      $rows[$this->displayPath($root, $absolute)] = $counter->count($this->contents($absolute));
+      $rows[$this->relativePath($root, $absolute)] = $counter->count($this->contents($absolute));
     }
 
     $rows = $this->sortRows($rows, $sort);
@@ -258,7 +258,7 @@ class TokensCommand extends Command {
       $marker = $dir . '/' . Discovery::MARKER;
 
       foreach (SkillFiles::markdownUnder($dir) as $file) {
-        $relative = $this->displayPath($root, $file);
+        $relative = $this->relativePath($root, $file);
         $ref_content = $git->contentAt($ref, $relative);
 
         $deltas[] = new TokenDelta($relative, $counter->count($this->contents($file)), $ref_content === NULL ? NULL : $counter->count($ref_content));
@@ -536,7 +536,7 @@ class TokensCommand extends Command {
    * @return string
    *   The root-relative path, or the path unchanged.
    */
-  protected function displayPath(string $root, string $path): string {
+  protected function relativePath(string $root, string $path): string {
     $prefix = rtrim($root, '/') . '/';
 
     return str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path;
