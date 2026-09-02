@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
@@ -517,7 +518,7 @@ class TokensCommand extends Command {
    *   The resolved path.
    */
   protected function absoluteTarget(string $root, string $target): string {
-    if (file_exists($target)) {
+    if (File::exists($target)) {
       return $target;
     }
 
@@ -551,10 +552,13 @@ class TokensCommand extends Command {
    *   The file contents.
    */
   protected function contents(string $path): string {
-    $content = @file_get_contents($path);
-
+    try {
+      return File::read($path);
+    }
     // @codeCoverageIgnoreStart
-    return $content === FALSE ? '' : $content;
+    catch (\Throwable) {
+      return '';
+    }
     // @codeCoverageIgnoreEnd
   }
 

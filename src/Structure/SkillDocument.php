@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Structure;
 
+use AlexSkrypnyk\File\File;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -61,9 +62,14 @@ final readonly class SkillDocument {
    *   The parsed document; an unreadable file yields empty, absent frontmatter.
    */
   public static function fromFile(string $path): self {
-    $content = @file_get_contents($path);
+    try {
+      $content = File::read($path);
+    }
+    catch (\Throwable) {
+      $content = '';
+    }
 
-    return self::fromString($content === FALSE ? '' : $content);
+    return self::fromString($content);
   }
 
   /**

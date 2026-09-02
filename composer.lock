@@ -4,8 +4,76 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4dd43c270e9e42317098dfd3f0ab2b15",
+    "content-hash": "a5fbb46491f07433a26a599543174183",
     "packages": [
+        {
+            "name": "alexskrypnyk/file",
+            "version": "0.19.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AlexSkrypnyk/file.git",
+                "reference": "4f8bece45ccf32c09ada458c066d3c8046858aba"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AlexSkrypnyk/file/zipball/4f8bece45ccf32c09ada458c066d3c8046858aba",
+                "reference": "4f8bece45ccf32c09ada458c066d3c8046858aba",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/filesystem": "^7.2"
+            },
+            "require-dev": {
+                "alexskrypnyk/phpunit-helpers": "^0.15.0",
+                "dealerdirect/phpcodesniffer-composer-installer": "^1",
+                "drevops/phpcs-standard": "^0.6",
+                "drupal/coder": "^8.3",
+                "ergebnis/composer-normalize": "^2.42",
+                "phpbench/phpbench": "^1.4",
+                "phpstan/phpstan": "^2",
+                "phpunit/phpunit": "^11",
+                "rector/rector": "^2"
+            },
+            "suggest": {
+                "phpunit/phpunit": "Required for using FileAssertionsTrait and DirectoryAssertionsTrait (^11)"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AlexSkrypnyk\\File\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Alex Skrypnyk",
+                    "email": "alex@drevops.com",
+                    "homepage": "https://alexskrypnyk.com",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "Provides file manipulations functionality.",
+            "homepage": "https://github.com/alexskrypnyk/file",
+            "support": {
+                "issues": "https://github.com/alexskrypnyk/file/issues",
+                "source": "https://github.com/alexskrypnyk/file"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/alexskrypnyk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://www.patreon.com/alexskrypnyk",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2025-12-23T00:38:01+00:00"
+        },
         {
             "name": "justinrainbow/json-schema",
             "version": "6.11.0",
@@ -365,6 +433,76 @@
                 }
             ],
             "time": "2026-06-05T06:23:12+00:00"
+        },
+        {
+            "name": "symfony/filesystem",
+            "version": "v7.4.11",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/filesystem.git",
+                "reference": "d721ea61b4a5fba8c5b6e7c1feda19efea144b50"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/d721ea61b4a5fba8c5b6e7c1feda19efea144b50",
+                "reference": "d721ea61b4a5fba8c5b6e7c1feda19efea144b50",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/polyfill-ctype": "~1.8",
+                "symfony/polyfill-mbstring": "~1.8"
+            },
+            "require-dev": {
+                "symfony/process": "^6.4|^7.0|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Filesystem\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides basic utilities for the filesystem",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/filesystem/tree/v7.4.11"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-05-11T16:38:44+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -4034,76 +4172,6 @@
             "time": "2024-10-20T05:08:20+00:00"
         },
         {
-            "name": "symfony/filesystem",
-            "version": "v7.4.11",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/filesystem.git",
-                "reference": "d721ea61b4a5fba8c5b6e7c1feda19efea144b50"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/d721ea61b4a5fba8c5b6e7c1feda19efea144b50",
-                "reference": "d721ea61b4a5fba8c5b6e7c1feda19efea144b50",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.2",
-                "symfony/polyfill-ctype": "~1.8",
-                "symfony/polyfill-mbstring": "~1.8"
-            },
-            "require-dev": {
-                "symfony/process": "^6.4|^7.0|^8.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Filesystem\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Provides basic utilities for the filesystem",
-            "homepage": "https://symfony.com",
-            "support": {
-                "source": "https://github.com/symfony/filesystem/tree/v7.4.11"
-            },
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/nicolas-grekas",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2026-05-11T16:38:44+00:00"
-        },
-        {
             "name": "symfony/finder",
             "version": "v7.4.14",
             "source": {
@@ -4296,5 +4364,8 @@
         "php": ">=8.3"
     },
     "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.3.0"
+    },
     "plugin-api-version": "2.9.0"
 }

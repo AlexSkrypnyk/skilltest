@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Structure;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
@@ -600,7 +601,7 @@ final class StructureChecker {
         return StructureResult::fail($id, $name, sprintf("referenced file '%s' escapes the skill directory.", $path), $file, $line, $path);
       }
 
-      if (!file_exists($dir . '/' . $path)) {
+      if (!File::exists($dir . '/' . $path)) {
         return StructureResult::fail($id, $name, sprintf("referenced file '%s' does not exist in the skill directory.", $path), $file, $line, $path);
       }
     }
@@ -637,10 +638,11 @@ final class StructureChecker {
         continue;
       }
 
-      $contents = @file_get_contents($absolute);
-
+      try {
+        $contents = File::read($absolute);
+      }
       // @codeCoverageIgnoreStart
-      if ($contents === FALSE) {
+      catch (\Throwable) {
         continue;
       }
       // @codeCoverageIgnoreEnd

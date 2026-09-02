@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\DockerConfig;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
@@ -150,10 +151,10 @@ final class DockerEnvironment implements EnvironmentInterface {
    *   prepared.
    */
   public function prepare(): void {
-    // Same guarded mkdir as the host: a concurrent run may create the base
-    // between the check and the mkdir, so a failed mkdir is only an error when
-    // the directory still does not exist.
-    if (!is_dir($this->workspaceBase) && !@mkdir($this->workspaceBase, 0777, TRUE) && !is_dir($this->workspaceBase)) {
+    try {
+      File::mkdir($this->workspaceBase);
+    }
+    catch (\Throwable) {
       throw new ConfigException(sprintf("could not create the workspace base directory '%s'.", $this->workspaceBase));
     }
 
@@ -234,8 +235,8 @@ final class DockerEnvironment implements EnvironmentInterface {
       ($this->docker)($this->binary . ' rmi -f ' . escapeshellarg($this->builtImage), $this->root);
     }
 
-    if (is_dir($this->workspaceBase) && (scandir($this->workspaceBase) ?: []) === ['.', '..']) {
-      rmdir($this->workspaceBase);
+    if (is_dir($this->workspaceBase) && File::dirIsEmpty($this->workspaceBase)) {
+      File::rmdir($this->workspaceBase);
     }
   }
 
@@ -332,16 +333,11 @@ final class DockerEnvironment implements EnvironmentInterface {
     $tag = 'skilltest-run-' . $this->runId;
     $context = $this->workspaceBase . '/build-' . $this->runId;
 
-    if (!is_dir($context)) {
-      mkdir($context, 0777, TRUE);
-    }
-
-    file_put_contents($context . '/Dockerfile', sprintf("FROM %s\n%s\n", $this->config->image, $setup));
+    File::dump($context . '/Dockerfile', sprintf("FROM %s\n%s\n", $this->config->image, $setup));
 
     [$build] = ($this->docker)($this->binary . ' build -t ' . escapeshellarg($tag) . ' ' . escapeshellarg($context), $this->root);
 
-    unlink($context . '/Dockerfile');
-    rmdir($context);
+    File::rmdir($context);
 
     if ($build !== 0) {
       throw new ConfigException(sprintf("could not build the docker run image from '%s'.", $this->config->image));

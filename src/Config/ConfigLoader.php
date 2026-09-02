@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Config;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -134,10 +135,11 @@ final readonly class ConfigLoader {
    *   When the file will not parse or is not a mapping.
    */
   protected function parseFile(string $file): array {
-    $contents = file_get_contents($file);
-
+    try {
+      $contents = File::read($file);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       throw new ConfigException('unable to read file.', $file);
     }
     // @codeCoverageIgnoreEnd

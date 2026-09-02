@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
@@ -85,11 +86,12 @@ final class HostEnvironment implements EnvironmentInterface {
    *   When the workspace base directory cannot be created.
    */
   public function prepare(): void {
-    // A concurrent run may create the base between the check and the mkdir, so
-    // a failed mkdir is only an error when the directory still does not exist;
-    // that leaves an unwritable scratch area an explicit failure here rather
-    // than a confusing one later in setup().
-    if (!is_dir($this->workspaceBase) && !@mkdir($this->workspaceBase, 0777, TRUE) && !is_dir($this->workspaceBase)) {
+    // An unwritable scratch area is an explicit failure here rather than a
+    // confusing one later in setup().
+    try {
+      File::mkdir($this->workspaceBase);
+    }
+    catch (\Throwable) {
       throw new ConfigException(sprintf("could not create the workspace base directory '%s'.", $this->workspaceBase));
     }
   }
@@ -150,8 +152,8 @@ final class HostEnvironment implements EnvironmentInterface {
     // Remove the run's scratch area, but only once it is empty, so a concurrent
     // run's workspaces under the same base - and any preserved by retention -
     // are never disturbed.
-    if (is_dir($this->workspaceBase) && (scandir($this->workspaceBase) ?: []) === ['.', '..']) {
-      rmdir($this->workspaceBase);
+    if (is_dir($this->workspaceBase) && File::dirIsEmpty($this->workspaceBase)) {
+      File::rmdir($this->workspaceBase);
     }
   }
 

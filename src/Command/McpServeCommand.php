@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockServer;
@@ -68,7 +69,7 @@ class McpServeCommand extends Command {
       return ExitCode::CONFIG_ERROR;
     }
 
-    $data = json_decode((string) file_get_contents($config), TRUE);
+    $data = json_decode(File::read($config), TRUE);
     $name = is_array($data) ? Data::toStringOrNull(Data::get($data, 'server')) : NULL;
 
     if (!is_array($data) || $name === NULL || $name === '') {

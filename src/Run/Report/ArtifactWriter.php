@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Run\Report;
 
-use AlexSkrypnyk\SkillTest\Run\WritesFilesTrait;
+use AlexSkrypnyk\File\File;
 
 /**
  * Writes a single reporter artifact - JUnit XML or a session log - to disk.
@@ -15,8 +15,6 @@ use AlexSkrypnyk\SkillTest\Run\WritesFilesTrait;
  * silently when a write does not land.
  */
 final readonly class ArtifactWriter {
-
-  use WritesFilesTrait;
 
   /**
    * Writes content to a file, creating missing parent directories.
@@ -30,8 +28,7 @@ final readonly class ArtifactWriter {
    *   The path written.
    */
   public function write(string $file, string $content): string {
-    $this->ensureDir(dirname($file));
-    $this->put($file, $content);
+    File::dump($file, $content);
 
     return $file;
   }

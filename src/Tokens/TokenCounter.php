@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tokens;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
@@ -226,9 +227,10 @@ final class TokenCounter {
    *   When the file cannot be read, a line is malformed, or no ranks parse.
    */
   protected function loadVocab(string $path): array {
-    $content = @file_get_contents($path);
-
-    if ($content === FALSE) {
+    try {
+      $content = File::read($path);
+    }
+    catch (\Throwable) {
       throw new ConfigException(sprintf("vocabulary file '%s' cannot be read.", $path), $path);
     }
 

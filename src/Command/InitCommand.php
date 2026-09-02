@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Ai\PromptRunner;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Init\AiDraft;
@@ -81,10 +82,11 @@ class InitCommand extends Command {
       return ExitCode::CONFIG_ERROR;
     }
 
-    $contents = file_get_contents($skill_file);
-
+    try {
+      $contents = File::read($skill_file);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       $output->writeln(sprintf('ERROR could not read %s.', $skill_file));
 
       return ExitCode::CONFIG_ERROR;
@@ -101,8 +103,11 @@ class InitCommand extends Command {
       return $this->preview($target, $proposed, $output);
     }
 
+    try {
+      File::dump($target, $proposed);
+    }
     // @codeCoverageIgnoreStart
-    if (file_put_contents($target, $proposed) === FALSE) {
+    catch (\Throwable) {
       $output->writeln(sprintf('ERROR could not write %s.', $target));
 
       return ExitCode::CONFIG_ERROR;
@@ -223,10 +228,11 @@ class InitCommand extends Command {
    *   The fail exit code.
    */
   protected function preview(string $target, string $proposed, OutputInterface $output): int {
-    $existing = file_get_contents($target);
-
+    try {
+      $existing = File::read($target);
+    }
     // @codeCoverageIgnoreStart
-    if ($existing === FALSE) {
+    catch (\Throwable) {
       $existing = '';
     }
     // @codeCoverageIgnoreEnd

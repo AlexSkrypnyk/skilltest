@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
@@ -334,13 +335,7 @@ class RecordCommand extends Command {
 
     $contents = Redactor::fromEnvironment($this->environmentMap(), $redact)->redactString($transcript);
 
-    $dir = dirname($path);
-
-    if (!is_dir($dir)) {
-      mkdir($dir, 0777, TRUE);
-    }
-
-    file_put_contents($path, $contents);
+    File::dump($path, $contents);
   }
 
   /**

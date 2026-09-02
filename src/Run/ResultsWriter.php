@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Run;
 
+use AlexSkrypnyk\File\File;
+
 /**
  * Persists a results document to disk, redacted, in either supported layout.
  *
@@ -15,8 +17,6 @@ namespace AlexSkrypnyk\SkillTest\Run;
  * written, so no persisted artifact carries an environment secret.
  */
 final readonly class ResultsWriter {
-
-  use WritesFilesTrait;
 
   /**
    * The results filename inside a run directory.
@@ -45,8 +45,7 @@ final readonly class ResultsWriter {
    *   The path written.
    */
   public function writeFile(array $document, string $file): string {
-    $this->ensureDir(dirname($file));
-    $this->put($file, $this->encode($document));
+    File::dump($file, $this->encode($document));
 
     return $file;
   }
@@ -69,13 +68,11 @@ final readonly class ResultsWriter {
    */
   public function writeDir(array $document, string $dir, string $timestamp, array $artifacts = []): string {
     $run_dir = rtrim($dir, '/') . '/' . $timestamp;
-    $this->ensureDir($run_dir);
-    $this->put($run_dir . '/' . self::RESULTS_FILE, $this->encode($document));
+    File::mkdir($run_dir);
+    File::dump($run_dir . '/' . self::RESULTS_FILE, $this->encode($document));
 
     foreach ($artifacts as $relative => $content) {
-      $target = $run_dir . '/' . $relative;
-      $this->ensureDir(dirname($target));
-      $this->put($target, $this->redactor->redactString($content));
+      File::dump($run_dir . '/' . $relative, $this->redactor->redactString($content));
     }
 
     return $run_dir;

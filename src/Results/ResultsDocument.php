@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Results;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
@@ -79,10 +80,11 @@ final readonly class ResultsDocument {
       throw new ResultsException(sprintf('results file not found: %s.', $path));
     }
 
-    $contents = file_get_contents($path);
-
+    try {
+      $contents = File::read($path);
+    }
     // @codeCoverageIgnoreStart
-    if ($contents === FALSE) {
+    catch (\Throwable) {
       throw new ResultsException(sprintf('results file could not be read: %s.', $path));
     }
     // @codeCoverageIgnoreEnd

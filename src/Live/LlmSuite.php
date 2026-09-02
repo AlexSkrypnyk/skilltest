@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\File\File;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\Glob;
@@ -763,7 +764,7 @@ final readonly class LlmSuite {
    */
   protected function customChecks(EffectiveConfig $effective, string $stdout, TrialWorkspace $workspace): array {
     $file = $workspace->path() . '/.skilltest-transcript.jsonl';
-    file_put_contents($file, $stdout);
+    File::dump($file, $stdout);
 
     $custom = new CustomCheck($this->root, $this->checkRunner);
     $skill_dir = $this->root . '/' . $effective->path;
