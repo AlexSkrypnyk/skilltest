@@ -231,13 +231,7 @@ class RunCommand extends Command {
    *   The results document.
    */
   protected function document(RunReport $report, LoadedConfig $filtered, float $started, string $started_at): array {
-    return $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
-      'id' => 'st-' . date('Ymd-His'),
-      'started' => $started_at,
-      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
-      'command' => 'run',
-      'environment' => $filtered->repo->environment,
-    ]);
+    return $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], $this->runMetadata($started, $started_at, 'run', $filtered->repo->environment));
   }
 
   /**

@@ -168,13 +168,7 @@ class MatrixCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [$this->toMessage($config_exception)]);
     }
 
-    $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
-      'id' => 'st-' . date('Ymd-His'),
-      'started' => $started_at,
-      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
-      'command' => 'matrix',
-      'environment' => $environment,
-    ]);
+    $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], $this->runMetadata($started, $started_at, 'matrix', $environment));
 
     $output_file = $this->stringOption($input, 'output');
     $output_dir = $this->stringOption($input, 'output-dir');

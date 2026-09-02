@@ -100,6 +100,31 @@ trait LiveOptionsTrait {
   }
 
   /**
+   * Builds the results-document run block for a finished command run.
+   *
+   * @param float $started
+   *   The microtime the command started.
+   * @param string $started_at
+   *   The ISO-8601 start timestamp.
+   * @param string $command
+   *   The command name recorded in the document.
+   * @param string $environment
+   *   The execution environment recorded in the document.
+   *
+   * @return array<string, mixed>
+   *   The run block.
+   */
+  protected function runMetadata(float $started, string $started_at, string $command, string $environment): array {
+    return [
+      'id' => 'st-' . date('Ymd-His'),
+      'started' => $started_at,
+      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
+      'command' => $command,
+      'environment' => $environment,
+    ];
+  }
+
+  /**
    * The process environment as a name-keyed string map.
    *
    * @return array<string, string>
