@@ -28,7 +28,6 @@ use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -93,7 +92,7 @@ class LlmCommand extends Command {
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
     $json = (bool) $input->getOption('json');
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $parallel_option = $this->stringOption($input, 'parallel');
     $parallel = $parallel_option === NULL ? 1 : $this->intOption($input, 'parallel');

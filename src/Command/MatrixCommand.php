@@ -23,7 +23,6 @@ use AlexSkrypnyk\SkillTest\Version;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -100,7 +99,7 @@ class MatrixCommand extends Command {
     $root = $this->resolveRoot($input);
     $json = (bool) $input->getOption('json');
     $format = $this->stringOption($input, 'format') ?? 'text';
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     if (!in_array($format, self::FORMATS, TRUE)) {
       return $this->reportErrors($output, $stderr, $json, [ValidationMessage::error('', '', sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)))]);

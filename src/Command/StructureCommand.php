@@ -30,6 +30,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class StructureCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * The supported output formats.
    */
@@ -84,32 +86,6 @@ class StructureCommand extends Command {
     }
 
     return $this->failed($results) ? ExitCode::FAIL : ExitCode::PASS;
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
   /**
@@ -302,19 +278,6 @@ class StructureCommand extends Command {
     $single_line = str_replace(["\r\n", "\r", "\n"], ' ', $value);
 
     return str_replace('|', '\\|', $single_line);
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
 }

@@ -27,6 +27,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 class ValidateCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * {@inheritdoc}
    */
@@ -96,32 +98,6 @@ class ValidateCommand extends Command {
     }
 
     return count($violations);
-  }
-
-  /**
-   * Resolves the repository root from the option or the current directory.
-   *
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   The command input.
-   *
-   * @return string
-   *   The repository root.
-   */
-  protected function resolveRoot(InputInterface $input): string {
-    $dir = $input->getOption('dir');
-
-    if (is_string($dir) && $dir !== '') {
-      return $dir;
-    }
-
-    $cwd = getcwd();
-
-    // @codeCoverageIgnoreStart
-    if ($cwd === FALSE) {
-      return '.';
-    }
-    // @codeCoverageIgnoreEnd
-    return $cwd;
   }
 
   /**
@@ -245,19 +221,6 @@ class ValidateCommand extends Command {
     }
 
     $output->writeln(sprintf('OK: validated %d skill(s).', count($loaded->skills)));
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
 }

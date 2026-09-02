@@ -11,7 +11,6 @@ use AlexSkrypnyk\SkillTest\Live\Mcp\McpMockServer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -28,6 +27,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * the real stdin the loop would block on.
  */
 class McpServeCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * Constructs an McpServeCommand.
@@ -59,7 +60,7 @@ class McpServeCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
     $argument = $input->getArgument('config');
     $config = is_string($argument) ? $argument : '';
 

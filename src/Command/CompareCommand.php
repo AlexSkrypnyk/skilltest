@@ -13,7 +13,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -28,6 +27,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * baseline every delta is measured against.
  */
 class CompareCommand extends Command {
+
+  use SharedCommandTrait;
 
   /**
    * The supported output formats.
@@ -49,7 +50,7 @@ class CompareCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $stderr = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+    $stderr = $this->stderr($output);
 
     $raw = $input->getArgument('files');
     $paths = array_values(array_filter(is_array($raw) ? $raw : [], static fn(mixed $path): bool => is_string($path) && $path !== ''));
@@ -81,7 +82,7 @@ class CompareCommand extends Command {
     $comparison = Comparison::of($files);
 
     if ($format === 'json') {
-      $output->writeln(json_encode($comparison->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), OutputInterface::VERBOSITY_QUIET);
+      $output->writeln($this->encode($comparison->toArray()), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::PASS;
     }

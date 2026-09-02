@@ -277,21 +277,6 @@ class GradeCommand extends Command {
   }
 
   /**
-   * Renders one failed check as an indented line with its evidence.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $failure
-   *   The failed check.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function failureLine(CheckResult $failure): string {
-    $line = sprintf('  %s FAIL - %s', $failure->id, $failure->message);
-
-    return $failure->evidence === '' ? $line : sprintf('%s [%s]', $line, $failure->evidence);
-  }
-
-  /**
    * Resolves the judge timeout from the environment, or the default.
    *
    * @return float
@@ -301,19 +286,6 @@ class GradeCommand extends Command {
     $value = getenv(LlmSuite::ENV_TIMEOUT);
 
     return is_string($value) && is_numeric($value) ? (float) $value : Judge::DEFAULT_TIMEOUT;
-  }
-
-  /**
-   * Encodes a payload as a single JSON line.
-   *
-   * @param array<string, mixed> $payload
-   *   The payload to encode.
-   *
-   * @return string
-   *   The JSON encoding.
-   */
-  protected function encode(array $payload): string {
-    return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
   }
 
   /**
