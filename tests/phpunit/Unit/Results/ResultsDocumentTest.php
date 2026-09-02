@@ -68,7 +68,7 @@ final class ResultsDocumentTest extends TestCase {
   }
 
   public function testFromFileParsesDocument(): void {
-    $dir = dirname(__DIR__, 3) . '/.artifacts/tmp/resultsdoc-' . getmypid() . '-' . uniqid();
+    $dir = dirname(__DIR__, 4) . '/.artifacts/tmp/resultsdoc-' . getmypid() . '-' . uniqid();
     mkdir($dir, 0777, TRUE);
     $this->file = $dir . '/results.json';
     file_put_contents($this->file, json_encode($this->document()));

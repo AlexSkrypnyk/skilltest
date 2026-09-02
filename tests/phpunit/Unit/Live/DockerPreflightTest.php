@@ -29,7 +29,7 @@ final class DockerPreflightTest extends TestCase {
   protected function setUp(): void {
     parent::setUp();
 
-    $this->dir = dirname(__DIR__, 3) . '/.artifacts/tmp/dockerpre-' . getmypid() . '-' . uniqid();
+    $this->dir = dirname(__DIR__, 4) . '/.artifacts/tmp/dockerpre-' . getmypid() . '-' . uniqid();
     mkdir($this->dir, 0777, TRUE);
   }
 
