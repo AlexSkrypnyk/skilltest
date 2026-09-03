@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
 use AlexSkrypnyk\SkillTest\Live\DockerEnvironment;
@@ -48,6 +48,11 @@ class LlmCommand extends Command {
   use LiveOptionsTrait;
 
   /**
+   * The supported output formats.
+   */
+  public const array FORMATS = ['text', 'json'];
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -63,7 +68,8 @@ class LlmCommand extends Command {
       ->addOption(name: 'env', mode: InputOption::VALUE_REQUIRED, description: 'Execution environment: host or docker')
       ->addOption(name: 'parallel', mode: InputOption::VALUE_REQUIRED, description: 'Number of concurrent trials (default 1)')
       ->addOption(name: 'judge-model', mode: InputOption::VALUE_REQUIRED, description: 'Override the judge model (alias or id); the judge model never follows --models')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document and transcripts to a timestamped subdirectory of this directory')
       ->addOption(name: 'keep-workspace', mode: InputOption::VALUE_NONE, description: 'Preserve each trial workspace after the run and print its path for debugging')
@@ -79,8 +85,16 @@ class LlmCommand extends Command {
     $started = microtime(TRUE);
     $started_at = date(DATE_ATOM);
     $root = $this->resolveRoot($input);
-    $json = (bool) $input->getOption('json');
     $stderr = $this->stderr($output);
+
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+
+    if (!in_array($format, self::FORMATS, TRUE)) {
+      return $this->reportErrors($output, $stderr, $format === 'json', [ValidationMessage::error('', '', sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)))]);
+    }
+
+    $json = $format === 'json';
 
     $parallel_option = $this->stringOption($input, 'parallel');
     $parallel = $parallel_option === NULL ? 1 : $this->intOption($input, 'parallel');
@@ -134,7 +148,7 @@ class LlmCommand extends Command {
     try {
       if ($environment === 'docker') {
         $docker = new DockerEnvironment($root, $parallel, $this->timeout(), $loaded->repo->docker, (string) $preflight->binary(), $env_map, keepWorkspaces: $keep);
-        $environment_impl = $docker;
+        $runtime = $docker;
         // The agent runs inside the container, so the suite invokes the
         // image's own `claude`. Lifecycle hooks share the trial's isolation;
         // a hook with `on-host` runs on the host instead.
@@ -142,14 +156,14 @@ class LlmCommand extends Command {
         $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr), containerRunner: $docker->hookRunner());
       }
       else {
-        $environment_impl = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: $keep);
+        $runtime = new HostEnvironment($root, $parallel, $this->timeout(), keepWorkspaces: $keep);
         $binary = (string) $preflight->binary();
         $lifecycle = new Lifecycle($root, $loaded->repo->lifecycle, NULL, $this->warn($stderr));
       }
 
-      $report = (new LlmSuite($root, $binary, $environment_impl, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
+      $report = (new LlmSuite($root, $binary, $runtime, $lifecycle, $parallel, $this->timeout(), cache: $this->cache($input, $root)))->run($filtered, $this->globs($input, 'task'));
 
-      foreach ($environment_impl->keptWorkspaces() as $path) {
+      foreach ($runtime->keptWorkspaces() as $path) {
         $stderr->writeln(sprintf('workspace preserved: %s', $path));
       }
     }
@@ -157,13 +171,7 @@ class LlmCommand extends Command {
       return $this->reportErrors($output, $stderr, $json, [$this->toMessage($config_exception)]);
     }
 
-    $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
-      'id' => 'st-' . date('Ymd-His'),
-      'started' => $started_at,
-      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
-      'command' => 'llm',
-      'environment' => $environment,
-    ]);
+    $document = $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], $this->runMetadata($started, $started_at, 'llm', $environment));
 
     $output_file = $this->stringOption($input, 'output');
     $output_dir = $this->stringOption($input, 'output-dir');

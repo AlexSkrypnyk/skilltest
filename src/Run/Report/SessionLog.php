@@ -20,12 +20,12 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * `seq` orders them regardless. The document handed here is already redacted,
  * so no event carries a secret value.
  */
-final class SessionLog {
+final readonly class SessionLog {
 
   /**
    * The deterministic groups streamed, in per-skill order.
    */
-  protected const array GROUPS = ['structure', 'security', 'transcript'];
+  protected const array DETERMINISTIC_GROUPS = ['structure', 'security', 'transcript'];
 
   /**
    * Builds the ordered event list for the run.
@@ -53,7 +53,7 @@ final class SessionLog {
     foreach (Data::toArrayList(Data::get($document, 'skills')) as $skill) {
       $name = Data::toStringOrNull(Data::get($skill, 'skill')) ?? '';
 
-      foreach (self::GROUPS as $group) {
+      foreach (self::DETERMINISTIC_GROUPS as $group) {
         foreach (Data::toArrayList(Data::get($skill, 'deterministic', $group)) as $check) {
           $events[] = $this->checkEvent(++$seq, $started, $name, $group, $check);
         }

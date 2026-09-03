@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\CompareCommand;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\JsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ResultsDocumentTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,6 +27,7 @@ final class CompareCommandTest extends TestCase {
 
   use ApplicationTrait;
   use ArrayPathTrait;
+  use JsonDecodeTrait;
   use ResultsDocumentTrait;
 
   /**
@@ -162,25 +164,6 @@ final class CompareCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
-  }
-
-  /**
-   * Decodes JSON output into an array, failing when it is not an object.
-   *
-   * @param string $json
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded object.
-   */
-  protected function decode(string $json): array {
-    $data = json_decode($json, TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($data)) {
-      $this->fail('Expected a JSON object.');
-    }
-
-    return $data;
   }
 
 }

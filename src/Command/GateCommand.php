@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Gate\Gate;
 use AlexSkrypnyk\SkillTest\Gate\GateOptions;
@@ -50,7 +50,8 @@ class GateCommand extends Command {
       ->addOption(name: 'max-regression', mode: InputOption::VALUE_REQUIRED, description: 'Tolerated aggregate pass-rate drop, in percentage points (default 0)')
       ->addOption(name: 'on-new-tasks', mode: InputOption::VALUE_REQUIRED, description: 'Policy for tasks new since the baseline: allow, warn, or fail (default warn)')
       ->addOption(name: 'on-removed-tasks', mode: InputOption::VALUE_REQUIRED, description: 'Policy for tasks removed since the baseline: allow, warn, or fail (default warn)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: human, json, markdown, or github-actions', default: 'human')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, json, markdown, or github-actions', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root, for reading golden tasks from eval.yaml (default: current directory)');
   }
 
@@ -60,7 +61,8 @@ class GateCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $stderr = $this->stderr($output);
 
-    $format = $this->stringOption($input, 'format') ?? 'human';
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
 
     if (!in_array($format, GateRenderer::FORMATS, TRUE)) {
       return $this->configError($stderr, sprintf('unknown format; expected one of: %s.', implode(', ', GateRenderer::FORMATS)));

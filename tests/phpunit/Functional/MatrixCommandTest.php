@@ -9,6 +9,8 @@ use AlexSkrypnyk\SkillTest\Command\MatrixCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
+use AlexSkrypnyk\SkillTest\Tests\Traits\AgentStubTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
@@ -28,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class MatrixCommandTest extends TestCase {
 
+  use AgentStubTrait;
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
   use ArrayPathTrait;
   use DirectoryCleanupTrait;
@@ -177,7 +181,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--estimate' => TRUE, '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runMatrix(['--dir' => $root, '--estimate' => TRUE, '--json' => TRUE], 0));
 
     $this->assertTrue($decoded['estimate']);
     $this->assertSame(9, $decoded['total_trials']);
@@ -215,7 +219,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo(rubric: TRUE);
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--trials' => '1', '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runMatrix(['--dir' => $root, '--trials' => '1', '--json' => TRUE], 0));
 
     $models = $this->pathArray($decoded, 'skills', 0, 'llm', 'tasks', 0, 'models');
     $this->assertCount(3, $models);
@@ -230,7 +234,7 @@ final class MatrixCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->modelAgent($root));
 
-    $decoded = $this->decode($this->runMatrix(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runMatrix(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
 
     $this->assertMatchesResultsSchema((string) json_encode($decoded));
     $this->assertSame('matrix', $this->path($decoded, 'run', 'command'));
@@ -266,7 +270,7 @@ final class MatrixCommandTest extends TestCase {
 
     $output = $this->runMatrix(['--dir' => $root, '--format' => 'xml'], 2);
 
-    $this->assertStringContainsString('unknown format; expected one of: text, markdown', $output);
+    $this->assertStringContainsString('unknown format; expected one of: text, markdown, json', $output);
   }
 
   public function testParallelNonIntegerIsConfigError(): void {
@@ -352,7 +356,7 @@ final class MatrixCommandTest extends TestCase {
 
     $output = $this->runMatrix(['--dir' => $root, '--json' => TRUE], 2);
 
-    $decoded = $this->decode($output);
+    $decoded = $this->decodeStdout($output);
     $this->assertFalse($decoded['ok']);
   }
 
@@ -420,16 +424,6 @@ final class MatrixCommandTest extends TestCase {
   }
 
   /**
-   * Points the agent seam at a stub command.
-   *
-   * @param string $command
-   *   The stub command prefix.
-   */
-  protected function useAgent(string $command): void {
-    putenv(AgentPreflight::ENV_AGENT . '=' . $command);
-  }
-
-  /**
    * Runs the matrix command and asserts the exit code.
    *
    * @param array<string, string|bool|string[]> $input
@@ -447,26 +441,6 @@ final class MatrixCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
-  }
-
-  /**
-   * Decodes the JSON standard output of a command run.
-   *
-   * @param string $output
-   *   The combined output; only stdout carries the JSON.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $stdout = $this->applicationGetTester()->getDisplay();
-    $decoded = json_decode(trim($stdout === '' ? $output : $stdout), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
 }

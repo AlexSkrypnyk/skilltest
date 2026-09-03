@@ -314,4 +314,25 @@ trait ResultsDocumentTrait {
     return ['trial' => $number, 'pass' => $pass] + $extra;
   }
 
+  /**
+   * Builds one trial row for a results document.
+   *
+   * @param int $number
+   *   The trial number.
+   * @param bool $pass
+   *   The stored pass verdict.
+   * @param string $transcript
+   *   The transcript artifact reference.
+   * @param array<int, array<mixed>> $contract
+   *   The stored contract rows.
+   * @param array<int, array<mixed>> $judge
+   *   The stored judge criteria.
+   *
+   * @return array<string, mixed>
+   *   The trial row.
+   */
+  protected function trialRow(int $number, bool $pass, string $transcript, array $contract = [], array $judge = []): array {
+    return ['trial' => $number, 'pass' => $pass, 'contract' => $contract, 'judge' => $judge, 'transcript' => $transcript];
+  }
+
 }

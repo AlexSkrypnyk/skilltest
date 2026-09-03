@@ -8,7 +8,7 @@ namespace AlexSkrypnyk\SkillTest\Process;
  * Runs a command as a child process under a wall-clock timeout.
  *
  * Concurrent commands run through
- * {@see \AlexSkrypnyk\SkillTest\Live\ProcessPool} instead. Stdout is the one
+ * {@see \AlexSkrypnyk\SkillTest\Process\ProcessPool} instead. Stdout is the one
  * pipe read; stderr is discarded to `/dev/null` so a chatty process cannot
  * fill an unread pipe buffer and deadlock. The single pipe is drained without
  * blocking while the process runs. A process that outlives its timeout is

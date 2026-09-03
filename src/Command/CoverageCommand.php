@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Coverage\Coverage;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
@@ -47,7 +47,8 @@ class CoverageCommand extends Command {
       ->setName('coverage')
       ->setDescription('Render the skill-to-eval coverage grid and enforce the coverage gate')
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -56,9 +57,11 @@ class CoverageCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
     $format = $input->getOption('format');
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+    $stderr = $this->stderr($output);
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      $output->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -72,16 +75,20 @@ class CoverageCommand extends Command {
       return $this->reportErrors($output, $format, [$message]);
     }
 
-    $result = (new ConfigValidator($root))->validate($loaded);
+    $validation = (new ConfigValidator($root))->validate($loaded);
 
-    if ($result->hasErrors()) {
-      return $this->reportErrors($output, $format, $result->errors());
+    foreach ($validation->warnings() as $warning) {
+      $this->stderr($output)->writeln('WARNING ' . $warning->render());
+    }
+
+    if ($validation->hasErrors()) {
+      return $this->reportErrors($output, $format, $validation->errors());
     }
 
     $coverage = new Coverage($loaded);
 
     if ($format === 'json') {
-      $output->writeln($this->renderJson($coverage));
+      $output->writeln($this->renderJson($coverage), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderTable($output, $coverage, $format);
@@ -104,17 +111,19 @@ class CoverageCommand extends Command {
    *   The config-error exit code.
    */
   protected function reportErrors(OutputInterface $output, string $format, array $errors): int {
+    $stderr = $this->stderr($output);
+
     if ($format === 'json') {
       $payload = [
         'ok' => FALSE,
         'skills' => [],
         'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $errors),
       ];
-      $output->writeln($this->encode($payload));
+      $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       foreach ($errors as $error) {
-        $output->writeln('ERROR ' . $error->render());
+        $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
       }
     }
 

@@ -179,6 +179,33 @@ final readonly class ConfigValidator {
     $this->validateRubric($data, $loaded_skill, $validation_result);
     $this->validateJudgeUnknown($data, $loaded_skill, $validation_result);
     $this->validateResponders($data, $file, $validation_result);
+    $this->validateSuppressions($data, $file, $validation_result);
+  }
+
+  /**
+   * Requires every structure-check suppression to give a reason.
+   *
+   * A suppression only takes effect when its reason is a non-empty string, so
+   * a blank one leaves the check firing with nothing to explain why the
+   * suppression was ignored.
+   *
+   * @param array<mixed> $data
+   *   The parsed `eval.yaml`.
+   * @param string $file
+   *   The file the data came from.
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   *   The result to append errors to.
+   */
+  protected function validateSuppressions(array $data, string $file, ValidationResult $validation_result): void {
+    $suppress = Data::toArray(Data::get($data, 'structure', 'suppress'));
+
+    foreach ($suppress as $check_id => $reason) {
+      $pointer = sprintf('structure.suppress.%s', (string) $check_id);
+
+      if (!is_string($reason) || trim($reason) === '') {
+        $validation_result->addError($file, $pointer, sprintf("suppression of '%s' is missing a reason.", (string) $check_id));
+      }
+    }
   }
 
   /**

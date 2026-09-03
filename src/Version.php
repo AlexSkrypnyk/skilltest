@@ -10,7 +10,7 @@ namespace AlexSkrypnyk\SkillTest;
  * Single source of truth for the version command output and for the
  * versions stamped into configuration and results files.
  */
-final class Version {
+final readonly class Version {
 
   /**
    * The tool name.

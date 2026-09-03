@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\ValidateCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class ValidateCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
 
   /**
@@ -169,7 +171,7 @@ final class ValidateCommandTest extends TestCase {
       'skills' => ['foo' => ['SKILL.md' => 'x', 'eval.yaml' => "version: \"1\"\nskill: foo\n"]],
     ]);
 
-    $decoded = $this->decode($this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0));
 
     $this->assertTrue($decoded['ok']);
     $this->assertSame([], $decoded['errors']);
@@ -179,7 +181,7 @@ final class ValidateCommandTest extends TestCase {
     $eval = "version: \"1\"\ncontract:\n  tools:\n    required: [Bash]\n    forbidden: [Bash]\n";
     $output = $this->runValidate(['--dir' => $this->skill($eval), '--json' => TRUE], 2);
 
-    $this->assertFalse($this->decode($output)['ok']);
+    $this->assertFalse($this->decodeStdout($output)['ok']);
     $this->assertStringContainsString('contract.tools', $output);
   }
 
@@ -188,7 +190,7 @@ final class ValidateCommandTest extends TestCase {
 
     $output = $this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 2);
 
-    $this->assertFalse($this->decode($output)['ok']);
+    $this->assertFalse($this->decodeStdout($output)['ok']);
     $this->assertStringContainsString('skilltest.yml', $output);
   }
 
@@ -236,12 +238,20 @@ final class ValidateCommandTest extends TestCase {
     ]);
 
     $output = $this->runValidate(['--dir' => $root->url(), '--json' => TRUE], 0);
-    $decoded = $this->decode($output);
+    $decoded = $this->decodeStdout($output);
 
     $this->assertTrue($decoded['ok']);
     $this->assertSame([], $decoded['errors']);
     $this->assertStringContainsString('"file":"skills/foo"', $output);
     $this->assertStringContainsString('has no eval.yaml', $output);
+  }
+
+  public function testUnknownFormatIsConfigError(): void {
+    $root = vfsStream::setup('root', NULL, ['skills' => []]);
+
+    $output = $this->runValidate(['--dir' => $root->url(), '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('unknown format; expected one of: text, json.', $output);
   }
 
   /**
@@ -261,7 +271,7 @@ final class ValidateCommandTest extends TestCase {
 
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
-    return $this->applicationGetTester()->getDisplay();
+    return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
   }
 
   /**
@@ -293,25 +303,6 @@ final class ValidateCommandTest extends TestCase {
   }
 
   /**
-   * Decodes a JSON command output.
-   *
-   * @param string $output
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
-  }
-
-  /**
    * Extracts a skill's resolved model list from a --show-config JSON payload.
    *
    * @param string $output
@@ -323,7 +314,7 @@ final class ValidateCommandTest extends TestCase {
    *   The resolved model list.
    */
   protected function configModels(string $output, string $skill): array {
-    $config = $this->decode($output)['config'] ?? NULL;
+    $config = $this->decodeStdout($output)['config'] ?? NULL;
     $skill_config = is_array($config) ? ($config[$skill] ?? NULL) : NULL;
     $llm = is_array($skill_config) ? ($skill_config['llm'] ?? NULL) : NULL;
     $models = is_array($llm) ? ($llm['models'] ?? NULL) : NULL;

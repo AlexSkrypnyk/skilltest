@@ -16,7 +16,7 @@ namespace AlexSkrypnyk\SkillTest\Live\Mcp;
  * pick the entry - is unit-tested, while the thin wrapper that reads the
  * ambient PHP binary and PHAR state is the only environment-coupled code.
  */
-final class SelfInvocation {
+final readonly class SelfInvocation {
 
   /**
    * Picks the `[php, entry]` command pair for the current runtime shape.

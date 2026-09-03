@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Coverage\CoverageRow;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Live\TrialCache;
 use AlexSkrypnyk\SkillTest\Results\Interpreter;
@@ -76,15 +76,15 @@ class RunCommand extends Command {
       ->addOption(name: 'group', mode: InputOption::VALUE_REQUIRED, description: 'Run one group only: structure, security, hooks, or transcript')
       ->addOption(name: 'check', mode: InputOption::VALUE_REQUIRED, description: 'Run one check id only')
       ->addOption(name: 'list', mode: InputOption::VALUE_NONE, description: 'List selected skills and the checks that would run, without running')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable results document on stdout and nothing else')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Render stdout as a reporter format: github-comment')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, github-comment, or json')
       ->addOption(name: 'reporter', mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, description: 'Write an additional reporter file (repeatable): junit:<path>')
       ->addOption(name: 'session-log', mode: InputOption::VALUE_NONE, description: 'Write an ordered NDJSON event stream for the run (requires --session-dir)')
       ->addOption(name: 'session-dir', mode: InputOption::VALUE_REQUIRED, description: 'Directory the --session-log NDJSON stream is written to')
       ->addOption(name: 'output', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to this file')
       ->addOption(name: 'output-dir', mode: InputOption::VALUE_REQUIRED, description: 'Persist the results document to a timestamped subdirectory of this directory, with artifacts')
       ->addOption(name: 'interpret', mode: InputOption::VALUE_NONE, description: 'Append a plain-language reading of the result: the top failure and a concrete next step')
-      ->addOption(name: 'no-update-check', mode: InputOption::VALUE_NONE, description: 'Skip the once-a-day check for a newer skilltest release');
+      ->addOption(name: 'update-check', mode: InputOption::VALUE_NONE, description: 'Check once a day for a newer skilltest release; the only network call this command makes');
   }
 
   /**
@@ -153,7 +153,7 @@ class RunCommand extends Command {
       $this->emitReports($output, $stderr, $filtered, $report_options, $document);
     }
 
-    if ($report_options->stdoutFormat() === 'human') {
+    if ($report_options->stdoutFormat() === 'text') {
       $this->renderReport($output, $filtered, $selection, $report);
 
       if ($interpret && $document !== NULL) {
@@ -162,7 +162,7 @@ class RunCommand extends Command {
       }
     }
 
-    $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('no-update-check'));
+    $this->emitUpdateNotice($stderr, $root, (bool) $input->getOption('update-check'));
 
     return $report->failed() ? ExitCode::FAIL : ExitCode::PASS;
   }
@@ -177,15 +177,15 @@ class RunCommand extends Command {
    *   The error output the notice is written to.
    * @param string $root
    *   The repository root, under which the once-a-day cache lives.
-   * @param bool $flag_disabled
-   *   Whether `--no-update-check` was passed.
+   * @param bool $flag_enabled
+   *   Whether `--update-check` was passed.
    */
-  protected function emitUpdateNotice(OutputInterface $stderr, string $root, bool $flag_disabled): void {
+  protected function emitUpdateNotice(OutputInterface $stderr, string $root, bool $flag_enabled): void {
     if (!$this->notifier instanceof UpdateNotifier) {
       return;
     }
 
-    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, $flag_disabled);
+    $notice = $this->notifier->notice(rtrim($root, '/') . '/' . TrialCache::CACHE_DIR, $flag_enabled);
 
     if ($notice !== NULL) {
       $stderr->writeln($notice);
@@ -231,13 +231,7 @@ class RunCommand extends Command {
    *   The results document.
    */
   protected function document(RunReport $report, LoadedConfig $filtered, float $started, string $started_at): array {
-    return $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], [
-      'id' => 'st-' . date('Ymd-His'),
-      'started' => $started_at,
-      'duration_ms' => (int) round((microtime(TRUE) - $started) * 1000),
-      'command' => 'run',
-      'environment' => $filtered->repo->environment,
-    ]);
+    return $report->toResults(Version::RESULTS_SCHEMA_VERSION, ['name' => Version::NAME, 'version' => Version::id()], $this->runMetadata($started, $started_at, 'run', $filtered->repo->environment));
   }
 
   /**
@@ -304,7 +298,7 @@ class RunCommand extends Command {
    * @return \AlexSkrypnyk\SkillTest\Run\RunSelection
    *   The validated selection.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the requested group or check is impossible.
    */
   protected function selection(InputInterface $input): RunSelection {

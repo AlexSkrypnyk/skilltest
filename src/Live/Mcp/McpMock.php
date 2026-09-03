@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live\Mcp;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
  * Parses and normalises a task's `mcp-mocks:` block into server definitions.
@@ -61,7 +61,7 @@ final readonly class McpMock {
    * @return self
    *   The parsed mock, empty when the task declares no mocks.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a mock, tool, or response is malformed, or a response file is
    *   missing.
    */
@@ -137,7 +137,7 @@ final readonly class McpMock {
    * @return array<int, array{name: string, description: ?string, responses: array<int, array{kind: string, matcher: mixed, text: string, label: string}>}>
    *   The normalised tools.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the server declares no tools or a tool is malformed.
    */
   protected static function parseTools(array $entry, string $server, string $config_file, string $skill_dir): array {
@@ -183,7 +183,7 @@ final readonly class McpMock {
    * @return array<int, array{kind: string, matcher: mixed, text: string, label: string}>
    *   The normalised responses.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the tool declares no responses or a response is malformed.
    */
   protected static function parseResponses(array $raw, string $server, string $tool, string $config_file, string $skill_dir): array {
@@ -218,7 +218,7 @@ final readonly class McpMock {
    * @return array{0: string, 1: mixed, 2: string}
    *   The matcher kind, the matcher, and a human label.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When zero or more than one matcher key is present, or a matcher is not a
    *   mapping.
    */
@@ -260,7 +260,7 @@ final readonly class McpMock {
    * @return string
    *   The response text.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When neither or both sources are present, or a response file is missing.
    */
   protected static function resolveText(array $response, string $server, string $tool, string $config_file, string $skill_dir): string {

@@ -10,6 +10,8 @@ use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
 use AlexSkrypnyk\SkillTest\Live\DockerPreflight;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
+use AlexSkrypnyk\SkillTest\Tests\Traits\AgentStubTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
@@ -28,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class LlmCommandTest extends TestCase {
 
+  use AgentStubTrait;
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
   use ArrayPathTrait;
   use DirectoryCleanupTrait;
@@ -209,10 +213,10 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $serial = $this->model($this->decode($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '1', '--json' => TRUE], 0)));
+    $serial = $this->model($this->decodeStdout($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '1', '--json' => TRUE], 0)));
 
     $this->applicationTearDown();
-    $parallel = $this->model($this->decode($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '3', '--json' => TRUE], 0)));
+    $parallel = $this->model($this->decodeStdout($this->runLlm(['--dir' => $root, '--trials' => '3', '--parallel' => '3', '--json' => TRUE], 0)));
 
     $this->assertSame($serial, $parallel);
   }
@@ -266,6 +270,15 @@ final class LlmCommandTest extends TestCase {
     $output = $this->runLlm(['--dir' => $root, '--parallel' => 'abc'], 2);
 
     $this->assertStringContainsString('--parallel must be an integer', $output);
+  }
+
+  public function testUnknownFormatIsConfigError(): void {
+    $root = $this->realRepo();
+    $this->useAgent($this->passStub($root));
+
+    $output = $this->runLlm(['--dir' => $root, '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('unknown format; expected one of: text, json.', $output);
   }
 
   public function testDockerEnvironmentRunsTrialThroughContainer(): void {
@@ -329,7 +342,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useAgent($this->passStub($root));
 
-    $decoded = $this->decode($this->runLlm(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
+    $decoded = $this->decodeStdout($this->runLlm(['--dir' => $root, '--trials' => '2', '--json' => TRUE], 0));
 
     $this->assertSame('llm', $this->path($decoded, 'run', 'command'));
     $this->assertSame('alpha', $this->path($decoded, 'skills', 0, 'skill'));
@@ -404,7 +417,7 @@ final class LlmCommandTest extends TestCase {
     $root = $this->realRepo();
     $this->useDocker($this->dockerStub($root, 'down', NULL, 1));
 
-    $decoded = $this->decode($this->runLlm(['--dir' => $root, '--env' => 'docker', '--json' => TRUE], 2));
+    $decoded = $this->decodeStdout($this->runLlm(['--dir' => $root, '--env' => 'docker', '--json' => TRUE], 2));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame([], $decoded['skills']);
@@ -522,60 +535,6 @@ final class LlmCommandTest extends TestCase {
   }
 
   /**
-   * Points the agent seam at a stub command.
-   *
-   * @param string $command
-   *   The stub command prefix.
-   */
-  protected function useAgent(string $command): void {
-    putenv(AgentPreflight::ENV_AGENT . '=' . $command);
-  }
-
-  /**
-   * Writes a stub docker binary and returns its command prefix.
-   *
-   * The stub answers the daemon probe with the given exit and, for `run`,
-   * emits the canned transcript to stdout, so the whole docker path is
-   * exercised without a real daemon.
-   *
-   * @param string $root
-   *   The repository root the stub lives under.
-   * @param string $name
-   *   The stub filename stem.
-   * @param string|null $stream
-   *   The stream-json a `run` emits, or NULL to emit nothing.
-   * @param int $version_exit
-   *   The `version` probe's exit code; non-zero marks the daemon down.
-   *
-   * @return string
-   *   The `php <path>` command prefix.
-   */
-  protected function dockerStub(string $root, string $name, ?string $stream, int $version_exit = 0): string {
-    $path = $root . '/' . $name . '-docker.php';
-    $stream_file = $root . '/' . $name . '-docker-stream.txt';
-    file_put_contents($stream_file, $stream ?? '');
-
-    $body = "<?php\n";
-    $body .= '$sub = $argv[1] ?? "";' . "\n";
-    $body .= 'if ($sub === "version") { exit(' . $version_exit . "); }\n";
-    $body .= 'if ($sub === "run") { readfile(' . var_export($stream_file, TRUE) . "); exit(0); }\n";
-    $body .= "exit(0);\n";
-    file_put_contents($path, $body);
-
-    return 'php ' . escapeshellarg($path);
-  }
-
-  /**
-   * Points the docker seam at a stub command.
-   *
-   * @param string $command
-   *   The stub command prefix.
-   */
-  protected function useDocker(string $command): void {
-    putenv(DockerPreflight::ENV_DOCKER . '=' . $command);
-  }
-
-  /**
    * Runs the llm command and asserts the exit code.
    *
    * @param array<string, string|bool|string[]> $input
@@ -593,26 +552,6 @@ final class LlmCommandTest extends TestCase {
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
     return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
-  }
-
-  /**
-   * Decodes the JSON standard output of a command run.
-   *
-   * @param string $output
-   *   The combined output; only stdout carries the JSON.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $stdout = $this->applicationGetTester()->getDisplay();
-    $decoded = json_decode(trim($stdout === '' ? $output : $stdout), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
   }
 
 }

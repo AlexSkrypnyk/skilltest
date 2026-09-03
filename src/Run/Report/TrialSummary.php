@@ -13,7 +13,7 @@ use AlexSkrypnyk\SkillTest\Config\Data;
  * was not met; the derivation lives here once, so every reporter renders
  * the same reason.
  */
-final class TrialSummary {
+final readonly class TrialSummary {
 
   /**
    * Builds a one-line reason a trial failed: its contract and judge failures.

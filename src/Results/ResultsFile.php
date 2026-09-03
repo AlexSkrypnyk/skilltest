@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Results;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
  * Loads and validates a saved `results.json`.
@@ -28,7 +28,7 @@ final readonly class ResultsFile {
    * @return array<string, mixed>
    *   The decoded results document.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the file is missing, unreadable, not valid JSON, not a mapping, or
    *   declares a schema major this tool cannot read.
    */
@@ -69,7 +69,7 @@ final readonly class ResultsFile {
    * @param string $file
    *   The file path, for error context.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the version is unparseable or its major is not the current major.
    */
   protected static function assertReadableMajor(array $document, string $file): void {

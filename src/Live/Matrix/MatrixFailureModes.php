@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live\Matrix;
 
-use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Judge\UnknownPolicy;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 
@@ -59,7 +58,7 @@ final readonly class MatrixFailureModes {
           if ($check->pass) {
             continue;
           }
-          if (self::isJudge($check)) {
+          if (LlmSuite::isJudgeCheck($check)) {
             continue;
           }
           $contract[$check->id] = ($contract[$check->id] ?? 0) + 1;
@@ -153,19 +152,6 @@ final readonly class MatrixFailureModes {
     }
 
     return $ranked;
-  }
-
-  /**
-   * Whether a check is one of the judge's folded-in checks.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $check
-   *   The check.
-   *
-   * @return bool
-   *   TRUE when the check is the judge verdict or judge rubric check.
-   */
-  protected static function isJudge(CheckResult $check): bool {
-    return $check->id === LlmSuite::CHECK_JUDGE || $check->id === LlmSuite::CHECK_JUDGE_RUBRIC;
   }
 
 }

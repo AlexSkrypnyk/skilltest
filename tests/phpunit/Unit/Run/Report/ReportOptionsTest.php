@@ -20,7 +20,7 @@ final class ReportOptionsTest extends TestCase {
     $options = ReportOptions::parse(FALSE, NULL, [], FALSE, NULL, NULL, NULL);
 
     $this->assertTrue($options->valid());
-    $this->assertSame('human', $options->stdoutFormat());
+    $this->assertSame('text', $options->stdoutFormat());
     $this->assertFalse($options->wantsDocument());
     $this->assertFalse($options->writesArtifacts());
     $this->assertSame([], $options->junitTargets);

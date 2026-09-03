@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Migrate;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Migrate\Migrator;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ArrayPathTrait;
+use AlexSkrypnyk\SkillTest\Tests\Traits\JsonDecodeTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,6 +26,7 @@ use Symfony\Component\Yaml\Yaml;
 final class MigratorTest extends TestCase {
 
   use ArrayPathTrait;
+  use JsonDecodeTrait;
 
   /**
    * The virtual filesystem root each test writes fixtures under.
@@ -107,7 +109,7 @@ final class MigratorTest extends TestCase {
     $this->assertSame('1', $result->to);
 
     $written = (string) file_get_contents($file);
-    $reparsed = $this->decodedJson($written);
+    $reparsed = $this->decode($written);
     $this->assertSame('1', $this->path($reparsed, 'version'));
     $this->assertSame(3, $this->path($reparsed, 'totals', 'checks'));
     $this->assertStringContainsString("\n", $written, 'JSON is pretty-printed.');
@@ -206,25 +208,6 @@ final class MigratorTest extends TestCase {
 
     if (!is_array($data)) {
       $this->fail('Expected a YAML mapping.');
-    }
-
-    return $data;
-  }
-
-  /**
-   * Decodes a JSON string into an object, failing when it is not one.
-   *
-   * @param string $json
-   *   The JSON to decode.
-   *
-   * @return array<mixed>
-   *   The decoded object.
-   */
-  protected function decodedJson(string $json): array {
-    $data = json_decode($json, TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($data)) {
-      $this->fail('Expected a JSON object.');
     }
 
     return $data;

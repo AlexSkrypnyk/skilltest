@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Run;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 
 /**
  * The validated selection a run applies: skill globs, one group, one check.
@@ -92,7 +92,7 @@ final readonly class RunSelection {
    * @return self
    *   The validated selection.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the group is unknown, the check id has no owning group, or the
    *   check belongs to a different group than the one requested.
    */

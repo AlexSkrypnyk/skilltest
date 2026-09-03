@@ -108,13 +108,7 @@ final readonly class DockerPreflight {
    *   when neither is available.
    */
   public function binary(): ?string {
-    $override = trim((string) ($this->env[self::ENV_DOCKER] ?? ''));
-
-    if ($override !== '') {
-      return $override;
-    }
-
-    return self::onPath((string) ($this->env['PATH'] ?? ''), self::DEFAULT_BINARY);
+    return $this->overrideOrOnPath(self::ENV_DOCKER, self::DEFAULT_BINARY);
   }
 
   /**

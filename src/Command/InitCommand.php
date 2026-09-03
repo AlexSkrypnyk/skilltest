@@ -30,6 +30,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class InitCommand extends Command {
 
+  use SharedCommandTrait;
+
   /**
    * The skill marker the scaffold reads from.
    */
@@ -73,11 +75,13 @@ class InitCommand extends Command {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
+    $stderr = $this->stderr($output);
+
     $dir = $this->resolveDir($input);
     $skill_file = $dir . '/' . self::SKILL_FILE;
 
     if (!is_file($skill_file)) {
-      $output->writeln(sprintf('ERROR no %s found in %s.', self::SKILL_FILE, $dir));
+      $stderr->writeln(sprintf('ERROR no %s found in %s.', self::SKILL_FILE, $dir), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -87,7 +91,7 @@ class InitCommand extends Command {
     }
     // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      $output->writeln(sprintf('ERROR could not read %s.', $skill_file));
+      $stderr->writeln(sprintf('ERROR could not read %s.', $skill_file), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -108,7 +112,7 @@ class InitCommand extends Command {
     }
     // @codeCoverageIgnoreStart
     catch (\Throwable) {
-      $output->writeln(sprintf('ERROR could not write %s.', $target));
+      $stderr->writeln(sprintf('ERROR could not write %s.', $target), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }

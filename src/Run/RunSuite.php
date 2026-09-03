@@ -61,7 +61,7 @@ final readonly class RunSuite {
    * @return \AlexSkrypnyk\SkillTest\Run\RunReport
    *   The aggregated run outcome.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the structure group's `commands.resolve` binary cannot run, or a
    *   declared hook script is missing or not executable.
    */

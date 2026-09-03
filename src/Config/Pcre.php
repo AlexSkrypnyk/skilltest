@@ -12,7 +12,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * and reports whether it compiles; the warning PCRE emits on a bad pattern
  * is suppressed so it does not surface in test output.
  */
-final class Pcre {
+final readonly class Pcre {
 
   /**
    * Candidate delimiters tried in order until one is absent from the pattern.

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live\Matrix;
 
-use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
 use AlexSkrypnyk\SkillTest\Live\TrialResult;
 
@@ -167,7 +166,7 @@ final readonly class MatrixModelRow {
    */
   protected static function contractPassed(TrialResult $trial): bool {
     foreach ($trial->checks as $check) {
-      if (!self::isJudge($check) && !$check->pass) {
+      if (!LlmSuite::isJudgeCheck($check) && !$check->pass) {
         return FALSE;
       }
     }
@@ -195,25 +194,12 @@ final readonly class MatrixModelRow {
     }
 
     foreach ($trial->checks as $check) {
-      if (self::isJudge($check) && !$check->pass) {
+      if (LlmSuite::isJudgeCheck($check) && !$check->pass) {
         return FALSE;
       }
     }
 
     return TRUE;
-  }
-
-  /**
-   * Whether a check is one of the judge's folded-in checks.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Contract\CheckResult $check
-   *   The check.
-   *
-   * @return bool
-   *   TRUE when the check id is the judge verdict or judge rubric id.
-   */
-  protected static function isJudge(CheckResult $check): bool {
-    return $check->id === LlmSuite::CHECK_JUDGE || $check->id === LlmSuite::CHECK_JUDGE_RUBRIC;
   }
 
 }

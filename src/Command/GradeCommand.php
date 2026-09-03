@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\SchemaVersion;
 use AlexSkrypnyk\SkillTest\Contract\CheckResult;
 use AlexSkrypnyk\SkillTest\Contract\TranscriptGrader;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Grade\Grader;
 use AlexSkrypnyk\SkillTest\Grade\RescoreResult;
@@ -43,6 +43,11 @@ class GradeCommand extends Command {
   use ResultsCommandTrait;
 
   /**
+   * The supported output formats.
+   */
+  public const array FORMATS = ['text', 'json'];
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -54,7 +59,8 @@ class GradeCommand extends Command {
       ->addOption(name: 'skill', mode: InputOption::VALUE_REQUIRED, description: 'The skill whose contract to assert (required with --transcript)')
       ->addOption(name: 'results', mode: InputOption::VALUE_REQUIRED, description: 'Re-score this saved results.json against the current contract')
       ->addOption(name: 'judge', mode: InputOption::VALUE_NONE, description: 'Re-run the judge when re-scoring (spends tokens; needs an authenticated agent)')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Emit the machine-readable result on stdout and nothing else');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -63,7 +69,15 @@ class GradeCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $stderr = $this->stderr($output);
     $root = $this->resolveRoot($input);
-    $json = (bool) $input->getOption('json');
+
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+
+    if (!in_array($format, self::FORMATS, TRUE)) {
+      return $this->configError($stderr, sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+    }
+
+    $json = $format === 'json';
 
     $transcript = $this->stringOption($input, 'transcript');
     $results = $this->stringOption($input, 'results');

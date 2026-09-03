@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 use AlexSkrypnyk\SkillTest\Structure\StructureResult;
@@ -50,7 +50,8 @@ class StructureCommand extends Command {
       ->setName('structure')
       ->setDescription("Check that every skill's files are well-formed and honest (the structure group)")
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text, markdown, or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -59,9 +60,11 @@ class StructureCommand extends Command {
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
     $format = $input->getOption('format');
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+    $stderr = $this->stderr($output);
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      $output->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::CONFIG_ERROR;
     }
@@ -79,7 +82,7 @@ class StructureCommand extends Command {
     $skills = count($loaded->allSkills());
 
     if ($format === 'json') {
-      $output->writeln($this->renderJson($results, $skills));
+      $output->writeln($this->renderJson($results, $skills), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderReport($output, $results, $skills, $format);
@@ -102,17 +105,19 @@ class StructureCommand extends Command {
    *   The config-error exit code.
    */
   protected function reportErrors(OutputInterface $output, string $format, array $errors): int {
+    $stderr = $this->stderr($output);
+
     if ($format === 'json') {
       $payload = [
         'ok' => FALSE,
         'results' => [],
         'errors' => array_map(static fn(ValidationMessage $message): array => $message->toArray(), $errors),
       ];
-      $output->writeln($this->encode($payload));
+      $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       foreach ($errors as $error) {
-        $output->writeln('ERROR ' . $error->render());
+        $stderr->writeln('ERROR ' . $error->render(), OutputInterface::VERBOSITY_QUIET);
       }
     }
 

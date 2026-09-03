@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Results\Interpreter;
-use AlexSkrypnyk\SkillTest\Results\Report\HtmlReport;
+use AlexSkrypnyk\SkillTest\Results\Report\HtmlRenderer;
 use AlexSkrypnyk\SkillTest\Results\Report\ReportRenderer;
 use AlexSkrypnyk\SkillTest\Results\ResultsFile;
 use AlexSkrypnyk\SkillTest\Run\Report\ArtifactWriter;
@@ -74,7 +74,7 @@ class ReportCommand extends Command {
     $html = $input->getOption('html');
 
     if (is_string($html) && $html !== '') {
-      $written = (new ArtifactWriter())->write($html, (new HtmlReport())->render($document, $interpretation));
+      $written = (new ArtifactWriter())->write($html, (new HtmlRenderer())->render($document, $interpretation));
       $stderr->writeln(sprintf('report written to %s', $written));
 
       return ExitCode::PASS;
@@ -90,21 +90,6 @@ class ReportCommand extends Command {
     }
 
     return ExitCode::PASS;
-  }
-
-  /**
-   * Renders a configuration error with its file context when it has one.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
-   *   The error.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function errorLine(ConfigException $config_exception): string {
-    $file = $config_exception->configFile();
-
-    return $file === '' ? $config_exception->getMessage() : sprintf('%s: %s', $file, $config_exception->getMessage());
   }
 
 }

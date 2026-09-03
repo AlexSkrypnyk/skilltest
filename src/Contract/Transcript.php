@@ -14,7 +14,7 @@ use AlexSkrypnyk\File\File;
  * walked recursively and each `tool_use` node collected in order, so nested
  * transcript shapes yield the same event stream as flat ones.
  */
-final class Transcript {
+final readonly class Transcript {
 
   /**
    * The name of the tool whose input carries a Bash command string.
@@ -41,7 +41,7 @@ final class Transcript {
   /**
    * The last `session_id` seen, or NULL when the transcript carries none.
    */
-  protected ?string $sessionId = NULL;
+  protected ?string $sessionId;
 
   /**
    * The injected responder (user) turn texts, in order.

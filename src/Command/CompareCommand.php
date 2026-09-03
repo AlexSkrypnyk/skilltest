@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Results\Compare\Comparison;
 use AlexSkrypnyk\SkillTest\Results\Compare\CompareRenderer;
@@ -32,7 +32,7 @@ class CompareCommand extends Command {
   /**
    * The supported output formats.
    */
-  public const array FORMATS = ['table', 'json'];
+  public const array FORMATS = ['text', 'json'];
 
   /**
    * {@inheritdoc}
@@ -42,7 +42,8 @@ class CompareCommand extends Command {
       ->setName('compare')
       ->setDescription('Compare two or more results.json files: per-task, per-model, and aggregate deltas')
       ->addArgument(name: 'files', mode: InputArgument::REQUIRED | InputArgument::IS_ARRAY, description: 'Two or more results.json files, the first the baseline')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: table or json', default: 'table');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -61,7 +62,8 @@ class CompareCommand extends Command {
     }
 
     $format = $input->getOption('format');
-    $format = is_string($format) && $format !== '' ? $format : 'table';
+    $format = is_string($format) && $format !== '' ? $format : 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
 
     if (!in_array($format, self::FORMATS, TRUE)) {
       $stderr->writeln(sprintf('ERROR unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
@@ -102,7 +104,7 @@ class CompareCommand extends Command {
    * @return array<int, array{label: string, document: array<string, mixed>}>
    *   The labelled documents.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When any file is missing, unreadable, or incompatible.
    */
   protected function loadFiles(array $paths): array {
@@ -122,21 +124,6 @@ class CompareCommand extends Command {
     }
 
     return $files;
-  }
-
-  /**
-   * Renders a configuration error with its file context when it has one.
-   *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
-   *   The error.
-   *
-   * @return string
-   *   The rendered line.
-   */
-  protected function errorLine(ConfigException $config_exception): string {
-    $file = $config_exception->configFile();
-
-    return $file === '' ? $config_exception->getMessage() : sprintf('%s: %s', $file, $config_exception->getMessage());
   }
 
 }

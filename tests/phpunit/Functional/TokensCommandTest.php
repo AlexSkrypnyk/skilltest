@@ -7,6 +7,7 @@ namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 use AlexSkrypnyk\PhpunitHelpers\Traits\ApplicationTrait;
 use AlexSkrypnyk\SkillTest\Command\TokensCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
+use AlexSkrypnyk\SkillTest\Tests\Traits\ApplicationJsonDecodeTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -25,6 +26,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class TokensCommandTest extends TestCase {
 
+  use ApplicationJsonDecodeTrait;
   use ApplicationTrait;
   use DirectoryCleanupTrait;
 
@@ -110,7 +112,7 @@ final class TokensCommandTest extends TestCase {
     $root = $this->vfsRoot();
     $skill_tokens = (int) ceil(strlen(self::CLEAN_FOO) / 4);
 
-    $decoded = $this->decode($this->runTokens(['action' => 'count', 'targets' => ['skills'], '--dir' => $root, '--format' => 'json'], 0));
+    $decoded = $this->decodeStdout($this->runTokens(['action' => 'count', 'targets' => ['skills'], '--dir' => $root, '--format' => 'json'], 0));
 
     $this->assertTrue($decoded['ok']);
     $this->assertSame('estimate', $decoded['method']);
@@ -275,7 +277,7 @@ final class TokensCommandTest extends TestCase {
     $root = $this->gitRepo(['skills/foo/SKILL.md' => $this->paddedSkill(400), 'skills/foo/eval.yaml' => "version: \"1\"\n"]);
     file_put_contents($root . '/skills/foo/SKILL.md', $this->paddedSkill(480));
 
-    $decoded = $this->decode($this->runTokens(['action' => 'compare', '--dir' => $root, '--threshold' => '10', '--format' => 'json'], 1));
+    $decoded = $this->decodeStdout($this->runTokens(['action' => 'compare', '--dir' => $root, '--threshold' => '10', '--format' => 'json'], 1));
 
     $this->assertFalse($decoded['ok']);
     $this->assertSame('main', $decoded['ref']);
@@ -408,26 +410,7 @@ final class TokensCommandTest extends TestCase {
 
     $this->assertSame($expected_exit, $this->applicationGetTester()->getStatusCode());
 
-    return $this->applicationGetTester()->getDisplay();
-  }
-
-  /**
-   * Decodes a JSON command output.
-   *
-   * @param string $output
-   *   The JSON output.
-   *
-   * @return array<mixed>
-   *   The decoded payload.
-   */
-  protected function decode(string $output): array {
-    $decoded = json_decode(trim($output), TRUE, 512, JSON_THROW_ON_ERROR);
-
-    if (!is_array($decoded)) {
-      $this->fail('Expected JSON output to decode to an array.');
-    }
-
-    return $decoded;
+    return $this->applicationGetTester()->getDisplay() . $this->applicationGetTester()->getErrorOutput();
   }
 
 }

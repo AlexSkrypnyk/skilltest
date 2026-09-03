@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Command;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 use AlexSkrypnyk\SkillTest\Tokens\GitRef;
@@ -36,7 +36,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class TokensCommand extends Command {
 
-  use SharedCommandTrait;
+  use ResultsCommandTrait;
 
   /**
    * The supported actions.
@@ -46,7 +46,7 @@ class TokensCommand extends Command {
   /**
    * The supported output formats.
    */
-  public const array FORMATS = ['table', 'json'];
+  public const array FORMATS = ['text', 'json'];
 
   /**
    * The supported sort orders for `count`.
@@ -75,7 +75,8 @@ class TokensCommand extends Command {
       ->addArgument(name: 'action', mode: InputArgument::REQUIRED, description: 'The action: count or compare')
       ->addArgument(name: 'targets', mode: InputArgument::IS_ARRAY, description: 'Paths to count (count), or the git ref to compare against (compare)', default: [])
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
-      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: table or json', default: 'table')
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json')
       ->addOption(name: 'sort', mode: InputOption::VALUE_REQUIRED, description: 'Sort order for count: path or tokens', default: 'path')
       ->addOption(name: 'vocab', mode: InputOption::VALUE_REQUIRED, description: 'Tiktoken-format vocabulary file for exact BPE counts (default: estimation)')
       ->addOption(name: 'threshold', mode: InputOption::VALUE_REQUIRED, description: 'Fail compare when an existing file grows more than this percentage')
@@ -89,18 +90,19 @@ class TokensCommand extends Command {
     $root = $this->resolveRoot($input);
     $action = $input->getArgument('action');
     $format = $input->getOption('format');
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
     $sort = $input->getOption('sort');
 
     if (!is_string($action) || !in_array($action, self::ACTIONS, TRUE)) {
-      return $this->error($output, sprintf('unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
+      return $this->configError($this->stderr($output), sprintf('unknown action; expected one of: %s.', implode(', ', self::ACTIONS)));
     }
 
     if (!is_string($format) || !in_array($format, self::FORMATS, TRUE)) {
-      return $this->error($output, sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
+      return $this->configError($this->stderr($output), sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)));
     }
 
     if (!is_string($sort) || !in_array($sort, self::SORTS, TRUE)) {
-      return $this->error($output, sprintf('unknown sort; expected one of: %s.', implode(', ', self::SORTS)));
+      return $this->configError($this->stderr($output), sprintf('unknown sort; expected one of: %s.', implode(', ', self::SORTS)));
     }
 
     try {
@@ -109,7 +111,7 @@ class TokensCommand extends Command {
         : $this->runCompare($input, $output, $root, $format);
     }
     catch (ConfigException $config_exception) {
-      return $this->error($output, $config_exception->getMessage());
+      return $this->configError($this->stderr($output), $config_exception->getMessage());
     }
   }
 
@@ -130,14 +132,14 @@ class TokensCommand extends Command {
    * @return int
    *   The exit code.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a configured vocabulary cannot be read or parsed.
    */
   protected function runCount(InputInterface $input, OutputInterface $output, string $root, string $format, string $sort): int {
     $targets = $this->targets($input);
 
     if ($targets === []) {
-      return $this->error($output, 'tokens count expects at least one path.');
+      return $this->configError($this->stderr($output), 'tokens count expects at least one path.');
     }
 
     $counter = $this->counter($input, $root);
@@ -155,7 +157,7 @@ class TokensCommand extends Command {
       }
 
       if (!is_file($absolute)) {
-        return $this->error($output, sprintf("path '%s' does not exist.", $target));
+        return $this->configError($this->stderr($output), sprintf("path '%s' does not exist.", $target));
       }
 
       $rows[$this->relativePath($root, $absolute)] = $counter->count($this->contents($absolute));
@@ -169,7 +171,7 @@ class TokensCommand extends Command {
         'method' => $counter->method(),
         'files' => array_map(static fn(string $path): array => ['path' => $path, 'tokens' => $rows[$path]], array_keys($rows)),
         'total' => ['files' => count($rows), 'tokens' => array_sum($rows)],
-      ]));
+      ]), OutputInterface::VERBOSITY_QUIET);
 
       return ExitCode::PASS;
     }
@@ -194,7 +196,7 @@ class TokensCommand extends Command {
    * @return int
    *   The exit code.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the configuration, the ref, the threshold, or the vocabulary is
    *   unusable.
    */
@@ -202,7 +204,7 @@ class TokensCommand extends Command {
     $targets = $this->targets($input);
 
     if (count($targets) > 1) {
-      return $this->error($output, 'tokens compare expects at most one ref.');
+      return $this->configError($this->stderr($output), 'tokens compare expects at most one ref.');
     }
 
     $threshold = $this->threshold($input);
@@ -225,7 +227,7 @@ class TokensCommand extends Command {
         'files' => array_map(static fn(TokenDelta $delta): array => $delta->toArray(), $deltas),
         'violations' => $violations,
         'summary' => $this->compareSummary($deltas, $violations),
-      ]));
+      ]), OutputInterface::VERBOSITY_QUIET);
     }
     else {
       $this->renderCompareTable($output, $deltas, $violations, $ref, $counter->method());
@@ -470,7 +472,7 @@ class TokensCommand extends Command {
    * @return float|null
    *   The threshold percentage, or NULL when not given.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the value is not a non-negative number.
    */
   protected function threshold(InputInterface $input): ?float {
@@ -584,23 +586,6 @@ class TokensCommand extends Command {
     }
 
     return $rows;
-  }
-
-  /**
-   * Reports one error line and returns the config-error exit code.
-   *
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   The command output.
-   * @param string $message
-   *   The error message.
-   *
-   * @return int
-   *   The config-error exit code.
-   */
-  protected function error(OutputInterface $output, string $message): int {
-    $output->writeln('ERROR ' . $message);
-
-    return ExitCode::CONFIG_ERROR;
   }
 
   /**

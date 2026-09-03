@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Command;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Coverage\Coverage;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\ExitCode;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 use AlexSkrypnyk\SkillTest\Validation\ValidationMessage;
@@ -30,6 +30,11 @@ class ValidateCommand extends Command {
   use SharedCommandTrait;
 
   /**
+   * The supported output formats.
+   */
+  public const array FORMATS = ['text', 'json'];
+
+  /**
    * {@inheritdoc}
    */
   protected function configure(): void {
@@ -39,7 +44,8 @@ class ValidateCommand extends Command {
       ->addOption(name: 'dir', mode: InputOption::VALUE_REQUIRED, description: 'Repository root (default: current directory)')
       ->addOption(name: 'show-config', mode: InputOption::VALUE_NONE, description: 'Print the effective merged configuration per skill')
       ->addOption(name: 'models', mode: InputOption::VALUE_REQUIRED, description: 'Override the model list (comma-separated) shown by --show-config')
-      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Output as JSON');
+      ->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'Output format: text or json', default: 'text')
+      ->addOption(name: 'json', mode: InputOption::VALUE_NONE, description: 'Shorthand for --format=json');
   }
 
   /**
@@ -47,7 +53,17 @@ class ValidateCommand extends Command {
    */
   protected function execute(InputInterface $input, OutputInterface $output): int {
     $root = $this->resolveRoot($input);
-    $is_json = (bool) $input->getOption('json');
+
+    $format = $this->stringOption($input, 'format') ?? 'text';
+    $format = (bool) $input->getOption('json') ? 'json' : $format;
+
+    if (!in_array($format, self::FORMATS, TRUE)) {
+      $this->stderr($output)->writeln('ERROR ' . sprintf('unknown format; expected one of: %s.', implode(', ', self::FORMATS)), OutputInterface::VERBOSITY_QUIET);
+
+      return ExitCode::CONFIG_ERROR;
+    }
+
+    $is_json = $format === 'json';
     $show_config = (bool) $input->getOption('show-config');
 
     try {
@@ -57,17 +73,17 @@ class ValidateCommand extends Command {
       return $this->reportLoadError($config_exception, $output, $is_json);
     }
 
-    $result = (new ConfigValidator($root))->validate($loaded);
-    $uncovered = $this->warnUncovered($loaded, $result);
+    $validation = (new ConfigValidator($root))->validate($loaded);
+    $uncovered = $this->warnUncovered($loaded, $validation);
 
     if ($is_json) {
-      $this->renderJson($output, $loaded, $result, $show_config);
+      $this->renderJson($output, $loaded, $validation, $show_config);
     }
     else {
-      $this->renderHuman($output, $loaded, $result, $show_config, $uncovered);
+      $this->renderHuman($output, $loaded, $validation, $show_config, $uncovered);
     }
 
-    return $result->hasErrors() ? ExitCode::CONFIG_ERROR : ExitCode::PASS;
+    return $validation->hasErrors() ? ExitCode::CONFIG_ERROR : ExitCode::PASS;
   }
 
   /**
@@ -82,17 +98,17 @@ class ValidateCommand extends Command {
    *
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation
    *   The result to append warnings to.
    *
    * @return int
    *   The number of uncovered skills warned about.
    */
-  protected function warnUncovered(LoadedConfig $loaded, ValidationResult $validation_result): int {
+  protected function warnUncovered(LoadedConfig $loaded, ValidationResult $validation): int {
     $violations = (new Coverage($loaded))->violations();
 
     foreach ($violations as $violation) {
-      $validation_result->addWarning($violation->path, '', sprintf("skill '%s' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $violation->skill));
+      $validation->addWarning($violation->path, '', sprintf("skill '%s' has no eval.yaml and is not excluded (add an eval.yaml or exclude it with a reason).", $violation->skill));
     }
 
     return count($violations);
@@ -121,7 +137,7 @@ class ValidateCommand extends Command {
   /**
    * Reports a fatal load error and returns the config-error exit code.
    *
-   * @param \AlexSkrypnyk\SkillTest\Exception\ConfigException $config_exception
+   * @param \AlexSkrypnyk\SkillTest\Config\ConfigException $config_exception
    *   The load error.
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   The command output.
@@ -135,10 +151,10 @@ class ValidateCommand extends Command {
     $message = ValidationMessage::error($config_exception->configFile(), $config_exception->pointer(), $config_exception->getMessage());
 
     if ($is_json) {
-      $output->writeln($this->encode(['ok' => FALSE, 'errors' => [$message->toArray()], 'warnings' => []]));
+      $output->writeln($this->encode(['ok' => FALSE, 'errors' => [$message->toArray()], 'warnings' => []]), OutputInterface::VERBOSITY_QUIET);
     }
     else {
-      $output->writeln('ERROR ' . $message->render());
+      $this->stderr($output)->writeln('ERROR ' . $message->render(), OutputInterface::VERBOSITY_QUIET);
     }
 
     return ExitCode::CONFIG_ERROR;
@@ -151,16 +167,16 @@ class ValidateCommand extends Command {
    *   The command output.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation
    *   The validation result.
    * @param bool $show_config
    *   Whether to include the merged configuration.
    */
-  protected function renderJson(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config): void {
+  protected function renderJson(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation, bool $show_config): void {
     $payload = [
-      'ok' => !$validation_result->hasErrors(),
-      'errors' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->errors()),
-      'warnings' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation_result->warnings()),
+      'ok' => !$validation->hasErrors(),
+      'errors' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation->errors()),
+      'warnings' => array_map(static fn(ValidationMessage $validation_message): array => $validation_message->toArray(), $validation->warnings()),
     ];
 
     if ($show_config) {
@@ -173,7 +189,7 @@ class ValidateCommand extends Command {
       $payload['config'] = $config;
     }
 
-    $output->writeln($this->encode($payload));
+    $output->writeln($this->encode($payload), OutputInterface::VERBOSITY_QUIET);
   }
 
   /**
@@ -183,14 +199,14 @@ class ValidateCommand extends Command {
    *   The command output.
    * @param \AlexSkrypnyk\SkillTest\Config\LoadedConfig $loaded
    *   The loaded configuration.
-   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation_result
+   * @param \AlexSkrypnyk\SkillTest\Validation\ValidationResult $validation
    *   The validation result.
    * @param bool $show_config
    *   Whether to print the merged configuration.
    * @param int $uncovered
    *   The number of discovered skills that have no `eval.yaml`.
    */
-  protected function renderHuman(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation_result, bool $show_config, int $uncovered): void {
+  protected function renderHuman(OutputInterface $output, LoadedConfig $loaded, ValidationResult $validation, bool $show_config, int $uncovered): void {
     if ($show_config) {
       foreach ($loaded->skills as $skill) {
         $output->writeln('# ' . $skill->effective->skill);
@@ -198,16 +214,16 @@ class ValidateCommand extends Command {
       }
     }
 
-    foreach ($validation_result->warnings() as $warning) {
+    foreach ($validation->warnings() as $warning) {
       $output->writeln('WARNING ' . $warning->render());
     }
 
-    foreach ($validation_result->errors() as $error) {
+    foreach ($validation->errors() as $error) {
       $output->writeln('ERROR ' . $error->render());
     }
 
-    if ($validation_result->hasErrors()) {
-      $output->writeln(sprintf('FAILED: %d error(s).', count($validation_result->errors())));
+    if ($validation->hasErrors()) {
+      $output->writeln(sprintf('FAILED: %d error(s).', count($validation->errors())));
 
       return;
     }

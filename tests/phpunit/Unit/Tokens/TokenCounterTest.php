@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Tokens;
 
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Tokens\TokenCounter;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;

@@ -83,13 +83,7 @@ final readonly class AgentPreflight {
    *   when neither is available.
    */
   public function binary(): ?string {
-    $override = trim((string) ($this->env[self::ENV_AGENT] ?? ''));
-
-    if ($override !== '') {
-      return $override;
-    }
-
-    return self::onPath((string) ($this->env['PATH'] ?? ''), self::DEFAULT_BINARY);
+    return $this->overrideOrOnPath(self::ENV_AGENT, self::DEFAULT_BINARY);
   }
 
   /**

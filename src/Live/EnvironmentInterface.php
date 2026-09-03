@@ -39,7 +39,7 @@ interface EnvironmentInterface {
    * @return \AlexSkrypnyk\SkillTest\Live\TrialWorkspace
    *   The assembled workspace, ready for its command to run.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a declared fixture is missing or a repo worktree cannot be created.
    */
   public function setup(string $skill, string $path, array $inputs): TrialWorkspace;

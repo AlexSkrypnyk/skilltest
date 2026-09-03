@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Live;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**
@@ -24,7 +24,7 @@ use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
  * validated up front, so a hook missing its command is caught before any
  * trial runs.
  */
-final class Lifecycle {
+final readonly class Lifecycle {
 
   /**
    * The phase run once before any trial.
@@ -92,7 +92,7 @@ final class Lifecycle {
    *   When set, every hook not marked `on-host` runs through it instead of the
    *   host runner, so a docker run's hooks share the trial's isolation.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a declared hook is missing its command.
    */
   public function __construct(
@@ -117,7 +117,7 @@ final class Lifecycle {
    * @param array<string, string> $vars
    *   The template variables available to the hook commands.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When an `error-on-fail` hook fails its acceptable exit codes.
    */
   public function beforeRun(array $vars): void {
@@ -130,7 +130,7 @@ final class Lifecycle {
    * @param array<string, string> $vars
    *   The template variables available to the hook commands.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When an `error-on-fail` hook fails its acceptable exit codes.
    */
   public function beforeTask(array $vars): void {
@@ -168,7 +168,7 @@ final class Lifecycle {
    *   Whether an `error-on-fail` failure aborts (a setup phase) rather than
    *   only warning (a teardown phase).
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When an abortable `error-on-fail` hook fails its acceptable exit codes.
    */
   protected function runPhase(string $phase, array $vars, bool $abortable): void {
@@ -200,7 +200,7 @@ final class Lifecycle {
    * @return array<string, array<int, array{command: string, cwd: string, exitCodes: int[], errorOnFail: bool, onHost: bool}>>
    *   The hooks keyed by phase.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a declared hook is missing its command.
    */
   protected function parse(): array {

@@ -10,6 +10,7 @@ use AlexSkrypnyk\SkillTest\Command\RunCommand;
 use AlexSkrypnyk\SkillTest\Config\ConfigLoader;
 use AlexSkrypnyk\SkillTest\Live\AgentPreflight;
 use AlexSkrypnyk\SkillTest\Live\LlmSuite;
+use AlexSkrypnyk\SkillTest\Tests\Traits\AgentStubTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\ResultsDocumentTrait;
 use AlexSkrypnyk\SkillTest\Tests\Traits\SchemaValidationTrait;
@@ -28,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 #[Group('command')]
 final class GradeCommandTest extends TestCase {
 
+  use AgentStubTrait;
   use ApplicationTrait;
   use DirectoryCleanupTrait;
   use ResultsDocumentTrait;
@@ -187,6 +189,14 @@ final class GradeCommandTest extends TestCase {
     $output = $this->runGrade(['--dir' => $root, '--transcript' => $file, '--skill' => 'alpha'], 2);
 
     $this->assertStringContainsString('malformed YAML', $output);
+  }
+
+  public function testUnknownFormatIsConfigError(): void {
+    $root = $this->repo();
+
+    $output = $this->runGrade(['--dir' => $root, '--format' => 'xml'], 2);
+
+    $this->assertStringContainsString('ERROR unknown format; expected one of: text, json.', $output);
   }
 
   public function testResultsRescoreTightenedContractFlipsToFail(): void {
@@ -367,27 +377,6 @@ final class GradeCommandTest extends TestCase {
   }
 
   /**
-   * Builds one trial row for a results document.
-   *
-   * @param int $number
-   *   The trial number.
-   * @param bool $pass
-   *   The stored pass verdict.
-   * @param string $transcript
-   *   The transcript artifact reference.
-   * @param array<int, array<mixed>> $contract
-   *   The stored contract rows.
-   * @param array<int, array<mixed>> $judge
-   *   The stored judge criteria.
-   *
-   * @return array<string, mixed>
-   *   The trial row.
-   */
-  protected function trialRow(int $number, bool $pass, string $transcript, array $contract = [], array $judge = []): array {
-    return ['trial' => $number, 'pass' => $pass, 'contract' => $contract, 'judge' => $judge, 'transcript' => $transcript];
-  }
-
-  /**
    * Writes a results document and its transcript artifacts under a run dir.
    *
    * @param string $root
@@ -451,16 +440,6 @@ final class GradeCommandTest extends TestCase {
     file_put_contents($path, "<?php\necho " . var_export($verdict, TRUE) . ";\nexit(0);\n");
 
     return 'php ' . escapeshellarg($path);
-  }
-
-  /**
-   * Points the agent seam at a stub command.
-   *
-   * @param string $command
-   *   The stub command prefix.
-   */
-  protected function useAgent(string $command): void {
-    putenv(AgentPreflight::ENV_AGENT . '=' . $command);
   }
 
   /**

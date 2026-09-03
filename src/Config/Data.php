@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * traversal or coercion into a single, typed call so every consumer narrows
  * the same way instead of scattering is_array/is_string guards.
  */
-final class Data {
+final readonly class Data {
 
   /**
    * Returns a value when it is an array, otherwise an empty array.

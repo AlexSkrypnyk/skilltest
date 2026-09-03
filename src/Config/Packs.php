@@ -11,7 +11,7 @@ namespace AlexSkrypnyk\SkillTest\Config;
  * instead of a hand-written regex; the security group enables named packs by
  * listing them.
  */
-final class Packs {
+final readonly class Packs {
 
   /**
    * The prefix that marks a pattern value as a pack reference.

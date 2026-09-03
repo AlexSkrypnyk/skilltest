@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Structure;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
 use AlexSkrypnyk\SkillTest\Config\Discovery;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\SkillFiles;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Tokens\TokenCounter;
 use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
 
@@ -26,7 +26,7 @@ use AlexSkrypnyk\SkillTest\Validation\ConfigValidator;
  * injected runner, and a binary that cannot run is a configuration error,
  * not a pass.
  */
-final class StructureChecker {
+final readonly class StructureChecker {
 
   /**
    * Frontmatter parses with a non-empty name and description.
@@ -201,7 +201,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult[]
    *   The results, in skill-then-check order.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When `commands.resolve` is enabled but its binary cannot run or parse.
    */
   public function check(LoadedConfig $loaded_config): array {
@@ -227,7 +227,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\CommandCatalog|null
    *   The catalog, or NULL when the command-reference check is disabled.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When `commands.resolve` is set but names no binary.
    */
   protected function catalog(LoadedConfig $loaded_config): ?CommandCatalog {
@@ -617,7 +617,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
    *   The result.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the binary cannot run or its output cannot be parsed.
    */
   protected function checkCommandRefs(LoadedSkill $loaded_skill, string $name, string $dir, CommandCatalog $catalog): StructureResult {
@@ -641,7 +641,7 @@ final class StructureChecker {
       // @codeCoverageIgnoreEnd
       $relative = $this->relativePath($absolute);
 
-      foreach (explode("\n", $contents) as $index => $line) {
+      foreach (preg_split('/\R/', $contents) ?: [] as $index => $line) {
         if (preg_match_all($pattern, $line, $matches, PREG_SET_ORDER) < 1) {
           continue;
         }
@@ -679,7 +679,7 @@ final class StructureChecker {
    * @return \AlexSkrypnyk\SkillTest\Structure\StructureResult
    *   The result.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a configured vocabulary cannot be read or parsed.
    */
   protected function checkTokenBudget(LoadedSkill $loaded_skill, SkillDocument $document, string $name, string $file): StructureResult {
@@ -763,7 +763,7 @@ final class StructureChecker {
   protected function countMatchingLines(string $text, string $pattern): int {
     $count = 0;
 
-    foreach (explode("\n", $text) as $line) {
+    foreach (preg_split('/\R/', $text) ?: [] as $line) {
       if (preg_match($pattern, $line) === 1) {
         $count++;
       }
@@ -840,7 +840,7 @@ final class StructureChecker {
   protected function referencedFiles(SkillDocument $document): array {
     $references = [];
 
-    foreach (explode("\n", $document->body) as $index => $line) {
+    foreach (preg_split('/\R/', $document->body) ?: [] as $index => $line) {
       $number = $document->bodyStartLine + $index;
 
       foreach ($this->candidatesInLine($line) as $path) {
@@ -989,7 +989,7 @@ final class StructureChecker {
    *   The 1-based file line and the trimmed matching line, or NULL.
    */
   protected function firstLineMatching(string $text, string $pattern, int $base_line): ?array {
-    foreach (explode("\n", $text) as $index => $line) {
+    foreach (preg_split('/\R/', $text) ?: [] as $index => $line) {
       if (preg_match($pattern, $line) === 1) {
         return [$base_line + $index, trim($line)];
       }
@@ -1051,7 +1051,7 @@ final class StructureChecker {
    *   The 1-based line number.
    */
   protected function lineContaining(string $content, string $needle): int {
-    foreach (explode("\n", $content) as $index => $line) {
+    foreach (preg_split('/\R/', $content) ?: [] as $index => $line) {
       if (str_contains($line, $needle)) {
         return $index + 1;
       }

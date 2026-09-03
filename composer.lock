@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d02b290f4e148b9860af9a25dea7dbdf",
+    "content-hash": "9b08295764eeb6363aed94877060bfae",
     "packages": [
         {
             "name": "alexskrypnyk/file",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AlexSkrypnyk/file.git",
-                "reference": "20fb85eb71eec1e3e78d42c2b44924e9d0deceb3"
+                "reference": "a9e0545b3044004f79d4fb5e7c35aa0fa298f789"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AlexSkrypnyk/file/zipball/20fb85eb71eec1e3e78d42c2b44924e9d0deceb3",
-                "reference": "20fb85eb71eec1e3e78d42c2b44924e9d0deceb3",
+                "url": "https://api.github.com/repos/AlexSkrypnyk/file/zipball/a9e0545b3044004f79d4fb5e7c35aa0fa298f789",
+                "reference": "a9e0545b3044004f79d4fb5e7c35aa0fa298f789",
                 "shasum": ""
             },
             "require": {
@@ -30,10 +30,11 @@
                 "drevops/phpcs-standard": "^0.7",
                 "drupal/coder": "^9.0.1",
                 "ergebnis/composer-normalize": "^2.52.0",
+                "mikey179/vfsstream": "^1.6.12",
                 "phpbench/phpbench": "^1.7.0",
                 "phpstan/phpstan": "^2.2.12",
                 "phpunit/phpunit": "^11.5.56",
-                "rector/rector": "^2.6.5"
+                "rector/rector": "^2.6.6"
             },
             "suggest": {
                 "phpunit/phpunit": "Required for using FileAssertionsTrait and DirectoryAssertionsTrait (^11)"
@@ -72,7 +73,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-09-02T10:20:39+00:00"
+            "time": "2026-09-03T03:53:12+00:00"
         },
         {
             "name": "justinrainbow/json-schema",

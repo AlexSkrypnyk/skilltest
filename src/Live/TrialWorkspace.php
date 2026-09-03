@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AlexSkrypnyk\SkillTest\Live;
 
 use AlexSkrypnyk\File\File;
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\Data;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Process\ProcessRunner;
 
 /**
@@ -88,7 +88,7 @@ final class TrialWorkspace {
    * @return array{fixture: ?string, repos: array<int, array{source: string, commit: string, dest: string}>, workdir: ?string}
    *   The normalised inputs.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a repo entry omits its source or dest, or a dest or workdir is not a
    *   safe relative path.
    */
@@ -153,7 +153,7 @@ final class TrialWorkspace {
   /**
    * Assembles the workspace: fixture, repos, skill, and agent directory.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a declared fixture is missing or a repo worktree cannot be created.
    */
   public function assemble(): void {
@@ -182,7 +182,7 @@ final class TrialWorkspace {
   /**
    * Copies the task fixture into the workspace, when one is declared.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the declared fixture path does not exist.
    */
   protected function copyFixture(): void {
@@ -212,7 +212,7 @@ final class TrialWorkspace {
   /**
    * Materialises each declared repo as a detached worktree in the workspace.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When a worktree cannot be created from its source at its commit.
    */
   protected function materialiseRepos(): void {
@@ -251,7 +251,7 @@ final class TrialWorkspace {
    * @param string $config_file
    *   The declaring `eval.yaml`, for error context.
    *
-   * @throws \AlexSkrypnyk\SkillTest\Exception\ConfigException
+   * @throws \AlexSkrypnyk\SkillTest\Config\ConfigException
    *   When the path is absolute or contains a `..` segment.
    */
   protected static function assertSafeRelative(string $value, string $label, string $config_file): void {

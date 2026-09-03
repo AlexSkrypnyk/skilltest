@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AlexSkrypnyk\SkillTest\Live;
-
-use AlexSkrypnyk\SkillTest\Process\ProcessTerminationTrait;
+namespace AlexSkrypnyk\SkillTest\Process;
 
 /**
  * Runs many commands concurrently under a bounded worker pool and a timeout.

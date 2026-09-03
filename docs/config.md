@@ -299,8 +299,7 @@ Lifecycle hook commands accept `{{ ... }}` template variables, substituted per c
 | `SKILLTEST_AGENT` | The agent binary or command prefix for live runs; default is the first `claude` on `PATH` |
 | `SKILLTEST_DOCKER` | The docker CLI path for the docker environment; default is the first `docker` on `PATH` |
 | `SKILLTEST_TRIAL_TIMEOUT` | Per-trial wall-clock budget in seconds; default 300 |
-| `SKILLTEST_NO_UPDATE_CHECK` | Any non-empty value disables the once-a-day release check |
-| `CI` | Any non-empty value also disables the release check |
+| `SKILLTEST_UPDATE_CHECK` | Any non-empty value opts in to the once-a-day release check, which is off by default |
 | `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` | Credentials for llm runs, forwarded to the agent (host) or the container (docker); an authenticated Claude Code home (`~/.claude`) satisfies the preflight too |
 
 skilltest never handles credentials itself - it only checks that one of the credential signals is present before spending tokens, then forwards the host environment to the agent. The deterministic suite needs no credentials at all.

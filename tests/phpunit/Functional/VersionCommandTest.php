@@ -51,4 +51,13 @@ final class VersionCommandTest extends TestCase {
     $this->assertSame($expected, json_decode(trim($output), TRUE));
   }
 
+  public function testUnknownFormatIsConfigError(): void {
+    $this->applicationInitFromCommand(VersionCommand::class);
+
+    $output = $this->applicationRun(['--format' => 'xml'], [], TRUE);
+
+    $this->assertSame(2, $this->applicationGetTester()->getStatusCode());
+    $this->assertStringContainsString('unknown format; expected one of: text, json.', $output);
+  }
+
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Unit\Structure;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\EffectiveConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedConfig;
 use AlexSkrypnyk\SkillTest\Config\LoadedSkill;
 use AlexSkrypnyk\SkillTest\Config\RepoConfig;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Structure\StructureChecker;
 use AlexSkrypnyk\SkillTest\Structure\StructureResult;
 use org\bovigo\vfs\vfsStream;

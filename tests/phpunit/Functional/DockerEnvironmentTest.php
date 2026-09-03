@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\SkillTest\Tests\Functional;
 
+use AlexSkrypnyk\SkillTest\Config\ConfigException;
 use AlexSkrypnyk\SkillTest\Config\DockerConfig;
-use AlexSkrypnyk\SkillTest\Exception\ConfigException;
 use AlexSkrypnyk\SkillTest\Live\DockerEnvironment;
-use AlexSkrypnyk\SkillTest\Live\ProcessPool;
 use AlexSkrypnyk\SkillTest\Live\TrialWorkspace;
+use AlexSkrypnyk\SkillTest\Process\ProcessPool;
 use AlexSkrypnyk\SkillTest\Tests\Traits\DirectoryCleanupTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;

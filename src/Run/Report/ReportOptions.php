@@ -80,12 +80,13 @@ final readonly class ReportOptions {
     $errors = [];
 
     $github_comment = $format === self::GITHUB_COMMENT;
+    $format_json = $format === 'json';
 
-    if ($format !== NULL && !$github_comment) {
-      $errors[] = ValidationMessage::error('', '', sprintf("unknown format '%s'; the run command supports: %s (use --json for JSON output).", $format, self::GITHUB_COMMENT));
+    if ($format !== NULL && !$github_comment && !$format_json && $format !== 'text') {
+      $errors[] = ValidationMessage::error('', '', sprintf("unknown format '%s'; the run command supports: text, github-comment, json.", $format));
     }
 
-    if ($json && $github_comment) {
+    if ($json && $format !== NULL && $format !== 'json') {
       $errors[] = ValidationMessage::error('', '', 'choose a single stdout format: --json or --format github-comment, not both.');
     }
 
@@ -118,7 +119,7 @@ final readonly class ReportOptions {
       $session = $session_dir;
     }
 
-    return new self($json, $github_comment, $junit, $session, $output_file, $output_dir, $errors);
+    return new self($json || $format_json, $github_comment, $junit, $session, $output_file, $output_dir, $errors);
   }
 
   /**
@@ -142,7 +143,7 @@ final readonly class ReportOptions {
       return 'github-comment';
     }
 
-    return $this->json ? 'json' : 'human';
+    return $this->json ? 'json' : 'text';
   }
 
   /**

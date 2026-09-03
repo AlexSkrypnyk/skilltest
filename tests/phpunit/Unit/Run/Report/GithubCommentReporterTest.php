@@ -25,7 +25,7 @@ final class GithubCommentReporterTest extends TestCase {
     $markdown = (new GithubCommentReporter())->render($document);
 
     $this->assertStringContainsString('### skilltest results', $markdown);
-    $this->assertStringContainsString('✅ All 3 checks passed - run `st-1` (run, host)', $markdown);
+    $this->assertStringContainsString('✅ All 3 check(s) passed - run `st-1` (run, host)', $markdown);
     $this->assertStringContainsString('| Metric | Value |', $markdown);
     $this->assertStringContainsString('| --- | --- |', $markdown);
     $this->assertStringContainsString('| Checks | 3 |', $markdown);
@@ -45,7 +45,7 @@ final class GithubCommentReporterTest extends TestCase {
 
     $markdown = (new GithubCommentReporter())->render($document);
 
-    $this->assertStringContainsString('❌ 3 of 3 checks failed', $markdown);
+    $this->assertStringContainsString('❌ 3 of 3 check(s) failed', $markdown);
     $this->assertStringContainsString('#### Failures', $markdown);
     $this->assertStringContainsString('- `contract.commands.forbidden` (alpha.transcript) - forbidden behaviour matched  `git push origin main`', $markdown);
     $this->assertStringContainsString('- `hooks.guard` (hooks) - allowed but must block', $markdown);
@@ -67,7 +67,7 @@ final class GithubCommentReporterTest extends TestCase {
 
     $this->assertStringContainsString('| Trials | 6 |', $markdown);
     $this->assertStringContainsString('| Tokens | 120 in / 340 out |', $markdown);
-    $this->assertStringContainsString('| Cost | $0.42 |', $markdown);
+    $this->assertStringContainsString('| Cost | $0.4200 |', $markdown);
   }
 
   public function testMatrixGridRendersWhenLlmPresent(): void {
@@ -83,7 +83,7 @@ final class GithubCommentReporterTest extends TestCase {
     $markdown = (new GithubCommentReporter())->render($document);
 
     $this->assertStringContainsString('#### Matrix: alpha', $markdown);
-    $this->assertStringContainsString('Minimal model: **sonnet** (threshold 0.8, 3 trials)', $markdown);
+    $this->assertStringContainsString('Minimal model: **sonnet** (threshold 0.80, 3 trial(s))', $markdown);
     $this->assertStringContainsString('| Task | haiku | sonnet |', $markdown);
     $this->assertStringContainsString('| invoked | 33% | 100% |', $markdown);
     $this->assertStringContainsString('| refined | - | 50% |', $markdown);
