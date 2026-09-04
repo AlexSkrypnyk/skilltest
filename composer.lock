@@ -4,24 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e2371baaeddb0fa0715632e9e1a85b74",
+    "content-hash": "c8c56bf63762dbc5a9009a037bf0a6f9",
     "packages": [
         {
             "name": "alexskrypnyk/file",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AlexSkrypnyk/file.git",
-                "reference": "a9e0545b3044004f79d4fb5e7c35aa0fa298f789"
+                "reference": "d7a62771959804dfca14f829d21d3b7f05d32001"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AlexSkrypnyk/file/zipball/a9e0545b3044004f79d4fb5e7c35aa0fa298f789",
-                "reference": "a9e0545b3044004f79d4fb5e7c35aa0fa298f789",
+                "url": "https://api.github.com/repos/AlexSkrypnyk/file/zipball/d7a62771959804dfca14f829d21d3b7f05d32001",
+                "reference": "d7a62771959804dfca14f829d21d3b7f05d32001",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.2",
+                "php": ">=8.3",
                 "symfony/filesystem": "^7.4.18"
             },
             "require-dev": {
@@ -32,7 +32,7 @@
                 "ergebnis/composer-normalize": "^2.52.0",
                 "mikey179/vfsstream": "^1.6.12",
                 "phpbench/phpbench": "^1.7.0",
-                "phpstan/phpstan": "^2.2.12",
+                "phpstan/phpstan": "^2.2.13",
                 "phpunit/phpunit": "^11.5.56",
                 "rector/rector": "^2.6.6"
             },
@@ -73,7 +73,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-09-03T03:53:12+00:00"
+            "time": "2026-09-04T07:32:17+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
