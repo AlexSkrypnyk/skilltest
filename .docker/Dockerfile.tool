@@ -16,9 +16,9 @@
 # dependencies.
 # hadolint global ignore=DL3008,DL3059
 
-FROM php:8.5-cli@sha256:9ebdf4c28ab12c02085e171c31e22ac5f7bbb6a9f6927e3bc3dfe7ee23df51e0 AS builder
+FROM php:8.5-cli@sha256:a39fb299e915914e5d587baaca6c9c7a782b00235375ad33abd16bb2df529975 AS builder
 
-COPY --from=composer:2@sha256:add7779823f272dcbc4b47b092d8a9e26fd304fb72f7209e0725737d2a5ba6a6 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:aaeab4b6b031e0a88efb907f0f26b563532a644fc2f4ea0d000ecf8658f7a2b8 /usr/bin/composer /usr/bin/composer
 
 # git and unzip cover Composer's VCS and dist extraction; the base image
 # already ships every extension Box needs (phar, iconv, mbstring, zlib).
@@ -38,7 +38,7 @@ RUN sed -i "s/\"skilltest-version\": \"development\"/\"skilltest-version\": \"${
 RUN composer install --no-interaction --no-progress
 RUN composer build
 
-FROM php:8.5-cli-alpine@sha256:aa66ee4275e0472bafcd18e35142499fcbda6ac90e641e751418e052e6a0d812 AS runtime
+FROM php:8.5-cli-alpine@sha256:dae77e6aa4934d22b903da93e0e506c34032f5d8f8f91693d2cbf6e2724ddf73 AS runtime
 
 LABEL org.opencontainers.image.source="https://github.com/alexskrypnyk/skilltest"
 LABEL org.opencontainers.image.description="skilltest: deterministic test runner for AI agent skills"
