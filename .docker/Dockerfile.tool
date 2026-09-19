@@ -16,7 +16,7 @@
 # dependencies.
 # hadolint global ignore=DL3008,DL3059
 
-FROM php:8.5-cli@sha256:cf90c5eb5e79c89b0aa29ef72e74962d3194abf3e69d2cd4ba635af9d629985e AS builder
+FROM php:8.5-cli@sha256:df50257c90ad9a53052fb4e9c6fdba8262cf72ca9e9a048b7c89f74c8d23fc0d AS builder
 
 COPY --from=composer:2@sha256:a5f59b9fd2faf31218632be4809dc6491761085e8064c31dc3b84378c48c248b /usr/bin/composer /usr/bin/composer
 
