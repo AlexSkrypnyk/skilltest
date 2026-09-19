@@ -10,7 +10,7 @@
 # apt packages are version-pinned.
 # hadolint global ignore=DL3008,DL3016
 
-FROM node:24.21.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553
+FROM node:24.21.0-bookworm-slim@sha256:a9d7043680f11d1229c0db1900b7f916719b1f0e4b47ed14a8c881e99767b8d2
 
 LABEL org.opencontainers.image.source="https://github.com/alexskrypnyk/skilltest"
 LABEL org.opencontainers.image.description="skilltest agent base: Claude Code CLI plus common tooling for --env docker trials"
