@@ -38,7 +38,7 @@ RUN sed -i "s/\"skilltest-version\": \"development\"/\"skilltest-version\": \"${
 RUN composer install --no-interaction --no-progress
 RUN composer build
 
-FROM php:8.5-cli-alpine@sha256:6cb4d855b2b63fd4792e76555a16211e2e4d8feab0ba770da080d774824eac92 AS runtime
+FROM php:8.5-cli-alpine@sha256:4992c6fda82eadfb3b22dca3929188dc5831e9f44a3d42b3c8d36a460b4d5a80 AS runtime
 
 LABEL org.opencontainers.image.source="https://github.com/alexskrypnyk/skilltest"
 LABEL org.opencontainers.image.description="skilltest: deterministic test runner for AI agent skills"
