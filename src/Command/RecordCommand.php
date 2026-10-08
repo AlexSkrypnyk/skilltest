@@ -244,7 +244,7 @@ class RecordCommand extends Command {
       return ['name' => $task_name, 'prompt' => $prompt, 'task' => $task];
     }
 
-    throw new ConfigException(sprintf("skill '%s' has no task named '%s'.", $skill->effective->skill, (string) $name), $skill->file, 'llm.tasks');
+    throw new ConfigException(sprintf("skill '%s' has no task named '%s'.", $skill->effective->skill, $name), $skill->file, 'llm.tasks');
   }
 
   /**
