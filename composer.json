@@ -20,8 +20,8 @@
         "php": ">=8.3",
         "alexskrypnyk/file": "^1.2.0",
         "justinrainbow/json-schema": "^6.13.1",
-        "symfony/console": "^7.4.20",
-        "symfony/yaml": "^7.4.20"
+        "symfony/console": "^7.4.21",
+        "symfony/yaml": "^7.4.21"
     },
     "require-dev": {
         "alexskrypnyk/phpunit-helpers": "^0.16.0",
